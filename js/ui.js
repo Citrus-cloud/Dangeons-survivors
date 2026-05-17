@@ -193,13 +193,17 @@ const UI = {
     const levelEl = el.children[2];
     const cdEl   = el.children[0];
     if (!weapon) {
-      el.classList.remove('filled');
+      el.classList.remove('filled', 'exclusive-slot', 'super-evolved-slot');
       iconEl.textContent = '';
       levelEl.textContent = '';
       cdEl.style.height = '0%';
       return;
     }
     el.classList.add('filled');
+    // Exclusive/Super-evolved visual
+    if (weapon.isSuperEvolved) { el.classList.add('super-evolved-slot'); el.classList.remove('exclusive-slot'); }
+    else if (weapon.isExclusive) { el.classList.add('exclusive-slot'); el.classList.remove('super-evolved-slot'); }
+    else { el.classList.remove('exclusive-slot', 'super-evolved-slot'); }
     iconEl.textContent = weapon.icon || '?';
     levelEl.textContent = Utils.roman(weapon.level);
     // CD-заполнение: растёт от 0% до 100% по мере готовности
@@ -333,8 +337,6 @@ const UI = {
   /**
    * Окно эволюции: оружие + пассивка → результат.
    * onChoice(true) — принять, onChoice(false) — отказаться.
-   * Если игрок отказывается, вызывающий код может предложить fallback (например,
-   * обычное улучшение).
    */
   showEvolutionDialog(roll, pair, onChoice) {
     this.hideAll();
@@ -361,6 +363,98 @@ const UI = {
     this.chestPanelEl.querySelector('#evoDecline').addEventListener('click', () => {
       this.hideAll();
       onChoice && onChoice(false);
+    });
+  },
+
+  /**
+   * Окно выбора из нескольких доступных эволюций.
+   * Прокручиваемый список. Игрок выбирает одну.
+   */
+  showEvolutionChoice(roll, readyList, onChoice) {
+    this.hideAll();
+    let html =
+      '<div class="d20-title">ЭВОЛЮЦИЯ!</div>' +
+      `<div class="d20-sub">Бросок: <span class="d20-mini crit">${roll}</span> — выберите эволюцию</div>` +
+      '<div id="evoChoiceList" class="evo-choice-list">';
+    for (let i = 0; i < readyList.length; i++) {
+      const p = readyList[i];
+      const w = p.weapon, a = p.ability, r = p.recipe;
+      html += `<div class="evo-choice-item" data-idx="${i}">` +
+        `<span class="evo-choice-icon">${w.icon}</span>` +
+        `<span class="evo-choice-plus">+</span>` +
+        `<span class="evo-choice-icon">${a.icon}</span>` +
+        `<span class="evo-choice-arrow">→</span>` +
+        `<span class="evo-choice-result-icon">${r.resultIcon}</span>` +
+        `<span class="evo-choice-name">${r.resultName}</span>` +
+        `<span class="evo-choice-desc">${r.desc}</span>` +
+      '</div>';
+    }
+    html += '</div>' +
+      '<div class="evo-buttons">' +
+        '<button id="evoDeclineAll" class="btn btn-secondary">Отказаться</button>' +
+      '</div>';
+    this.chestPanelEl.innerHTML = html;
+    this.chestOverlay.classList.add('active');
+
+    // Event listeners
+    const list = this.chestPanelEl.querySelector('#evoChoiceList');
+    list.addEventListener('click', (e) => {
+      const item = e.target.closest('.evo-choice-item');
+      if (!item) return;
+      const idx = parseInt(item.dataset.idx);
+      if (idx >= 0 && idx < readyList.length) {
+        this.hideAll();
+        onChoice && onChoice(readyList[idx]);
+      }
+    });
+    this.chestPanelEl.querySelector('#evoDeclineAll').addEventListener('click', () => {
+      this.hideAll();
+      onChoice && onChoice(null);
+    });
+  },
+
+  /**
+   * Окно супер-эволюции: золотая рамка, особое оформление.
+   */
+  showSuperEvolutionDialog(roll, superReadyList, onChoice) {
+    this.hideAll();
+    let html =
+      '<div class="d20-title super-evo-title">⭐ СУПЕР-ЭВОЛЮЦИЯ! ⭐</div>' +
+      `<div class="d20-sub">Бросок: <span class="d20-mini crit">${roll}</span></div>` +
+      '<div id="superEvoList" class="evo-choice-list super-evo-list">';
+    for (let i = 0; i < superReadyList.length; i++) {
+      const s = superReadyList[i];
+      const excl = s.exclusive, evolved = s.evolved, r = s.recipe;
+      html += `<div class="evo-choice-item super-evo-item" data-idx="${i}">` +
+        `<span class="evo-choice-icon">${excl.icon}</span>` +
+        `<span class="evo-choice-plus">+</span>` +
+        `<span class="evo-choice-icon">${evolved.icon}</span>` +
+        `<span class="evo-choice-arrow">→</span>` +
+        `<span class="evo-choice-result-icon">${r.resultIcon}</span>` +
+        `<span class="evo-choice-name">${r.resultName}</span>` +
+        `<span class="evo-choice-desc">${r.desc}</span>` +
+      '</div>';
+    }
+    html += '</div>' +
+      '<div class="evo-buttons">' +
+        '<button id="superEvoDecline" class="btn btn-secondary">Отказаться</button>' +
+      '</div>';
+    this.chestPanelEl.innerHTML = html;
+    this.chestOverlay.classList.add('active');
+
+    const list = this.chestPanelEl.querySelector('#superEvoList');
+    list.addEventListener('click', (e) => {
+      const item = e.target.closest('.super-evo-item');
+      if (!item) return;
+      const idx = parseInt(item.dataset.idx);
+      if (idx >= 0 && idx < superReadyList.length) {
+        this.hideAll();
+        onChoice && onChoice(superReadyList[idx]);
+      }
+    });
+    this.chestPanelEl.querySelector('#superEvoDecline').addEventListener('click', () => {
+      this.hideAll();
+      onChoice && onChoice(null);
     });
   },
 

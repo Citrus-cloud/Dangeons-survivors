@@ -374,6 +374,8 @@ const Game = {
 
     // Шаг 6: проверка попадания снарядов игрока в босса
     this.checkProjectilesVsBoss();
+    // Шаг 9-10: отражение снарядов
+    this.updateProjectileReflection();
     // Шаг 6: хоминг для снарядов босса (лич)
     this.updateHomingProjectiles(dt);
 
@@ -551,7 +553,6 @@ const Game = {
         desc: '+20 очков опыта.',
       };
       player.xp += 20;
-      // Если набралось — обработаем левелап после закрытия окна
       UI.showChestReward(roll, reward, () => this._afterChestClose());
       return;
     }
@@ -566,31 +567,89 @@ const Game = {
       return;
     }
 
-    // 19..20 — редкая награда
-    const ready = (window.Evolutions && Evolutions.findReady) ? Evolutions.findReady(player) : [];
-    if (ready.length > 0) {
-      // Берём первую готовую пару (по порядку слотов)
-      const pair = ready[0];
-      UI.showEvolutionDialog(roll, pair, (accepted) => {
-        if (accepted) {
-          Evolutions.apply(player, pair.recipe);
+    // 19..20 — редкая награда: проверяем супер-эволюции, эволюции, эксклюзивы
+    // Приоритет 1: Супер-эволюции
+    const superReady = (window.Evolutions && Evolutions.findSuperReady) ? Evolutions.findSuperReady(player) : [];
+    if (superReady.length > 0) {
+      UI.showSuperEvolutionDialog(roll, superReady, (chosen) => {
+        if (chosen) {
+          Evolutions.applySuper(player, chosen.recipe);
           this._afterChestClose();
         } else {
-          // Отказ — даём обычную награду через окно выбора
-          const choices = this.buildLevelUpChoices(3);
-          UI.showChestPick(roll, choices, (chosen) => {
-            if (chosen) chosen.apply(player);
-            this._afterChestClose();
-          });
+          this._resolveChestEvolutionsOrFallback(roll, player);
         }
       });
       return;
     }
 
-    // Готовых пар нет — даём мощную разовую награду или новую вещь
+    // Приоритет 2: Обычные эволюции
+    this._resolveChestEvolutionsOrFallback(roll, player);
+  },
+
+  /** Проверить обычные эволюции или дать фоллбэк (эксклюзив/большая награда). */
+  _resolveChestEvolutionsOrFallback(roll, player) {
+    const ready = (window.Evolutions && Evolutions.findReady) ? Evolutions.findReady(player) : [];
+    if (ready.length > 0) {
+      // Если несколько — показываем окно выбора эволюции
+      if (ready.length === 1) {
+        const pair = ready[0];
+        UI.showEvolutionDialog(roll, pair, (accepted) => {
+          if (accepted) {
+            Evolutions.apply(player, pair.recipe);
+            this._afterChestClose();
+          } else {
+            this._resolveChestExclusiveOrFallback(roll, player);
+          }
+        });
+      } else {
+        // Множественный выбор
+        UI.showEvolutionChoice(roll, ready, (chosenPair) => {
+          if (chosenPair) {
+            Evolutions.apply(player, chosenPair.recipe);
+            this._afterChestClose();
+          } else {
+            this._resolveChestExclusiveOrFallback(roll, player);
+          }
+        });
+      }
+      return;
+    }
+
+    this._resolveChestExclusiveOrFallback(roll, player);
+  },
+
+  /** Эксклюзивное оружие или большая награда как фоллбэк при d20=20. */
+  _resolveChestExclusiveOrFallback(roll, player) {
+    // d20=20 и нет эволюций — шанс эксклюзивного оружия
+    if (roll >= 20 && Player.hasFreeWeaponSlot(player)) {
+      const excl = this._tryGetExclusiveWeapon(player);
+      if (excl) {
+        UI.showChestReward(roll, excl, () => this._afterChestClose());
+        excl.apply(player);
+        return;
+      }
+    }
+    // Большая награда
     const reward = this._buildBigReward(player);
     reward.apply(player);
     UI.showChestReward(roll, reward, () => this._afterChestClose());
+  },
+
+  /** Попробовать выдать случайное эксклюзивное оружие. */
+  _tryGetExclusiveWeapon(player) {
+    if (!window.EXCLUSIVE_WEAPON_INFO || !window.EXCLUSIVE_WEAPON_FACTORIES) return null;
+    // Не давать то, что уже есть
+    const available = EXCLUSIVE_WEAPON_INFO.filter(info => !Player.findWeapon(player, info.id));
+    if (available.length === 0) return null;
+    const info = available[Math.floor(Math.random() * available.length)];
+    return {
+      title: `⭐ Легендарное: ${info.name}`,
+      desc: info.desc,
+      apply(p) {
+        const w = EXCLUSIVE_WEAPON_FACTORIES[info.id]();
+        Player.addWeapon(p, w);
+      },
+    };
   },
 
   /** Подбор разовой "редкой" награды на 19..20 без эволюции. */
@@ -975,6 +1034,16 @@ const Game = {
     this.state = 'chest';
     Input.releaseJoystick();
 
+    // 20% шанс эксклюзивного оружия
+    if (Math.random() < 0.20 && Player.hasFreeWeaponSlot(this.player)) {
+      const excl = this._tryGetExclusiveWeapon(this.player);
+      if (excl) {
+        excl.apply(this.player);
+        UI.showChestReward(20, { title: excl.title, desc: excl.desc }, () => this._afterChestClose());
+        return;
+      }
+    }
+
     // Карты: 3 штуки, одна гарантированно "сильная"
     const choices = this._buildBossChestChoices();
     UI.showChestPick(20, choices, (chosen) => {
@@ -1044,6 +1113,58 @@ const Game = {
         ctx.fillStyle = pa.color;
         ctx.fillRect(pa.x - pa.size * 0.5, pa.y - pa.size * 0.5, pa.size, pa.size);
         ctx.globalAlpha = 1;
+      }
+    }
+  },
+
+  /* ============================================================
+     Шаг 9-10: Отражение снарядов врагов своими снарядами.
+     Снаряды игрока могут столкнуться с вражескими и уничтожить их.
+     Более сильные вражеские снаряды требуют 2+ попаданий.
+     ============================================================ */
+  updateProjectileReflection() {
+    const items = this.projectiles.items;
+    for (let i = 0; i < items.length; i++) {
+      const ep = items[i];
+      if (!ep.active || ep.owner !== 'enemy') continue;
+      // Определяем "уровень сложности" вражеского снаряда
+      let hitsNeeded = 1;
+      if (ep.kind === 'boss_bolt' || ep.kind === 'boss_fireball') hitsNeeded = 3;
+      else if (ep.kind === 'boss_web') hitsNeeded = 2;
+      else if (ep.kind === 'magebolt' || ep.kind === 'breath') hitsNeeded = 2;
+
+      // Проверяем столкновение со снарядами игрока
+      for (let j = 0; j < items.length; j++) {
+        const pp = items[j];
+        if (!pp.active || pp.owner !== 'player') continue;
+        const dx = ep.x - pp.x, dy = ep.y - pp.y;
+        const hitR = ep.radius + pp.radius + 4;
+        if (dx * dx + dy * dy <= hitR * hitR) {
+          // Попадание: уменьшаем hitsNeeded
+          if (!ep._reflectHits) ep._reflectHits = 0;
+          ep._reflectHits++;
+          pp.active = false; // Наш снаряд расходуется
+
+          if (ep._reflectHits >= hitsNeeded) {
+            ep.active = false; // Вражеский снаряд уничтожен
+            // Визуальный эффект
+            if (window.Particles && Particles.burst) {
+              Particles.burst(ep.x, ep.y, 5, {
+                color: '#ffffff', speedMin: 40, speedMax: 120,
+                lifeMin: 0.15, lifeMax: 0.3, sizeMin: 2, sizeMax: 4,
+              });
+            }
+          } else {
+            // Частичное попадание - искры
+            if (window.Particles && Particles.burst) {
+              Particles.burst(ep.x, ep.y, 3, {
+                color: '#ffff00', speedMin: 30, speedMax: 80,
+                lifeMin: 0.1, lifeMax: 0.2, sizeMin: 1, sizeMax: 3,
+              });
+            }
+          }
+          break; // Один снаряд игрока за кадр на один вражеский
+        }
       }
     }
   },
