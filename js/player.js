@@ -138,11 +138,8 @@ const Player = {
       player.facing.x = move.x / ml;
       player.facing.y = move.y / ml;
 
-      player.trailTimer -= dt;
-      if (player.trailTimer <= 0) {
-        player.trailTimer = CONFIG.PLAYER.TRAIL_INTERVAL;
-        Game.spawnTrailParticle(player, move);
-      }
+      // Трейл-частицы героя отключены (визуальный мусор).
+      player.trailTimer = 0;
     }
 
     // Взаимодействие с рычагами по касанию
