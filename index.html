@@ -88,18 +88,22 @@
   }
   #pauseBtn:active { background: rgba(255,255,255,0.15); }
 
-  /* Joystick */
+  /* Joystick — floating: appears at touch position, hidden otherwise.
+     pointer-events: none so the canvas receives the underlying touches. */
   #joystick {
     position: fixed;
-    left: 30px; bottom: 30px;
+    left: -300px; top: -300px;        /* offscreen by default */
     width: 140px; height: 140px;
+    margin-left: -70px; margin-top: -70px;  /* center anchor */
     border-radius: 50%;
     background: rgba(255,255,255,0.06);
     border: 2px solid rgba(255,255,255,0.25);
     z-index: 6;
-    pointer-events: auto;
-    touch-action: none;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.12s ease;
   }
+  #joystick.active { opacity: 1; }
   #joystick .stick {
     position: absolute; left: 50%; top: 50%;
     width: 60px; height: 60px;
@@ -159,7 +163,7 @@
   .card .card-desc  { font-size: 13px; line-height: 1.35; color: #ddd; }
 
   @media (max-width: 480px) {
-    #joystick { width: 120px; height: 120px; left: 20px; bottom: 20px; }
+    #joystick { width: 120px; height: 120px; margin-left: -60px; margin-top: -60px; }
     #joystick .stick { width: 52px; height: 52px; margin-left: -26px; margin-top: -26px; }
     .bar { width: 170px; }
     .card { width: 90%; min-height: 110px; }
@@ -413,58 +417,88 @@ const Input = {
     });
     window.addEventListener('keyup', (e) => { this.keys[e.code] = false; });
 
-    // Virtual joystick (pointer events for mouse + touch)
+    // Floating virtual joystick — appears at the pointer position.
+    // We listen on the canvas (full-screen) so the user can press anywhere.
+    // Buttons & overlays sit on top with their own pointer-events: auto.
     const joy = document.getElementById('joystick');
     const stick = joy.querySelector('.stick');
+    const surface = document.getElementById('game');
     let activeId = null;
     let center = { x: 0, y: 0 };
-    let radius = 0;
+    const radius = 70;       // joystick radius in CSS px (max stick travel)
+    const deadZone = 0.12;   // ignore tiny inputs
 
-    const updateGeometry = () => {
-      const r = joy.getBoundingClientRect();
-      center.x = r.left + r.width / 2;
-      center.y = r.top + r.height / 2;
-      radius = r.width / 2;
+    const placeJoystick = (clientX, clientY) => {
+      center.x = clientX;
+      center.y = clientY;
+      joy.style.left = clientX + 'px';
+      joy.style.top  = clientY + 'px';
+      stick.style.transform = 'translate(0px, 0px)';
+      joy.classList.add('active');
+    };
+    const hideJoystick = () => {
+      joy.classList.remove('active');
+      stick.style.transform = 'translate(0px, 0px)';
     };
 
     const onDown = (e) => {
+      // Don't intercept clicks on UI controls (pause btn, overlays).
+      if (e.target.closest('button') || e.target.closest('.overlay')) return;
+      // Only react during gameplay-like states; in menu the canvas is hidden behind overlay anyway.
       if (activeId !== null) return;
       activeId = e.pointerId;
-      joy.setPointerCapture(activeId);
-      updateGeometry();
+      try { surface.setPointerCapture(activeId); } catch (_) {}
       this.joystick.active = true;
-      onMove(e);
+      placeJoystick(e.clientX, e.clientY);
     };
     const onMove = (e) => {
       if (e.pointerId !== activeId) return;
       const dx = e.clientX - center.x;
       const dy = e.clientY - center.y;
       const len = Math.hypot(dx, dy);
-      const max = radius;
-      const clamped = Math.min(len, max);
+      const clamped = Math.min(len, radius);
       const nx = len > 0 ? dx / len : 0;
       const ny = len > 0 ? dy / len : 0;
       const ix = nx * clamped;
       const iy = ny * clamped;
       stick.style.transform = `translate(${ix}px, ${iy}px)`;
-      // normalized -1..1
-      this.joystick.dx = ix / max;
-      this.joystick.dy = iy / max;
+      // normalized -1..1 with dead zone
+      const ndx = ix / radius;
+      const ndy = iy / radius;
+      const mag = Math.hypot(ndx, ndy);
+      if (mag < deadZone) {
+        this.joystick.dx = 0;
+        this.joystick.dy = 0;
+      } else {
+        // re-scale so dead zone -> 0 and edge -> 1
+        const scale = (mag - deadZone) / (1 - deadZone) / mag;
+        this.joystick.dx = ndx * scale;
+        this.joystick.dy = ndy * scale;
+      }
     };
     const onUp = (e) => {
       if (e.pointerId !== activeId) return;
-      try { joy.releasePointerCapture(activeId); } catch (_) {}
+      try { surface.releasePointerCapture(activeId); } catch (_) {}
       activeId = null;
       this.joystick.active = false;
       this.joystick.dx = 0;
       this.joystick.dy = 0;
-      stick.style.transform = 'translate(0px, 0px)';
+      hideJoystick();
     };
-    joy.addEventListener('pointerdown', onDown);
-    joy.addEventListener('pointermove', onMove);
-    joy.addEventListener('pointerup', onUp);
-    joy.addEventListener('pointercancel', onUp);
-    joy.addEventListener('pointerleave', onUp);
+    surface.addEventListener('pointerdown', onDown);
+    surface.addEventListener('pointermove', onMove);
+    surface.addEventListener('pointerup', onUp);
+    surface.addEventListener('pointercancel', onUp);
+    // If pointer leaves the window entirely, treat as release.
+    window.addEventListener('blur', () => {
+      if (activeId !== null) {
+        activeId = null;
+        this.joystick.active = false;
+        this.joystick.dx = 0;
+        this.joystick.dy = 0;
+        hideJoystick();
+      }
+    });
   },
 
   /** Returns intended movement vector (normalized, length 0..1). */
