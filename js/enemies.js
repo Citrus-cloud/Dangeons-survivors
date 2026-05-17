@@ -50,6 +50,37 @@ function createEnemy() {
     // Шаг 7: замедление от оружий (ледяная стрела и т.п.)
     _slowFactor: 0,
     _slowTimer: 0,
+    // Шаг 11: новые поля
+    _rageActive: false,
+    _chargeState: null,
+    _chargeTimer: 0,
+    _chargeDirX: 0,
+    _chargeDirY: 0,
+    _ballHp: -1,
+    _shellTimer: 0,
+    _shellCd: 0,
+    _shellDR: 0,
+    _heads: -1,
+    _headRegenTimers: [],
+    _headDmgAccum: 0,
+    _waveCd: 0,
+    _tailCd: 0,
+    _stalkCd: 0,
+    _antiCd: 0,
+    _darkWaveCd: 0,
+    _summonCd: 0,
+    _homingCd: 0,
+    _abyssCd: 0,
+    _trapCd: 0,
+    _headCds: null,
+    _orbitAngle: 0,
+    _firstStrike: true,
+    _speedBoost: 0,
+    _speedBoostTimer: 0,
+    _diveTargetX: 0,
+    _diveTargetY: 0,
+    _elite: false,
+    _slideSign: 1,
   };
 }
 
@@ -642,8 +673,8 @@ const Enemies = {
       const dp = cfg.deathPuddle;
       _spawnGroundEffect(dp.kind || 'rot', e.x, e.y, {
         radius: dp.radius || 40, life: dp.life || 3,
-        slow: dp.slow || 0.30, dps: 0,
-        color: 'rgba(120, 200, 100, 0.45)',
+        slow: dp.slow || 0.30, dps: dp.dps || 0,
+        color: dp.color || 'rgba(120, 200, 100, 0.45)',
       });
     }
 
@@ -904,3 +935,10 @@ const Enemies = {
 
 window.createEnemy = createEnemy;
 window.Enemies = Enemies;
+window.Behaviors = Behaviors;
+window._norm = _norm;
+window._spawnEnemyProjectile = _spawnEnemyProjectile;
+window._spawnGroundEffect = _spawnGroundEffect;
+window._moveTowards = _moveTowards;
+window._tryContactDamage = _tryContactDamage;
+window._currentSpeed = _currentSpeed;
