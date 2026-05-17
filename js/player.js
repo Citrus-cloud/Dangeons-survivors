@@ -88,6 +88,28 @@ const Player = {
   hasFreeWeaponSlot(player)  { return player.weaponSlots.some(s => !s); },
   hasFreeAbilitySlot(player) { return player.abilitySlots.some(s => !s); },
 
+  /** Удалить пассивку из её слота (со снятием эффектов). Возвращает true/false. */
+  removeAbility(player, slotIndex) {
+    if (slotIndex < 0 || slotIndex >= player.abilitySlots.length) return false;
+    const a = player.abilitySlots[slotIndex];
+    if (!a) return false;
+    if (typeof a.remove === 'function') a.remove(player);
+    a.slotIndex = -1;
+    player.abilitySlots[slotIndex] = null;
+    return true;
+  },
+
+  /** Заменить оружие в указанном слоте. Если слот пустой — просто положить.
+   *  Используется для эволюций: новое оружие занимает слот старого. */
+  replaceWeapon(player, slotIndex, newWeapon) {
+    if (slotIndex < 0 || slotIndex >= player.weaponSlots.length) return false;
+    const old = player.weaponSlots[slotIndex];
+    if (old) old.slotIndex = -1;
+    newWeapon.slotIndex = slotIndex;
+    player.weaponSlots[slotIndex] = newWeapon;
+    return true;
+  },
+
   /** Обновление героя: движение, регенерация, встроенные кулдауны. */
   update(player, dt) {
     const move = Input.getMove();

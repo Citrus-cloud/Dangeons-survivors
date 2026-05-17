@@ -3,18 +3,7 @@
    main.js — точка входа: инициализация, состояния, игровой цикл.
    ============================================================ */
 
-/* Фабрика для частиц (визуальные следы и эффекты смерти). */
-function createParticle() {
-  return {
-    active: false,
-    x: 0, y: 0,
-    vx: 0, vy: 0,
-    life: 0, maxLife: 0,
-    color: '#888',
-    size: 3,
-  };
-}
-window.createParticle = createParticle;
+// createParticle и фабрики частиц — в js/particles.js (Шаг 3).
 
 
 /* ============================================================
@@ -52,7 +41,7 @@ const Game = {
   canvas: null, ctx: null,
   viewW: 0, viewH: 0, dpr: 1,
 
-  // state: 'menu' | 'playing' | 'paused' | 'levelup' | 'gameover'
+  // state: 'menu' | 'playing' | 'paused' | 'levelup' | 'gameover' | 'chest'
   state: 'menu',
 
   // мир
@@ -68,6 +57,10 @@ const Game = {
   waveIndex: 0,
   waveTimer: 0,
   kills: 0,
+
+  // Шаг 3: сундук
+  chest: null,           // текущий активный сундук на карте (или null)
+  chestTimer: 0,         // секунд до следующего спавна (0 — спавним немедленно)
 
   init() {
     this.canvas = document.getElementById('game');
@@ -119,6 +112,10 @@ const Game = {
     this.runTime = 0;
     this.waveIndex = 0;
     this.waveTimer = CONFIG.WAVE.INITIAL_DELAY;
+
+    // Шаг 3: сундук
+    this.chest = null;
+    this.chestTimer = CONFIG.CHEST.FIRST_DELAY;
 
     this.player = Player.create();
 
@@ -309,6 +306,7 @@ const Game = {
 
     // Лут и частицы
     Loot.update(this.xpDrops, this.player, dt);
+    this.updateChest(dt);
     this.updateParticles(dt);
 
     // Левелап
@@ -371,6 +369,174 @@ const Game = {
     }
   },
 
+  /* ============================================================
+     Шаг 3: Сундук — спавн, подбор, бросок d20.
+     ============================================================ */
+
+  /** Тик: уменьшаем таймер пока сундука нет (ровно "не копится при наличии"
+   *  по ТЗ — но мы трактуем ровно как сказано: пока есть сундук, новый
+   *  не появляется и таймер не идёт). При подборе таймер сбрасывается. */
+  updateChest(dt) {
+    if (this.chest) {
+      Chest.update(this.chest, dt);
+      // Подобрать
+      if (Chest.pickedUpBy(this.chest, this.player)) {
+        this.openChest();
+      }
+      return;
+    }
+    // Сундука нет — копится таймер
+    this.chestTimer -= dt;
+    if (this.chestTimer <= 0) {
+      this.chest = Chest.spawnNear(this.player);
+      this.chestTimer = CONFIG.CHEST.INTERVAL;
+    }
+  },
+
+  /** Подбор сундука: переход в state=chest, эффект открытия, бросок d20. */
+  openChest() {
+    if (!this.chest) return;
+    // Визуальный эффект открытия в точке сундука
+    if (window.Particles) Particles.chestOpen(this.chest.x, this.chest.y);
+    // Сундук исчезает (логически — открыт)
+    this.chest = null;
+
+    // Переходим в "сундучный" state (игра паузится по факту:
+    // update() выполняется только в state==='playing')
+    this.state = 'chest';
+    Input.releaseJoystick();
+
+    // Бросок d20 с финальным значением, заданным заранее
+    const finalRoll = 1 + Math.floor(Math.random() * 20);
+    UI.showD20Roll(finalRoll, () => this.resolveChest(finalRoll));
+  },
+
+  /** Применить результат броска. */
+  resolveChest(roll) {
+    const player = this.player;
+    if (!player) { this.state = 'playing'; UI.hideAll(); return; }
+
+    // 1..10 — символическая награда: +20 XP
+    if (roll <= 10) {
+      const reward = {
+        title: roll <= 3 ? 'Сундук пуст…' : 'Скромная находка',
+        desc: '+20 очков опыта.',
+      };
+      player.xp += 20;
+      // Если набралось — обработаем левелап после закрытия окна
+      UI.showChestReward(roll, reward, () => this._afterChestClose());
+      return;
+    }
+
+    // 11..18 — выбор одного улучшения (как левелап без +1 ур.)
+    if (roll <= 18) {
+      const choices = this.buildLevelUpChoices(3);
+      UI.showChestPick(roll, choices, (chosen) => {
+        if (chosen) chosen.apply(player);
+        this._afterChestClose();
+      });
+      return;
+    }
+
+    // 19..20 — редкая награда
+    const ready = (window.Evolutions && Evolutions.findReady) ? Evolutions.findReady(player) : [];
+    if (ready.length > 0) {
+      // Берём первую готовую пару (по порядку слотов)
+      const pair = ready[0];
+      UI.showEvolutionDialog(roll, pair, (accepted) => {
+        if (accepted) {
+          Evolutions.apply(player, pair.recipe);
+          this._afterChestClose();
+        } else {
+          // Отказ — даём обычную награду через окно выбора
+          const choices = this.buildLevelUpChoices(3);
+          UI.showChestPick(roll, choices, (chosen) => {
+            if (chosen) chosen.apply(player);
+            this._afterChestClose();
+          });
+        }
+      });
+      return;
+    }
+
+    // Готовых пар нет — даём мощную разовую награду или новую вещь
+    const reward = this._buildBigReward(player);
+    reward.apply(player);
+    UI.showChestReward(roll, reward, () => this._afterChestClose());
+  },
+
+  /** Подбор разовой "редкой" награды на 19..20 без эволюции. */
+  _buildBigReward(player) {
+    // Сначала пытаемся выдать новую вещь, если есть свободные слоты
+    if (Player.hasFreeWeaponSlot(player)) {
+      const missingWeapons = WEAPON_INFO.filter(info => !Player.findWeapon(player, info.id));
+      if (missingWeapons.length > 0) {
+        const info = missingWeapons[Math.floor(Math.random() * missingWeapons.length)];
+        return {
+          title: `Редкая находка: ${info.name}`,
+          desc: info.desc,
+          apply(p) {
+            const w = WEAPON_FACTORIES[info.id]();
+            Player.addWeapon(p, w);
+          },
+        };
+      }
+    }
+    if (Player.hasFreeAbilitySlot(player)) {
+      const missingAbilities = ABILITY_INFO.filter(info => !Player.findAbility(player, info.id));
+      if (missingAbilities.length > 0) {
+        const info = missingAbilities[Math.floor(Math.random() * missingAbilities.length)];
+        return {
+          title: `Редкая находка: ${info.name}`,
+          desc: info.desc,
+          apply(p) {
+            const a = ABILITY_FACTORIES[info.id]();
+            Player.addAbility(p, a);
+          },
+        };
+      }
+    }
+    // Иначе — мощное разовое улучшение (rand один из вариантов)
+    const variants = [
+      {
+        title: 'Мощное улучшение: HP',
+        desc: 'Макс. HP +30%, лечение полностью.',
+        apply(p) {
+          p.maxHp = Math.round(p.maxHp * 1.30);
+          p.hp = p.maxHp;
+        },
+      },
+      {
+        title: 'Мощное улучшение: Урон',
+        desc: '+20% ко всему урону (стакается).',
+        apply(p) { p.damageMul *= 1.20; },
+      },
+      {
+        title: 'Мощное улучшение: Скорость',
+        desc: '+15% к скорости передвижения.',
+        apply(p) { p.speedMul *= 1.15; },
+      },
+    ];
+    return variants[Math.floor(Math.random() * variants.length)];
+  },
+
+  /** Закрытие сундучного флоу: возврат к игре, отложенный левелап если набрали XP. */
+  _afterChestClose() {
+    UI.hideAll();
+    this.state = 'playing';
+    // Если очки опыта переполнили шкалу (например, после +20 XP или после
+    // эволюции это не происходит — но на всякий случай) — обработаем.
+    if (this.player && this.player.xp >= this.player.xpNext) {
+      // отдадим в обычный update()-цикл — он сам переведёт в levelup
+    }
+  },
+
+  /** Притянуть весь опыт мгновенно к игроку (эффект Soul Flame). */
+  magnetizeAllXP() {
+    if (!this.xpDrops || !this.player) return;
+    Loot.magnetizeAll(this.xpDrops, this.player);
+  },
+
   damageEnemy(e, dmg) {
     e.hp -= dmg;
     e.flash = 0.08;
@@ -386,6 +552,7 @@ const Game = {
     for (let i = 0; i < count; i++) {
       const pa = this.particles.spawn();
       if (!pa) break;
+      pa.kind = 'spark';
       pa.x = e.x; pa.y = e.y;
       const a = Math.random() * Math.PI * 2;
       const sp = Utils.rand(40, 110);
@@ -400,6 +567,7 @@ const Game = {
   spawnTrailParticle(player, move) {
     const tp = this.particles.spawn();
     if (!tp) return;
+    tp.kind = 'spark';
     tp.x = player.x; tp.y = player.y;
     tp.vx = -move.x * 20 + Utils.rand(-10, 10);
     tp.vy = -move.y * 20 + Utils.rand(-10, 10);
@@ -413,12 +581,8 @@ const Game = {
     for (let i = 0; i < items.length; i++) {
       const p = items[i];
       if (!p.active) continue;
-      p.life -= dt;
-      if (p.life <= 0) { p.active = false; continue; }
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.vx *= 0.94;
-      p.vy *= 0.94;
+      const done = (window.Particles && Particles.step) ? Particles.step(p, dt) : (p.life -= dt) <= 0;
+      if (done) p.active = false;
     }
   },
 
@@ -436,6 +600,8 @@ const Game = {
 
     GameMap.render(ctx, cam, this.viewW, this.viewH);
     Loot.render(ctx, this.xpDrops, cam, this.viewW, this.viewH);
+    // Шаг 3: сундук рисуется в мире
+    if (this.chest) Chest.render(ctx, this.chest, cam, this.viewW, this.viewH);
     this.renderParticles(ctx, cam);
     Enemies.render(ctx, this.enemies, cam, this.viewW, this.viewH);
     Player.render(ctx, this.player);
@@ -448,6 +614,9 @@ const Game = {
     Projectiles.render(ctx, this.projectiles, cam, this.viewW, this.viewH);
 
     ctx.restore();
+
+    // Индикатор сундука — экранные координаты, без сдвига камеры
+    if (this.chest) Chest.renderIndicator(ctx, this.chest, cam, this.viewW, this.viewH);
   },
 
   renderParticles(ctx, cam) {
@@ -457,12 +626,19 @@ const Game = {
     for (let i = 0; i < items.length; i++) {
       const pa = items[i];
       if (!pa.active) continue;
-      if (pa.x < minX - 10 || pa.x > maxX + 10 || pa.y < minY - 10 || pa.y > maxY + 10) continue;
-      const a = Math.max(0, pa.life / pa.maxLife);
-      ctx.globalAlpha = a;
-      ctx.fillStyle = pa.color;
-      ctx.fillRect(pa.x - pa.size * 0.5, pa.y - pa.size * 0.5, pa.size, pa.size);
-      ctx.globalAlpha = 1;
+      // 'ring' может быть большой — пропускаем bbox-cull для них
+      const pad = pa.kind === 'ring' ? (pa.maxRadius || 0) : 12;
+      if (pa.x + pad < minX || pa.x - pad > maxX || pa.y + pad < minY || pa.y - pad > maxY) continue;
+      if (window.Particles && Particles.draw) {
+        Particles.draw(ctx, pa);
+      } else {
+        // Фолбэк: квадрат старого формата
+        const a = Math.max(0, pa.life / pa.maxLife);
+        ctx.globalAlpha = a;
+        ctx.fillStyle = pa.color;
+        ctx.fillRect(pa.x - pa.size * 0.5, pa.y - pa.size * 0.5, pa.size, pa.size);
+        ctx.globalAlpha = 1;
+      }
     }
   },
 };
