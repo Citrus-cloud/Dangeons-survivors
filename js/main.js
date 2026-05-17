@@ -57,10 +57,14 @@ const Game = {
   waveIndex: 0,
   waveTimer: 0,
   kills: 0,
+  killsByType: Object.create(null),
 
   // Шаг 3: сундук
   chest: null,           // текущий активный сундук на карте (или null)
   chestTimer: 0,         // секунд до следующего спавна (0 — спавним немедленно)
+
+  // Шаг 4: спец-режим спавна мимика
+  mimicState: null,
 
   init() {
     this.canvas = document.getElementById('game');
@@ -107,8 +111,10 @@ const Game = {
     this.projectiles.clearAll();
     this.xpDrops.clearAll();
     this.particles.clearAll();
+    if (window.GameMap && GameMap.clearGroundEffects) GameMap.clearGroundEffects();
 
     this.kills = 0;
+    this.killsByType = Object.create(null);
     this.runTime = 0;
     this.waveIndex = 0;
     this.waveTimer = CONFIG.WAVE.INITIAL_DELAY;
@@ -116,6 +122,11 @@ const Game = {
     // Шаг 3: сундук
     this.chest = null;
     this.chestTimer = CONFIG.CHEST.FIRST_DELAY;
+
+    // Шаг 4: мимик
+    this.mimicState = (window.Enemies && Enemies.initMimicState)
+      ? Enemies.initMimicState()
+      : { count: 0, nextCheckTime: 180 };
 
     this.player = Player.create();
 
@@ -279,6 +290,26 @@ const Game = {
     this.runTime += dt;
 
     Player.update(this.player, dt);
+    // Шаг 4: применяем эффекты от наземных луж (slime/rot замедляют, fire — DoT)
+    if (window.GameMap && GameMap.queryGroundAt) {
+      const eff = GameMap.queryGroundAt(this.player.x, this.player.y);
+      if (eff.dps > 0) this.player.hp -= eff.dps * dt;
+      // Замедление применим в Player.update в этот же кадр в следующий раз —
+      // здесь подкорректируем позицию: поскольку Player уже сдвинулся,
+      // компенсируем "лишнее" движение, если есть slow > 0.
+      if (eff.slow > 0) {
+        const move = Input.getMove();
+        const ml = Math.hypot(move.x, move.y);
+        if (ml > 0.001) {
+          // Откатываем часть смещения: dx_lost = -move * speed * dt * slow
+          const speed = CONFIG.PLAYER.SPEED * this.player.speedMul;
+          this.player.x -= move.x * speed * dt * eff.slow;
+          this.player.y -= move.y * speed * dt * eff.slow;
+        }
+      }
+    }
+    if (window.GameMap && GameMap.updateGroundEffects) GameMap.updateGroundEffects(dt);
+
     this.updateWaves(dt);
     Enemies.update(this.enemies, this.player, dt);
 
@@ -347,6 +378,7 @@ const Game = {
       const pr = this.projectiles.spawn();
       if (!pr) break;
       pr.kind = 'missile';
+      pr.owner = 'player';
       pr.x = p.x; pr.y = p.y;
       pr.vx = Math.cos(a) * CONFIG.MISSILE.SPEED;
       pr.vy = Math.sin(a) * CONFIG.MISSILE.SPEED;
@@ -364,8 +396,12 @@ const Game = {
     if (this.waveTimer <= 0) {
       this.waveIndex += 1;
       const count = CONFIG.WAVE.BASE + this.waveIndex * CONFIG.WAVE.PER_WAVE;
-      Enemies.spawnWave(this.enemies, this.player, count);
+      Enemies.spawnWave(this.enemies, this.player, count, this.waveIndex);
       this.waveTimer = CONFIG.WAVE.INTERVAL;
+    }
+    // Шаг 4: попытка заспавнить мимика (после 3-й минуты, не более 1-2 за забег)
+    if (window.Enemies && Enemies.tryMimicSpawn && this.mimicState) {
+      Enemies.tryMimicSpawn(this.player, this.runTime, this.mimicState);
     }
   },
 
@@ -538,29 +574,36 @@ const Game = {
   },
 
   damageEnemy(e, dmg) {
+    if (e.invulnerable) return;
     e.hp -= dmg;
     e.flash = 0.08;
-    if (e.hp <= 0) this.killEnemy(e);
+    if (e.hp <= 0) {
+      this.killEnemy(e);
+    } else if (window.Enemies && Enemies.handleHit) {
+      Enemies.handleHit(e, this);
+    }
   },
 
   killEnemy(e) {
+    if (!e.active) return;
+    // Хук: лужи / расщепление / взрыв
+    if (window.Enemies && Enemies.handleDeath) {
+      Enemies.handleDeath(e, this);
+    }
     e.active = false;
     this.kills += 1;
-    Loot.dropXP(this.xpDrops, e.x, e.y, Utils.randInt(CONFIG.ENEMY.XP_MIN, CONFIG.ENEMY.XP_MAX));
-    // Частицы смерти
-    const count = Utils.randInt(3, 5);
-    for (let i = 0; i < count; i++) {
-      const pa = this.particles.spawn();
-      if (!pa) break;
-      pa.kind = 'spark';
-      pa.x = e.x; pa.y = e.y;
-      const a = Math.random() * Math.PI * 2;
-      const sp = Utils.rand(40, 110);
-      pa.vx = Math.cos(a) * sp;
-      pa.vy = Math.sin(a) * sp;
-      pa.life = pa.maxLife = Utils.rand(0.4, 0.7);
-      pa.color = '#888';
-      pa.size = Utils.rand(2, 4);
+    // Учёт по типам (заготовка для UI)
+    const tid = (e.cfg && e.cfg.id) || e.type || 'unknown';
+    this.killsByType[tid] = (this.killsByType[tid] || 0) + 1;
+
+    // Выпадение опыта по конфигу типа
+    const cfg = e.cfg;
+    const dropChance = (cfg && cfg.dropChance != null) ? cfg.dropChance : 0.6;
+    if (Math.random() < dropChance) {
+      let xpMin = (cfg && cfg.xp) ? cfg.xp[0] : CONFIG.ENEMY.XP_MIN;
+      let xpMax = (cfg && cfg.xp) ? cfg.xp[1] : CONFIG.ENEMY.XP_MAX;
+      const value = Utils.randInt(xpMin, xpMax);
+      Loot.dropXP(this.xpDrops, e.x, e.y, value);
     }
   },
 
@@ -600,6 +643,8 @@ const Game = {
 
     GameMap.render(ctx, cam, this.viewW, this.viewH);
     Loot.render(ctx, this.xpDrops, cam, this.viewW, this.viewH);
+    // Шаг 4: лужи и следы под врагами/героем
+    if (GameMap.renderGroundEffects) GameMap.renderGroundEffects(ctx, cam, this.viewW, this.viewH);
     // Шаг 3: сундук рисуется в мире
     if (this.chest) Chest.render(ctx, this.chest, cam, this.viewW, this.viewH);
     this.renderParticles(ctx, cam);

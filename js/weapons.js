@@ -21,17 +21,22 @@ const MAX_WEAPON_LEVEL = 5;
 function createProjectile() {
   return {
     active: false,
-    kind: 'missile',     // 'missile' | 'arrow' | 'dagger' | 'fireball'
+    /** Тип отрисовки/логики:
+     *  - игроцкие: 'missile' | 'arrow' | 'dagger' | 'fireball'
+     *  - вражеские: 'arrow_e' | 'magebolt' | 'breath' */
+    kind: 'missile',
+    /** 'player' (по умолчанию) — бьёт врагов; 'enemy' — бьёт игрока. */
+    owner: 'player',
     x: 0, y: 0,
     vx: 0, vy: 0,
     life: 0,
     damage: 0,
     radius: 6,
-    // Для стрел/кинжалов: направление для отрисовки
+    // Для стрел/кинжалов/дыхания: направление для отрисовки
     angle: 0,
-    // Для огненного шара: радиус взрыва, флаг "уже взорвался"
+    // Для огненного шара: радиус взрыва
     explodeRadius: 0,
-    // Идентификатор источника (имя оружия) — на будущее (резисты и т.п.)
+    // Идентификатор источника (имя оружия / тип врага)
     source: '',
   };
 }
@@ -58,6 +63,7 @@ const Projectiles = {
     const margin = 60;
     const minX = cam.x - margin, minY = cam.y - margin;
     const maxX = cam.x + viewW + margin, maxY = cam.y + viewH + margin;
+    const player = (window.Game && Game.player) ? Game.player : null;
 
     for (let i = 0; i < items.length; i++) {
       const m = items[i];
@@ -80,23 +86,39 @@ const Projectiles = {
         continue;
       }
 
-      // Столкновения с врагами
-      const eItems = enemies.items;
-      for (let j = 0; j < eItems.length; j++) {
-        const e = eItems[j];
-        if (!e.active) continue;
-        const r = m.radius + CONFIG.ENEMY.SIZE * 0.5;
-        const dx = e.x - m.x, dy = e.y - m.y;
-        if (dx * dx + dy * dy <= r * r) {
-          if (m.kind === 'fireball') {
-            // Огненный шар: при попадании — AoE-взрыв вместо одиночного урона
-            Projectiles._fireballExplode(m, enemies, onDamage);
-          } else {
-            onDamage(e, m.damage);
+      if (m.owner === 'enemy') {
+        // Вражеский снаряд → проверяем столкновение с игроком
+        if (player && player.hp > 0) {
+          const r = m.radius + player.size * 0.5;
+          const dx = player.x - m.x, dy = player.y - m.y;
+          if (dx * dx + dy * dy <= r * r) {
+            player.hp -= m.damage;
+            m.active = false;
           }
-          // Кинжалы и стрелы — пробивающие? Для MVP-2: исчезают при попадании.
-          m.active = false;
-          break;
+        }
+      } else {
+        // Игроцкий снаряд → столкновения с врагами
+        const eItems = enemies.items;
+        for (let j = 0; j < eItems.length; j++) {
+          const e = eItems[j];
+          if (!e.active) continue;
+          if (e.invulnerable) continue;             // мимик в idle / shadow в invisible
+          // Bat: 20% шанс уйти от снаряда
+          if (e.cfg && e.cfg.behavior === 'bat' && (e.cfg.dodgeChance || 0) > 0) {
+            if (Math.random() < e.cfg.dodgeChance) continue;
+          }
+          const eSize = e.cfg ? Math.max(e.cfg.w, e.cfg.h) : CONFIG.ENEMY.SIZE;
+          const r = m.radius + eSize * 0.5;
+          const dx = e.x - m.x, dy = e.y - m.y;
+          if (dx * dx + dy * dy <= r * r) {
+            if (m.kind === 'fireball') {
+              Projectiles._fireballExplode(m, enemies, onDamage);
+            } else {
+              onDamage(e, m.damage);
+            }
+            m.active = false;
+            break;
+          }
         }
       }
     }
@@ -109,6 +131,7 @@ const Projectiles = {
     for (let j = 0; j < eItems.length; j++) {
       const e = eItems[j];
       if (!e.active) continue;
+      if (e.invulnerable) continue;
       const dx = e.x - m.x, dy = e.y - m.y;
       if (dx * dx + dy * dy <= er2) {
         onDamage(e, m.damage);
@@ -203,6 +226,48 @@ const Projectiles = {
           ctx.fillStyle = '#fff1a8';
           ctx.beginPath();
           ctx.arc(m.x, m.y, m.radius * 0.5, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        }
+        case 'arrow_e': {
+          // Вражеская стрела (костяная, тёмно-серая)
+          ctx.save();
+          ctx.translate(m.x, m.y);
+          ctx.rotate(m.angle);
+          ctx.fillStyle = '#cfcfcf';
+          ctx.fillRect(-9, -2, 18, 4);
+          ctx.fillStyle = '#7d3a1f';
+          ctx.fillRect(-9, -1, 18, 1);
+          ctx.restore();
+          break;
+        }
+        case 'magebolt': {
+          // Фиолетовый снаряд мага
+          ctx.shadowColor = 'rgba(180, 90, 255, 0.95)';
+          ctx.shadowBlur = 14;
+          ctx.fillStyle = '#7e57c2';
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = '#e0c8ff';
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, m.radius * 0.45, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        }
+        case 'breath': {
+          // Дыхание дракончика — оранжевый импульс
+          ctx.shadowColor = 'rgba(255, 160, 60, 0.7)';
+          ctx.shadowBlur = 10;
+          ctx.fillStyle = '#ff8a3a';
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = '#ffe28a';
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, m.radius * 0.55, 0, Math.PI * 2);
           ctx.fill();
           break;
         }
@@ -364,6 +429,7 @@ class BowWeapon extends Weapon {
     const p = projectiles.spawn();
     if (!p) return true; // считаем, что атака произошла, но снарядов не хватило
     p.kind = 'arrow';
+    p.owner = 'player';
     p.x = player.x; p.y = player.y;
     p.vx = dir.x * this.arrowSpeed;
     p.vy = dir.y * this.arrowSpeed;
@@ -415,6 +481,7 @@ class DaggerWeapon extends Weapon {
       const p = projectiles.spawn();
       if (!p) break;
       p.kind = 'dagger';
+      p.owner = 'player';
       p.x = player.x; p.y = player.y;
       p.vx = Math.cos(a) * this.speed;
       p.vy = Math.sin(a) * this.speed;
@@ -459,6 +526,7 @@ class FireballWeapon extends Weapon {
     const p = projectiles.spawn();
     if (!p) return false;
     p.kind = 'fireball';
+    p.owner = 'player';
     p.x = player.x; p.y = player.y;
     p.vx = dx * speed;
     p.vy = dy * speed;
@@ -625,6 +693,7 @@ class RapidBowWeapon extends EvolutionWeapon {
     const p = projectiles.spawn();
     if (!p) return;
     p.kind = 'arrow';
+    p.owner = 'player';
     p.x = player.x; p.y = player.y;
     // Маленький вертикальный разлёт между стрелами очереди
     const jitter = (Math.random() - 0.5) * 0.05;
@@ -682,6 +751,7 @@ class BladeStormWeapon extends EvolutionWeapon {
       const p = projectiles.spawn();
       if (!p) break;
       p.kind = 'dagger';
+      p.owner = 'player';
       p.x = player.x; p.y = player.y;
       p.vx = Math.cos(a) * this.speed;
       p.vy = Math.sin(a) * this.speed;
@@ -727,6 +797,7 @@ class SoulFlameWeapon extends EvolutionWeapon {
     const p = projectiles.spawn();
     if (!p) return false;
     p.kind = 'fireball';
+    p.owner = 'player';
     p.x = player.x; p.y = player.y;
     p.vx = dx * this.speed;
     p.vy = dy * this.speed;
