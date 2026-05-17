@@ -66,9 +66,10 @@ const CONFIG = {
 
   POOLS: {
     ENEMIES: 80,
-    PROJECTILES: 80,        // по ТЗ: один общий пул, max 80
-    PARTICLES: 100,
+    PROJECTILES: 100,       // Шаг 4: расширено до 100 (плюс вражеские снаряды)
+    PARTICLES: 120,
     XP: 200,
+    GROUND_EFFECTS: 30,     // Шаг 4: лужи/следы (гниль, слизь, огонь)
   },
 
   // Параметры джойстика (экранные пиксели)
@@ -141,3 +142,218 @@ class ObjectPool {
 window.CONFIG = CONFIG;
 window.Utils = Utils;
 window.ObjectPool = ObjectPool;
+
+
+/* ============================================================
+   ENEMY_TYPES — таблица всех монстров (Шаг 4).
+   Поля:
+     id            — уникальный идентификатор типа
+     name          — имя для UI/отладки
+     letter        — буква, отрисованная по центру
+     shape         — 'rect' | 'diamond' | 'oval' | 'circle' | 'triangle'
+     color         — основной цвет
+     stroke        — цвет обводки (опц.)
+     w, h          — размеры в пикселях
+     hp, speed     — здоровье и скорость (px/sec)
+     damage        — контактный урон в касании (если behavior его использует)
+     xp            — диапазон опыта (min, max). Может быть переопределён лутом.
+     behavior      — 'chase' | 'archer' | 'gas' | 'mage' | 'goblin' |
+                     'spider' | 'ooze' | 'mimic' | 'captain' | 'fire_elem' |
+                     'bat' | 'rotgolem' | 'shadow' | 'dragonet' | 'cultist' |
+                     'spiderling' | 'slimeling'
+     tier          — 1..5 (5 — раньше остальных не появляется), у мимика 0 (особый)
+     dropChance    — вероятность выпадения кристалла опыта (0..1)
+     spawnWeight   — вес при выборе для волны (внутри своего тира)
+     summonChild   — id типа, призываемого при смерти (для паука/слизня и т.п.)
+     wobble        — амплитуда покачивания (по высоте)
+     attackCooldown, specialCooldown, specialRange — параметры поведения
+   Если поле не указано — берётся разумный дефолт в коде.
+   ============================================================ */
+const ENEMY_TYPES = {
+  /* ===== ТИР 1 (волны 1+) ===== */
+  skeleton: {
+    id: 'skeleton', name: 'Скелет-воин', letter: 'S',
+    shape: 'rect', color: '#bdbdbd', stroke: '#ffffff',
+    w: 28, h: 28, hp: 20, speed: 55, damage: 10,
+    xp: [5, 10], behavior: 'chase', tier: 1, dropChance: 0.6,
+    spawnWeight: 4, hitInterval: 0.6, wobble: 1.5,
+  },
+  zombie: {
+    id: 'zombie', name: 'Зомби', letter: 'Z',
+    shape: 'rect', color: '#3e6b3a', stroke: '#a3d39c',
+    w: 28, h: 28, hp: 40, speed: 32, damage: 15,
+    xp: [10, 14], behavior: 'chase', tier: 1, dropChance: 0.7,
+    spawnWeight: 3, hitInterval: 0.8, wobble: 2,
+    deathPuddle: { kind: 'rot', chance: 0.30, radius: 40, life: 3, slow: 0.30 },
+  },
+  goblin: {
+    id: 'goblin', name: 'Гоблин-налётчик', letter: 'G',
+    shape: 'triangle', color: '#27ae60', stroke: '#a0f0bf',
+    w: 20, h: 20, hp: 12, speed: 100, damage: 8,
+    xp: [5, 8], behavior: 'goblin', tier: 1, dropChance: 0.30,
+    spawnWeight: 4, hitInterval: 0.4, wobble: 1.5,
+    retreatDist: 80, retreatCooldown: 1.5,
+  },
+
+  /* ===== ТИР 2 (волны 3+) ===== */
+  archer: {
+    id: 'archer', name: 'Скелет-лучник', letter: 'A',
+    shape: 'rect', color: '#d9c08a', stroke: '#fff5cc',
+    w: 24, h: 24, hp: 15, speed: 50, damage: 8,
+    xp: [7, 9], behavior: 'archer', tier: 2, dropChance: 0.55,
+    spawnWeight: 3, wobble: 1,
+    keepDistMin: 150, keepDistMax: 200,
+    attackCooldown: 2.0, projectile: { kind: 'arrow_e', speed: 320, life: 2.5 },
+  },
+  ooze: {
+    id: 'ooze', name: 'Слизень (охра)', letter: 'O',
+    shape: 'oval', color: '#e67e22', stroke: '#ffd9a8',
+    w: 30, h: 20, hp: 30, speed: 40, damage: 12,
+    xp: [8, 12], behavior: 'ooze', tier: 2, dropChance: 0.6,
+    spawnWeight: 3, hitInterval: 0.7, wobble: 1.5,
+    trailEvery: 0.5,
+    trail: { kind: 'slime', radius: 22, life: 2, slow: 0.20 },
+    splitOnDeath: { childId: 'slimeling', count: 2 },
+  },
+  gasspore: {
+    id: 'gasspore', name: 'Газовый спор', letter: 'S',
+    shape: 'circle', color: '#7d8f6e', stroke: '#cfe0b6',
+    w: 22, h: 22, hp: 15, speed: 40, damage: 0,
+    xp: [8, 12], behavior: 'gas', tier: 2, dropChance: 0.55,
+    spawnWeight: 2, wobble: 2,
+    explodeRadius: 60, explodeDamage: 15,
+  },
+
+  /* ===== ТИР 3 (волны 5+) ===== */
+  mage: {
+    id: 'mage', name: 'Скелет-маг', letter: 'M',
+    shape: 'rect', color: '#7e57c2', stroke: '#dccff5',
+    w: 24, h: 24, hp: 18, speed: 55, damage: 12,
+    xp: [12, 18], behavior: 'mage', tier: 3, dropChance: 0.7,
+    spawnWeight: 2, wobble: 1.5,
+    teleportEvery: 4.0, teleportMin: 100, teleportMax: 150,
+    attackCooldown: 2.5, projectile: { kind: 'magebolt', speed: 280, life: 3 },
+  },
+  spider: {
+    id: 'spider', name: 'Гигантский паук', letter: 'P',
+    shape: 'diamond', color: '#1e1e1e', stroke: '#a070a0',
+    w: 26, h: 26, hp: 20, speed: 110, damage: 10,
+    xp: [12, 18], behavior: 'spider', tier: 3, dropChance: 0.55,
+    spawnWeight: 2, hitInterval: 0.5, wobble: 2,
+    dashEvery: 2.0, dashTime: 0.5, dashMul: 2.0,
+    splitOnDeath: { childId: 'spiderling', count: 3 },
+  },
+  fire_elem: {
+    id: 'fire_elem', name: 'Огненный элементаль', letter: 'F',
+    shape: 'diamond', color: '#ff7a00', stroke: '#ffd97a',
+    w: 30, h: 30, hp: 35, speed: 60, damage: 12,
+    xp: [18, 22], behavior: 'fire_elem', tier: 3, dropChance: 0.75,
+    spawnWeight: 2, hitInterval: 0.7, wobble: 2,
+    trailEvery: 0.35,
+    trail: { kind: 'fire', radius: 22, life: 2.5, dps: 5 },
+    explodeOnDeath: { radius: 80, damage: 20 },
+  },
+  bat: {
+    id: 'bat', name: 'Летучая мышь-вампир', letter: 'B',
+    shape: 'oval', color: '#7a1d2c', stroke: '#ffb3b3',
+    w: 18, h: 12, hp: 10, speed: 130, damage: 6,
+    xp: [7, 10], behavior: 'bat', tier: 3, dropChance: 0.45,
+    spawnWeight: 3, hitInterval: 0.5, wobble: 0,
+    sinAmp: 26, sinFreq: 6, dodgeChance: 0.20,
+  },
+
+  /* ===== ТИР 4 (волны 7+) ===== */
+  captain: {
+    id: 'captain', name: 'Скелет-капитан', letter: 'C',
+    shape: 'rect', color: '#c0392b', stroke: '#ffd700',
+    w: 32, h: 32, hp: 60, speed: 50, damage: 18,
+    xp: [25, 35], behavior: 'captain', tier: 4, dropChance: 0.85,
+    spawnWeight: 1, hitInterval: 0.7, wobble: 1.5,
+    auraRadius: 100, auraSpeedMul: 1.20, auraDmgMul: 1.20,
+  },
+  cultist: {
+    id: 'cultist', name: 'Культист', letter: 'K',
+    shape: 'triangle', color: '#1a1a1a', stroke: '#a040ff',
+    w: 22, h: 22, hp: 20, speed: 35, damage: 0,
+    xp: [30, 40], behavior: 'cultist', tier: 4, dropChance: 0.80,
+    spawnWeight: 2, wobble: 1,
+    keepDistMin: 100, keepDistMax: 140,
+    summonEvery: 5.0, summonChildId: 'skeleton', maxSummons: 3,
+  },
+  shadow: {
+    id: 'shadow', name: 'Теневой убийца', letter: 'X',
+    shape: 'rect', color: '#0a0a0a', stroke: '#7a7a7a',
+    w: 22, h: 22, hp: 18, speed: 110, damage: 14,
+    xp: [16, 22], behavior: 'shadow', tier: 4, dropChance: 0.65,
+    spawnWeight: 2, hitInterval: 0.6, wobble: 1.5,
+    visibleTime: 2.0, invisibleTime: 1.0, backstabMul: 1.5,
+  },
+
+  /* ===== ТИР 5 (волны 8+) ===== */
+  rotgolem: {
+    id: 'rotgolem', name: 'Гнилой голем', letter: 'G',
+    shape: 'rect', color: '#6b4a2b', stroke: '#c9a97a',
+    w: 40, h: 40, hp: 80, speed: 28, damage: 25,
+    xp: [35, 45], behavior: 'rotgolem', tier: 5, dropChance: 0.90,
+    spawnWeight: 1, hitInterval: 0.8, wobble: 1,
+    sporeCooldown: 5.0, sporeChildId: 'gasspore',
+  },
+  dragonet: {
+    id: 'dragonet', name: 'Костяной дракончик', letter: 'D',
+    shape: 'diamond', color: '#9aa0a6', stroke: '#fff5cc',
+    w: 35, h: 20, hp: 25, speed: 70, damage: 10,
+    xp: [18, 26], behavior: 'dragonet', tier: 5, dropChance: 0.85,
+    spawnWeight: 1, hitInterval: 0.7, wobble: 3,
+    keepDistMin: 130, keepDistMax: 180,
+    breathCooldown: 3.0, breathRange: 100, breathDamage: 10,
+  },
+
+  /* ===== ОСОБЫЙ — мимик (не входит в волны, спавнится отдельно) ===== */
+  mimic: {
+    id: 'mimic', name: 'Мимик', letter: '?',
+    shape: 'rect', color: '#d8a826', stroke: '#fffce0',
+    w: 28, h: 28, hp: 50, speed: 40, damage: 20,
+    xp: [40, 60], behavior: 'mimic', tier: 0, dropChance: 1.0,
+    spawnWeight: 0, hitInterval: 0.7, wobble: 0,
+    activateRadius: 50, biteDamage: 20,
+  },
+
+  /* ===== ДОЧЕРНИЕ (не призываются волной) ===== */
+  spiderling: {
+    id: 'spiderling', name: 'Паучок', letter: 'p',
+    shape: 'diamond', color: '#3a3a3a', stroke: '#a070a0',
+    w: 16, h: 16, hp: 5, speed: 130, damage: 3,
+    xp: [3, 5], behavior: 'chase', tier: 0, dropChance: 0.20,
+    spawnWeight: 0, hitInterval: 0.4, wobble: 1.5,
+  },
+  slimeling: {
+    id: 'slimeling', name: 'Малый слизень', letter: 'o',
+    shape: 'oval', color: '#f0a050', stroke: '#ffd9a8',
+    w: 18, h: 12, hp: 8, speed: 50, damage: 4,
+    xp: [4, 6], behavior: 'chase', tier: 0, dropChance: 0.30,
+    spawnWeight: 0, hitInterval: 0.6, wobble: 1.5,
+  },
+};
+
+/* Тиры доступности по номеру волны (waveIndex 1-based). */
+const ENEMY_TIERS = {
+  1: { unlockWave: 1, ids: ['skeleton', 'zombie', 'goblin'] },
+  2: { unlockWave: 3, ids: ['archer', 'ooze', 'gasspore'] },
+  3: { unlockWave: 5, ids: ['mage', 'spider', 'fire_elem', 'bat'] },
+  4: { unlockWave: 7, ids: ['captain', 'cultist', 'shadow'] },
+  5: { unlockWave: 8, ids: ['rotgolem', 'dragonet'] },
+};
+
+/* Спец-настройки спавна мимика (особый режим, отдельно от волн). */
+const MIMIC_CONFIG = {
+  MIN_TIME: 180,            // не раньше 3-й минуты
+  CHECK_INTERVAL: 30,       // частота попыток спавна (сек)
+  CHANCE_PER_CHECK: 0.40,   // вероятность спавна за попытку (если ещё не достигнут лимит)
+  MAX_PER_RUN: 2,           // 1–2 за забег
+  SPAWN_MIN_DIST: 300,
+  SPAWN_MAX_DIST: 600,
+};
+
+window.ENEMY_TYPES = ENEMY_TYPES;
+window.ENEMY_TIERS = ENEMY_TIERS;
+window.MIMIC_CONFIG = MIMIC_CONFIG;
