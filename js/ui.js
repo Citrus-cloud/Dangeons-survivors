@@ -185,6 +185,15 @@ const UI = {
           this.waveInfo.textContent += ` | Босс: ${bossIn}с`;
         }
       }
+      // Шаг 13: информация о портале
+      if (game.portalSpawned && window.GameMap && GameMap.portal && GameMap.portal.active) {
+        this.waveInfo.textContent = `⟐ ПОРТАЛ ОТКРЫТ ⟐`;
+      } else if (window.PORTAL_CONFIG && game.mapTime != null) {
+        const portalIn = Math.max(0, Math.ceil(PORTAL_CONFIG.APPEAR_TIME - game.mapTime));
+        if (portalIn <= 60 && portalIn > 0) {
+          this.waveInfo.textContent += ` | Портал: ${portalIn}с`;
+        }
+      }
     }
   },
 

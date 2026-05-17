@@ -113,9 +113,18 @@ const Game = {
     this.particles.clearAll();
     if (window.GameMap && GameMap.clearGroundEffects) GameMap.clearGroundEffects();
 
-    // Шаг 5: генерируем подземелье ДО создания игрока, чтобы поместить его в стартовую комнату.
+    // Шаг 13: бесконечный режим — инициализация
+    this.mapNumber = 1;
+    this.mapTime = 0;            // время на текущей карте
+    this.portalSpawned = false;  // портал уже появился?
+    this.guardianSpawned = false; // страж уже появился?
+    this.lastBiomeId = null;     // для предотвращения повтора биома
+    this.transitioning = false;  // идёт переход?
+    this.transitionTimer = 0;
+
+    // Шаг 5: генерируем подземелье ДО создания игрока (Шаг 13: первая карта — склеп)
     if (window.GameMap && GameMap.generateDungeon) {
-      GameMap.generateDungeon();
+      GameMap.generateDungeon('crypt', 1);
     }
 
     this.kills = 0;
@@ -140,7 +149,8 @@ const Game = {
       : { count: 0, nextCheckTime: 180 };
 
     // Стартовая позиция героя — центр стартовой комнаты подземелья
-    let startX = CONFIG.MAP.W / 2, startY = CONFIG.MAP.H / 2;
+    let startX = (window.GameMap ? GameMap.mapW : CONFIG.MAP.W) / 2;
+    let startY = (window.GameMap ? GameMap.mapH : CONFIG.MAP.H) / 2;
     if (window.GameMap && GameMap.dungeon && GameMap.dungeon.startRoom) {
       const sp = GameMap.randomPointInRoom(GameMap.dungeon.startRoom, 18);
       if (sp) { startX = sp.x; startY = sp.y; }
@@ -346,6 +356,8 @@ const Game = {
 
     this.updateWaves(dt);
     this.updateBoss(dt);
+    // Шаг 13: бесконечный режим — таймер карты, портал, страж
+    this.updateInfiniteMode(dt);
     Enemies.update(this.enemies, this.player, dt);
 
     // Оружия в слотах
@@ -458,6 +470,134 @@ const Game = {
     // Шаг 4: попытка заспавнить мимика (после 3-й минуты, не более 1-2 за забег)
     if (window.Enemies && Enemies.tryMimicSpawn && this.mimicState) {
       Enemies.tryMimicSpawn(this.player, this.runTime, this.mimicState);
+    }
+  },
+
+  /* ============================================================
+     Шаг 13: Бесконечный режим — портал, страж, переход.
+     ============================================================ */
+
+  updateInfiniteMode(dt) {
+    if (!window.PORTAL_CONFIG || !window.INFINITE_MODE) return;
+
+    this.mapTime += dt;
+
+    // Анимация перехода
+    if (this.transitioning) {
+      this.transitionTimer -= dt;
+      if (this.transitionTimer <= 0) {
+        this.transitioning = false;
+        this._executeMapTransition();
+      }
+      return;
+    }
+
+    // Страж карты (появляется через GUARDIAN_SPAWN_DELAY на картах >= 2)
+    if (!this.guardianSpawned &&
+        this.mapNumber >= INFINITE_MODE.GUARDIAN_MIN_MAP &&
+        this.mapTime >= INFINITE_MODE.GUARDIAN_SPAWN_DELAY) {
+      this.guardianSpawned = true;
+      if (window.Bosses && Bosses.spawnGuardian) {
+        Bosses.spawnGuardian(this.player);
+      }
+    }
+
+    // Портал (появляется через PORTAL_CONFIG.APPEAR_TIME секунд на карте)
+    if (!this.portalSpawned && this.mapTime >= PORTAL_CONFIG.APPEAR_TIME) {
+      this.portalSpawned = true;
+      if (window.GameMap && GameMap.spawnPortal) {
+        GameMap.spawnPortal();
+      }
+      // Уведомление
+      if (window.Particles && this.player) {
+        Particles.text(this.player.x, this.player.y - 40, 'ПОРТАЛ ОТКРЫТ!', 2.0, '#9b59b6', 16);
+      }
+    }
+
+    // Проверка входа в портал
+    if (this.portalSpawned && window.GameMap && GameMap.isPlayerInPortal &&
+        GameMap.isPlayerInPortal(this.player)) {
+      this._startMapTransition();
+    }
+  },
+
+  /** Начать анимацию перехода на следующую карту. */
+  _startMapTransition() {
+    this.transitioning = true;
+    this.transitionTimer = 0.8; // длительность анимации перехода (секунды)
+    Input.releaseJoystick();
+  },
+
+  /** Выполнить переход на следующую карту (после анимации). */
+  _executeMapTransition() {
+    const player = this.player;
+    if (!player) return;
+
+    // Сохраняем состояние игрока (HP, оружие, пассивки, уровень, опыт)
+    // — всё в объекте player, ничего не сбрасываем.
+
+    // Увеличиваем номер карты
+    this.mapNumber += 1;
+
+    // Выбираем биом (не повторять предыдущий)
+    let newBiome = INFINITE_MODE.getBiome(this.mapNumber);
+    let attempts = 0;
+    while (newBiome.id === this.lastBiomeId && attempts < 10) {
+      newBiome = BIOMES[Math.floor(Math.random() * BIOMES.length)];
+      attempts++;
+    }
+    this.lastBiomeId = newBiome.id;
+
+    // Очистка объектов
+    this.enemies.clearAll();
+    this.projectiles.clearAll();
+    this.xpDrops.clearAll();
+    this.particles.clearAll();
+    if (window.GameMap && GameMap.clearGroundEffects) GameMap.clearGroundEffects();
+
+    // Убираем активного босса
+    if (window.Bosses) {
+      Bosses.current = null;
+    }
+
+    // Убираем сундуки
+    this.chest = null;
+    this.secretChest = null;
+    this.bossChest = null;
+
+    // Генерируем новую карту
+    if (window.GameMap && GameMap.generateDungeon) {
+      GameMap.generateDungeon(newBiome.id, this.mapNumber);
+    }
+
+    // Размещаем героя в стартовой комнате новой карты
+    let startX = (window.GameMap ? GameMap.mapW : CONFIG.MAP.W) / 2;
+    let startY = (window.GameMap ? GameMap.mapH : CONFIG.MAP.H) / 2;
+    if (window.GameMap && GameMap.dungeon && GameMap.dungeon.startRoom) {
+      const sp = GameMap.randomPointInRoom(GameMap.dungeon.startRoom, 18);
+      if (sp) { startX = sp.x; startY = sp.y; }
+    }
+    player.x = startX;
+    player.y = startY;
+
+    // Сброс таймеров карты
+    this.mapTime = 0;
+    this.portalSpawned = false;
+    this.guardianSpawned = false;
+
+    // Волны продолжаются с текущего waveIndex (не сбрасываем)
+    this.waveTimer = CONFIG.WAVE.INITIAL_DELAY;
+
+    // Сундук: сброс таймера
+    this.chestTimer = CONFIG.CHEST.FIRST_DELAY;
+
+    // Визуальный эффект при выходе из перехода
+    if (window.Particles) {
+      Particles.burst(player.x, player.y, 12, {
+        color: '#f1c40f', speedMin: 60, speedMax: 180,
+        lifeMin: 0.4, lifeMax: 0.8, sizeMin: 3, sizeMax: 5,
+      });
+      Particles.ring(player.x, player.y, 60, 0.5, 'rgba(155, 89, 182, 0.8)', 3);
     }
   },
 
@@ -892,6 +1032,66 @@ const Game = {
 
     // Шаг 5: миникарта
     if (GameMap.renderMinimap) GameMap.renderMinimap(ctx, this.player, this.viewW, this.viewH);
+
+    // Шаг 13: анимация перехода (затемнение экрана)
+    if (this.transitioning) {
+      const progress = 1 - (this.transitionTimer / 0.8);
+      ctx.fillStyle = `rgba(0, 0, 0, ${Math.min(1, progress)})`;
+      ctx.fillRect(0, 0, this.viewW, this.viewH);
+      // Текст
+      ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, progress)})`;
+      ctx.font = 'bold 20px ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Переход в следующее подземелье...', this.viewW / 2, this.viewH / 2);
+    }
+
+    // Шаг 13: индикатор биома и номера карты
+    if (window.GameMap && GameMap.currentBiome && this.state === 'playing') {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.font = '12px ui-monospace, monospace';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText(`${GameMap.currentBiome.name} #${this.mapNumber || 1}`, 10, this.viewH - 24);
+    }
+
+    // Шаг 13: индикатор портала (стрелка к порталу)
+    if (this.portalSpawned && window.GameMap && GameMap.portal && GameMap.portal.active) {
+      this._renderPortalIndicator(ctx, cam);
+    }
+  },
+
+  /** Шаг 13: Стрелка-индикатор направления к порталу. */
+  _renderPortalIndicator(ctx, cam) {
+    const portal = GameMap.portal;
+    if (!portal || !this.player) return;
+    const px = portal.x - cam.x, py = portal.y - cam.y;
+    // Если портал на экране — не показываем стрелку
+    if (px >= 0 && px <= this.viewW && py >= 0 && py <= this.viewH) return;
+    // Стрелка у края экрана
+    const cx = this.viewW / 2, cy = this.viewH / 2;
+    const angle = Math.atan2(py - cy, px - cx);
+    const margin = 30;
+    const edgeX = Utils.clamp(cx + Math.cos(angle) * (this.viewW / 2 - margin), margin, this.viewW - margin);
+    const edgeY = Utils.clamp(cy + Math.sin(angle) * (this.viewH / 2 - margin), margin, this.viewH - margin);
+    // Рисуем стрелку
+    ctx.save();
+    ctx.translate(edgeX, edgeY);
+    ctx.rotate(angle);
+    ctx.fillStyle = PORTAL_CONFIG.COLOR_OUTER;
+    ctx.beginPath();
+    ctx.moveTo(10, 0);
+    ctx.lineTo(-6, -6);
+    ctx.lineTo(-6, 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    // Текст
+    ctx.fillStyle = 'rgba(155, 89, 182, 0.8)';
+    ctx.font = 'bold 11px ui-monospace, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('⟐', edgeX, edgeY - 12);
   },
 
   /* ============================================================

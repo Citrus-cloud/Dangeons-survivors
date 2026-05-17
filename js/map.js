@@ -1,8 +1,8 @@
 'use strict';
 /* ============================================================
-   map.js — карта, тайлы, камера, наземные эффекты + Шаг 5:
+   map.js — карта, тайлы, камера, наземные эффекты + Шаг 5/13:
    процедурная генерация подземелья (комнаты, коридоры, ловушки,
-   декор, миникарта).
+   декор, миникарта). Шаг 13: биомы, портал, новые ловушки.
    ============================================================ */
 
 /* ============================================================
@@ -35,6 +35,19 @@ const GameMap = {
 
   /** Кэш фоновых тайлов комнат — offscreen canvas (для производительности). */
   _floorCache: null,
+
+  /** Шаг 13: текущий биом (объект из BIOMES). */
+  currentBiome: null,
+
+  /** Шаг 13: номер текущей карты (1-based). */
+  currentMapNumber: 1,
+
+  /** Шаг 13: портал (объект или null). */
+  portal: null,
+
+  /** Шаг 13: ширина/высота текущей карты (могут отличаться от CONFIG.MAP). */
+  mapW: 2000,
+  mapH: 2000,
 
   /* ============================================================
      Прекомпьют: создаёт пул эффектов. Подземелье генерируется
@@ -132,8 +145,8 @@ const GameMap = {
   getCamera(player, viewW, viewH) {
     let cx = player.x - viewW / 2;
     let cy = player.y - viewH / 2;
-    cx = Utils.clamp(cx, 0, Math.max(0, CONFIG.MAP.W - viewW));
-    cy = Utils.clamp(cy, 0, Math.max(0, CONFIG.MAP.H - viewH));
+    cx = Utils.clamp(cx, 0, Math.max(0, this.mapW - viewW));
+    cy = Utils.clamp(cy, 0, Math.max(0, this.mapH - viewH));
     return { x: cx, y: cy };
   },
 
@@ -144,14 +157,42 @@ const GameMap = {
 
   /**
    * Сгенерировать новое подземелье. Вызывать при старте забега.
-   * @param {number} [seed] — необязательный сид. Если не задан — берётся
-   *   CONFIG.DUNGEON.SEED (если 0 — Math.random).
+   * Шаг 13: принимает biomeId и mapNumber для бесконечного режима.
+   * @param {string|number} [seedOrBiomeId] — сид (число) или biomeId (строка).
+   * @param {number} [mapNumber] — номер карты (1-based), определяет сложность/размер.
    */
-  generateDungeon(seed) {
+  generateDungeon(seedOrBiomeId, mapNumber) {
     const cfg = CONFIG.DUNGEON;
-    const useSeed = (seed != null) ? seed : cfg.SEED;
+    let useSeed = cfg.SEED;
+    let biome = null;
+
+    // Шаг 13: определяем биом и номер карты
+    if (typeof seedOrBiomeId === 'string') {
+      // biomeId passed
+      biome = BIOMES.find(b => b.id === seedOrBiomeId) || BIOMES[0];
+    } else if (typeof seedOrBiomeId === 'number') {
+      useSeed = seedOrBiomeId;
+    }
+    if (!biome) biome = BIOMES[0]; // по умолчанию — склеп
+    if (!mapNumber) mapNumber = 1;
+
+    this.currentBiome = biome;
+    this.currentMapNumber = mapNumber;
+    this.portal = null;
+
+    // Шаг 13: определяем размер карты
+    const mapSize = INFINITE_MODE.getMapSize(mapNumber);
+    this.mapW = mapSize.w;
+    this.mapH = mapSize.h;
+    CONFIG.MAP.W = this.mapW;
+    CONFIG.MAP.H = this.mapH;
+
     this.rng = (useSeed > 0) ? _mulberry32(useSeed) : Math.random;
     this.time = 0;
+
+    // Шаг 13: кол-во комнат и ловушек по номеру карты
+    const roomCounts = INFINITE_MODE.getRoomCount(mapNumber);
+    const trapMul = INFINITE_MODE.getTrapMultiplier(mapNumber);
 
     const dungeon = {
       rooms: [],         // { x, y, w, h, isStart, isPuzzle, isSecret, hasMosaic }
@@ -175,10 +216,13 @@ const GameMap = {
       startRoom: null,
       // Координата сундука внутри секретной комнаты
       secretChestPos: null,
+      // Шаг 13: ссылка на биом
+      biome: biome,
+      mapNumber: mapNumber,
     };
 
-    // 1) Комнаты
-    this._generateRooms(dungeon, cfg);
+    // 1) Комнаты (Шаг 13: количество из roomCounts)
+    this._generateRooms(dungeon, cfg, roomCounts);
 
     // 2) Коридоры
     this._generateCorridors(dungeon, cfg);
@@ -195,8 +239,8 @@ const GameMap = {
     // 6) Загадка (рычаги + секретная комната)
     this._placePuzzle(dungeon, cfg);
 
-    // 7) Ловушки
-    this._placeTraps(dungeon, cfg);
+    // 7) Ловушки (Шаг 13: биом-зависимые)
+    this._placeTraps(dungeon, cfg, biome, trapMul);
 
     // 8) Декор
     this._placeDecor(dungeon, cfg);
@@ -205,8 +249,8 @@ const GameMap = {
     //    коллизии живут в grid).
     this._buildWallRects(dungeon);
 
-    // 10) Кеш пола
-    this._buildFloorCache(dungeon);
+    // 10) Кеш пола (Шаг 13: биом-зависимые цвета)
+    this._buildFloorCache(dungeon, biome);
 
     this.dungeon = dungeon;
     return dungeon;
@@ -216,10 +260,11 @@ const GameMap = {
   _randInt(min, max) { return Math.floor(this._rand(min, max + 1)); },
   _randPick(arr) { return arr[Math.floor(this.rng() * arr.length)]; },
 
-  _generateRooms(dungeon, cfg) {
-    const count = this._randInt(cfg.ROOMS_MIN, cfg.ROOMS_MAX);
+  _generateRooms(dungeon, cfg, roomCounts) {
+    const count = this._randInt(roomCounts ? roomCounts.min : cfg.ROOMS_MIN,
+                                roomCounts ? roomCounts.max : cfg.ROOMS_MAX);
     const margin = 80;
-    const W = CONFIG.MAP.W, H = CONFIG.MAP.H;
+    const W = this.mapW, H = this.mapH;
     let attempts = 0, maxAttempts = 600;
     while (dungeon.rooms.length < count && attempts < maxAttempts) {
       attempts += 1;
@@ -303,16 +348,16 @@ const GameMap = {
   _addCorridorRect(dungeon, x, y, w, h) {
     // Зажимаем в карту
     x = Math.max(40, x); y = Math.max(40, y);
-    if (x + w > CONFIG.MAP.W - 40) w = CONFIG.MAP.W - 40 - x;
-    if (y + h > CONFIG.MAP.H - 40) h = CONFIG.MAP.H - 40 - y;
+    if (x + w > this.mapW - 40) w = this.mapW - 40 - x;
+    if (y + h > this.mapH - 40) h = this.mapH - 40 - y;
     if (w <= 0 || h <= 0) return;
     dungeon.corridors.push({ x, y, w, h });
   },
 
   _buildGrid(dungeon) {
     const cs = dungeon.cellSize;
-    const gw = Math.ceil(CONFIG.MAP.W / cs);
-    const gh = Math.ceil(CONFIG.MAP.H / cs);
+    const gw = Math.ceil(this.mapW / cs);
+    const gh = Math.ceil(this.mapH / cs);
     const grid = new Uint8Array(gw * gh); // 0 — стена
     dungeon.grid = grid;
     dungeon.gridW = gw;
@@ -485,7 +530,7 @@ const GameMap = {
       } else if (side === 'bottom') {
         sx = Math.floor(room.cx - sw / 2);
         sy = room.y + room.h + gap;
-        if (sy + sh > CONFIG.MAP.H - 60) continue;
+        if (sy + sh > this.mapH - 60) continue;
         doorRect = { x: Math.floor(room.cx - 30), y: room.y + room.h - 4, w: 60, h: gap + 8 };
       } else if (side === 'left') {
         sx = room.x - gap - sw;
@@ -495,7 +540,7 @@ const GameMap = {
       } else { // right
         sx = room.x + room.w + gap;
         sy = Math.floor(room.cy - sh / 2);
-        if (sx + sw > CONFIG.MAP.W - 60) continue;
+        if (sx + sw > this.mapW - 60) continue;
         doorRect = { x: room.x + room.w - 4, y: Math.floor(room.cy - 30), w: gap + 8, h: 60 };
       }
       // Проверка пересечений с уже существующими комнатами
@@ -532,11 +577,63 @@ const GameMap = {
     // Если не получилось — нет секретной комнаты (сундук не появится).
   },
 
-  _placeTraps(dungeon, cfg) {
+  _placeTraps(dungeon, cfg, biome, trapMul) {
     const traps = dungeon.traps;
-    // Шипы — преимущественно в коридорах и узких местах
+    const trapTypes = biome ? biome.trapTypes : ['spike', 'fire'];
+    const mul = trapMul || 1.0;
+
+    // Шаг 13: размещаем ловушки по типам биома
+    for (const trapType of trapTypes) {
+      let count = 0;
+      switch (trapType) {
+        case 'spike':
+          count = Math.round(cfg.SPIKE_TRAPS * mul);
+          this._placeSpikeTrapsBatch(dungeon, count);
+          break;
+        case 'fire':
+          count = Math.round(cfg.FIRE_TRAPS * mul);
+          this._placeFireTrapsBatch(dungeon, count);
+          break;
+        case 'ice_spike':
+          count = Math.round(4 * mul);
+          this._placeIceSpikeTrapsBatch(dungeon, count);
+          break;
+        case 'slippery_floor':
+          count = Math.round(3 * mul);
+          this._placeSlipperyFloorBatch(dungeon, count);
+          break;
+        case 'fire_geyser':
+          count = Math.round(4 * mul);
+          this._placeFireGeyserBatch(dungeon, count);
+          break;
+        case 'rockfall':
+          count = Math.round(3 * mul);
+          this._placeRockfallBatch(dungeon, count);
+          break;
+        case 'poison_plant':
+          count = Math.round(4 * mul);
+          this._placePoisonPlantBatch(dungeon, count);
+          break;
+        case 'root_grab':
+          count = Math.round(3 * mul);
+          this._placeRootGrabBatch(dungeon, count);
+          break;
+        case 'magic_rune':
+          count = Math.round(4 * mul);
+          this._placeMagicRuneBatch(dungeon, count);
+          break;
+        case 'portrait_trap':
+          count = Math.round(3 * mul);
+          this._placePortraitTrapBatch(dungeon, count);
+          break;
+      }
+    }
+  },
+
+  // Оригинальные ловушки — вынесены в batch-методы
+  _placeSpikeTrapsBatch(dungeon, count) {
     let placed = 0, attempts = 0;
-    while (placed < cfg.SPIKE_TRAPS && attempts < 200) {
+    while (placed < count && attempts < 200) {
       attempts++;
       const corridorOrRoom = this.rng() < 0.7
         ? this._randPick(dungeon.corridors)
@@ -546,19 +643,19 @@ const GameMap = {
       const x = corridorOrRoom.x + this._randInt(20, Math.max(20, corridorOrRoom.w - 20 - tw));
       const y = corridorOrRoom.y + this._randInt(20, Math.max(20, corridorOrRoom.h - 20 - th));
       if (this._tooCloseToSolids(dungeon, x, y, tw, th, 16)) continue;
-      // Не на рычагах
       if (this._tooCloseToLevers(dungeon, x, y, tw, th, 30)) continue;
-      traps.push(this._makeSpikeTrap(x, y));
+      dungeon.traps.push(this._makeSpikeTrap(x, y));
       placed++;
     }
-    // Огненные ловушки — вдоль стен комнат
-    placed = 0; attempts = 0;
-    while (placed < cfg.FIRE_TRAPS && attempts < 200) {
+  },
+
+  _placeFireTrapsBatch(dungeon, count) {
+    let placed = 0, attempts = 0;
+    while (placed < count && attempts < 200) {
       attempts++;
       const room = this._randPick(dungeon.rooms.filter(r => !r.isStart && !r.isSecret && !r.isPuzzle));
       if (!room) continue;
       const tw = CONFIG.TRAP.FIRE.W, th = CONFIG.TRAP.FIRE.H;
-      // Возле одной из стен, направление огня — внутрь комнаты
       const side = ['top', 'bottom', 'left', 'right'][this._randInt(0, 3)];
       let x, y, dx, dy;
       const inset = 14;
@@ -580,7 +677,183 @@ const GameMap = {
         dx = -1; dy = 0;
       }
       if (this._tooCloseToSolids(dungeon, x, y, tw, th, 24)) continue;
-      traps.push(this._makeFireTrap(x, y, dx, dy));
+      dungeon.traps.push(this._makeFireTrap(x, y, dx, dy));
+      placed++;
+    }
+  },
+
+  // === Шаг 13: Новые ловушки по биомам ===
+
+  _placeIceSpikeTrapsBatch(dungeon, count) {
+    let placed = 0, attempts = 0;
+    const tc = BIOME_TRAP_CONFIG.ice_spike;
+    while (placed < count && attempts < 200) {
+      attempts++;
+      const corridorOrRoom = this.rng() < 0.7
+        ? this._randPick(dungeon.corridors)
+        : this._randPick(dungeon.rooms.filter(r => !r.isStart && !r.isSecret));
+      if (!corridorOrRoom) continue;
+      const x = corridorOrRoom.x + this._randInt(20, Math.max(20, corridorOrRoom.w - 20 - tc.W));
+      const y = corridorOrRoom.y + this._randInt(20, Math.max(20, corridorOrRoom.h - 20 - tc.H));
+      if (this._tooCloseToSolids(dungeon, x, y, tc.W, tc.H, 16)) continue;
+      if (this._tooCloseToLevers(dungeon, x, y, tc.W, tc.H, 30)) continue;
+      dungeon.traps.push({
+        kind: 'ice_spike', x, y, w: tc.W, h: tc.H,
+        cx: x + tc.W / 2, cy: y + tc.H / 2,
+        phase: 'hidden', timer: this.rng() * tc.HIDDEN_TIME,
+        damage: tc.DAMAGE, slowPct: tc.SLOW_PCT, slowDuration: tc.SLOW_DURATION,
+        _struck: false,
+      });
+      placed++;
+    }
+  },
+
+  _placeSlipperyFloorBatch(dungeon, count) {
+    let placed = 0, attempts = 0;
+    const tc = BIOME_TRAP_CONFIG.slippery_floor;
+    while (placed < count && attempts < 150) {
+      attempts++;
+      const room = this._randPick(dungeon.rooms.filter(r => !r.isStart && !r.isSecret));
+      if (!room || room.w < tc.W + 60 || room.h < tc.H + 60) continue;
+      const x = room.x + this._randInt(30, room.w - 30 - tc.W);
+      const y = room.y + this._randInt(30, room.h - 30 - tc.H);
+      if (this._tooCloseToSolids(dungeon, x, y, tc.W, tc.H, 20)) continue;
+      dungeon.traps.push({
+        kind: 'slippery_floor', x, y, w: tc.W, h: tc.H,
+        cx: x + tc.W / 2, cy: y + tc.H / 2,
+        slideDuration: tc.SLIDE_DURATION, wallDamage: tc.WALL_DAMAGE,
+      });
+      placed++;
+    }
+  },
+
+  _placeFireGeyserBatch(dungeon, count) {
+    let placed = 0, attempts = 0;
+    const tc = BIOME_TRAP_CONFIG.fire_geyser;
+    while (placed < count && attempts < 200) {
+      attempts++;
+      const room = this._randPick(dungeon.rooms.filter(r => !r.isStart && !r.isSecret));
+      if (!room) continue;
+      const x = room.x + this._randInt(40, Math.max(40, room.w - 40 - tc.W));
+      const y = room.y + this._randInt(40, Math.max(40, room.h - 40 - tc.H));
+      if (this._tooCloseToSolids(dungeon, x, y, tc.W, tc.H, 20)) continue;
+      dungeon.traps.push({
+        kind: 'fire_geyser', x, y, w: tc.W, h: tc.H,
+        cx: x + tc.W / 2, cy: y + tc.H / 2,
+        phase: 'idle', timer: this.rng() * tc.COOLDOWN,
+        damage: tc.DAMAGE, radius: tc.RADIUS,
+        cooldown: tc.COOLDOWN, warnTime: tc.WARN_TIME, activeTime: tc.ACTIVE_TIME,
+        _struck: false,
+      });
+      placed++;
+    }
+  },
+
+  _placeRockfallBatch(dungeon, count) {
+    let placed = 0, attempts = 0;
+    const tc = BIOME_TRAP_CONFIG.rockfall;
+    while (placed < count && attempts < 200) {
+      attempts++;
+      const room = this._randPick(dungeon.rooms.filter(r => !r.isStart && !r.isSecret));
+      if (!room) continue;
+      const x = room.x + this._randInt(40, Math.max(40, room.w - 40 - tc.W));
+      const y = room.y + this._randInt(40, Math.max(40, room.h - 40 - tc.H));
+      dungeon.traps.push({
+        kind: 'rockfall', x, y, w: tc.W, h: tc.H,
+        cx: x + tc.W / 2, cy: y + tc.H / 2,
+        phase: 'idle', timer: this.rng() * tc.COOLDOWN,
+        damage: tc.DAMAGE, aoeRadius: tc.AOE_RADIUS,
+        cooldown: tc.COOLDOWN, warnTime: tc.WARN_TIME,
+        _struck: false, _targetX: 0, _targetY: 0,
+      });
+      placed++;
+    }
+  },
+
+  _placePoisonPlantBatch(dungeon, count) {
+    let placed = 0, attempts = 0;
+    const tc = BIOME_TRAP_CONFIG.poison_plant;
+    while (placed < count && attempts < 200) {
+      attempts++;
+      const room = this._randPick(dungeon.rooms.filter(r => !r.isStart && !r.isSecret));
+      if (!room) continue;
+      const x = room.x + this._randInt(30, Math.max(30, room.w - 30 - tc.W));
+      const y = room.y + this._randInt(30, Math.max(30, room.h - 30 - tc.H));
+      if (this._tooCloseToSolids(dungeon, x, y, tc.W, tc.H, 20)) continue;
+      dungeon.traps.push({
+        kind: 'poison_plant', x, y, w: tc.W, h: tc.H,
+        cx: x + tc.W / 2, cy: y + tc.H / 2,
+        triggerRadius: tc.TRIGGER_RADIUS, cooldown: tc.COOLDOWN,
+        projSpeed: tc.PROJECTILE_SPEED, projDamage: tc.PROJECTILE_DAMAGE,
+        poisonDps: tc.POISON_DPS, poisonDuration: tc.POISON_DURATION,
+        timer: 0,
+      });
+      placed++;
+    }
+  },
+
+  _placeRootGrabBatch(dungeon, count) {
+    let placed = 0, attempts = 0;
+    const tc = BIOME_TRAP_CONFIG.root_grab;
+    while (placed < count && attempts < 150) {
+      attempts++;
+      const room = this._randPick(dungeon.rooms.filter(r => !r.isStart && !r.isSecret));
+      if (!room || room.w < tc.W + 60 || room.h < tc.H + 60) continue;
+      const x = room.x + this._randInt(30, room.w - 30 - tc.W);
+      const y = room.y + this._randInt(30, room.h - 30 - tc.H);
+      if (this._tooCloseToSolids(dungeon, x, y, tc.W, tc.H, 20)) continue;
+      dungeon.traps.push({
+        kind: 'root_grab', x, y, w: tc.W, h: tc.H,
+        cx: x + tc.W / 2, cy: y + tc.H / 2,
+        slowPct: tc.SLOW_PCT, dps: tc.DPS,
+      });
+      placed++;
+    }
+  },
+
+  _placeMagicRuneBatch(dungeon, count) {
+    let placed = 0, attempts = 0;
+    const tc = BIOME_TRAP_CONFIG.magic_rune;
+    while (placed < count && attempts < 200) {
+      attempts++;
+      const corridorOrRoom = this.rng() < 0.5
+        ? this._randPick(dungeon.corridors)
+        : this._randPick(dungeon.rooms.filter(r => !r.isStart && !r.isSecret));
+      if (!corridorOrRoom) continue;
+      const x = corridorOrRoom.x + this._randInt(20, Math.max(20, corridorOrRoom.w - 20 - tc.W));
+      const y = corridorOrRoom.y + this._randInt(20, Math.max(20, corridorOrRoom.h - 20 - tc.H));
+      if (this._tooCloseToSolids(dungeon, x, y, tc.W, tc.H, 16)) continue;
+      dungeon.traps.push({
+        kind: 'magic_rune', x, y, w: tc.W, h: tc.H,
+        cx: x + tc.W / 2, cy: y + tc.H / 2,
+        damage: tc.DAMAGE, cooldown: tc.COOLDOWN,
+        timer: 0, _triggered: false,
+      });
+      placed++;
+    }
+  },
+
+  _placePortraitTrapBatch(dungeon, count) {
+    let placed = 0, attempts = 0;
+    const tc = BIOME_TRAP_CONFIG.portrait_trap;
+    while (placed < count && attempts < 200) {
+      attempts++;
+      const room = this._randPick(dungeon.rooms.filter(r => !r.isStart && !r.isSecret && !r.isPuzzle));
+      if (!room) continue;
+      // Размещаем у стены
+      const side = this._randInt(0, 3);
+      let x, y;
+      if (side === 0) { x = room.x + this._randInt(30, room.w - 30 - tc.W); y = room.y + 4; }
+      else if (side === 1) { x = room.x + this._randInt(30, room.w - 30 - tc.W); y = room.y + room.h - tc.H - 4; }
+      else if (side === 2) { x = room.x + 4; y = room.y + this._randInt(30, room.h - 30 - tc.H); }
+      else { x = room.x + room.w - tc.W - 4; y = room.y + this._randInt(30, room.h - 30 - tc.H); }
+      dungeon.traps.push({
+        kind: 'portrait_trap', x, y, w: tc.W, h: tc.H,
+        cx: x + tc.W / 2, cy: y + tc.H / 2,
+        triggerRadius: tc.TRIGGER_RADIUS, cooldown: tc.COOLDOWN,
+        projSpeed: tc.PROJECTILE_SPEED, projDamage: tc.PROJECTILE_DAMAGE,
+        timer: 0,
+      });
       placed++;
     }
   },
@@ -698,40 +971,46 @@ const GameMap = {
     // grid.
   },
 
-  _buildFloorCache(dungeon) {
+  _buildFloorCache(dungeon, biome) {
     // Кешируем целое подземелье в один offscreen canvas размером с карту.
-    // Для 2000x2000 это 4 МБ — приемлемо. Это позволяет не перерисовывать
-    // тайлы каждый кадр.
     const off = document.createElement('canvas');
-    off.width = CONFIG.MAP.W;
-    off.height = CONFIG.MAP.H;
+    off.width = this.mapW;
+    off.height = this.mapH;
     const ctx = off.getContext('2d');
 
+    // Шаг 13: цвета из биома
+    const wallColor = biome ? biome.wallColor : '#1a1a1a';
+    const corridorColor = biome ? biome.corridorColor : '#2a2a2a';
+    const floorColor = biome ? biome.floorColor : '#3a3a3a';
+    const floorGridColor = biome ? biome.floorGridColor : '#444444';
+    const secretFloorColor = biome ? biome.secretFloorColor : '#3a3245';
+    const secretGridColor = biome ? biome.secretGridColor : '#4a3f60';
+    const mosaicColor = biome ? biome.mosaicColor : 'rgba(120, 90, 60, 0.35)';
+
     // 1) Заполняем стены (тёмный фон)
-    ctx.fillStyle = '#1a1a1a';
-    ctx.fillRect(0, 0, CONFIG.MAP.W, CONFIG.MAP.H);
+    ctx.fillStyle = wallColor;
+    ctx.fillRect(0, 0, this.mapW, this.mapH);
 
     // 2) Коридоры (тёмный пол, без сетки)
-    ctx.fillStyle = '#2a2a2a';
+    ctx.fillStyle = corridorColor;
     for (const c of dungeon.corridors) {
       ctx.fillRect(c.x, c.y, c.w, c.h);
     }
 
-    // 2b) Площадка под секретной дверью (пол тёмного цвета — будет виден,
-    //     когда решётка поднимется).
+    // 2b) Площадка под секретной дверью
     if (dungeon.secretDoor) {
       const d = dungeon.secretDoor;
-      ctx.fillStyle = '#2a2230';
+      ctx.fillStyle = secretFloorColor;
       ctx.fillRect(d.x, d.y, d.w, d.h);
     }
 
     // 3) Комнаты (более светлый пол + сетка плитки)
     for (const r of dungeon.rooms) {
       // фон
-      ctx.fillStyle = r.isSecret ? '#3a3245' : '#3a3a3a';
+      ctx.fillStyle = r.isSecret ? secretFloorColor : floorColor;
       ctx.fillRect(r.x, r.y, r.w, r.h);
       // сетка плитки 40x40
-      ctx.strokeStyle = r.isSecret ? '#4a3f60' : '#444444';
+      ctx.strokeStyle = r.isSecret ? secretGridColor : floorGridColor;
       ctx.lineWidth = 1;
       for (let xx = r.x; xx <= r.x + r.w; xx += 40) {
         ctx.beginPath();
@@ -747,7 +1026,7 @@ const GameMap = {
       }
       // Мозаика в больших комнатах — концентрические круги по центру
       if (r.hasMosaic && !r.isSecret) {
-        ctx.strokeStyle = 'rgba(120, 90, 60, 0.35)';
+        ctx.strokeStyle = mosaicColor;
         ctx.lineWidth = 2;
         for (let k = 1; k <= 3; k++) {
           ctx.beginPath();
@@ -755,7 +1034,7 @@ const GameMap = {
           ctx.stroke();
         }
         // Диагонали
-        ctx.strokeStyle = 'rgba(140, 100, 60, 0.25)';
+        ctx.strokeStyle = mosaicColor.replace('0.35', '0.25').replace('0.3', '0.2');
         ctx.beginPath();
         ctx.moveTo(r.x + r.w / 2 - 60, r.y + r.h / 2 - 60);
         ctx.lineTo(r.x + r.w / 2 + 60, r.y + r.h / 2 + 60);
@@ -785,7 +1064,7 @@ const GameMap = {
    */
   isWalkable(x, y) {
     if (!this.dungeon) return true;
-    if (x < 0 || y < 0 || x >= CONFIG.MAP.W || y >= CONFIG.MAP.H) return false;
+    if (x < 0 || y < 0 || x >= this.mapW || y >= this.mapH) return false;
     const cs = this.dungeon.cellSize;
     const i = Math.floor(x / cs), j = Math.floor(y / cs);
     if (i < 0 || j < 0 || i >= this.dungeon.gridW || j >= this.dungeon.gridH) return false;
@@ -895,6 +1174,14 @@ const GameMap = {
       const t = traps[i];
       if (t.kind === 'spike') this._updateSpikeTrap(t, dt, player);
       else if (t.kind === 'fire') this._updateFireTrap(t, dt, player);
+      else if (t.kind === 'ice_spike') this._updateIceSpikeTrap(t, dt, player);
+      else if (t.kind === 'slippery_floor') this._updateSlipperyFloor(t, dt, player);
+      else if (t.kind === 'fire_geyser') this._updateFireGeyser(t, dt, player);
+      else if (t.kind === 'rockfall') this._updateRockfall(t, dt, player);
+      else if (t.kind === 'poison_plant') this._updatePoisonPlant(t, dt, player);
+      else if (t.kind === 'root_grab') this._updateRootGrab(t, dt, player);
+      else if (t.kind === 'magic_rune') this._updateMagicRune(t, dt, player);
+      else if (t.kind === 'portrait_trap') this._updatePortraitTrap(t, dt, player);
     }
 
     // Кулдауны рычагов
@@ -1102,13 +1389,13 @@ const GameMap = {
   render(ctx, cam, viewW, viewH) {
     // Фон карты — почти чёрный (стены)
     ctx.fillStyle = '#0e0e0e';
-    ctx.fillRect(0, 0, CONFIG.MAP.W, CONFIG.MAP.H);
+    ctx.fillRect(0, 0, this.mapW, this.mapH);
 
     // Кешированный пол
     if (this._floorCache) {
       const sx = cam.x, sy = cam.y;
-      const sw = Math.min(viewW, CONFIG.MAP.W - sx);
-      const sh = Math.min(viewH, CONFIG.MAP.H - sy);
+      const sw = Math.min(viewW, this.mapW - sx);
+      const sh = Math.min(viewH, this.mapH - sy);
       if (sw > 0 && sh > 0) {
         ctx.drawImage(this._floorCache, sx, sy, sw, sh, sx, sy, sw, sh);
       }
@@ -1117,7 +1404,7 @@ const GameMap = {
     if (!this.dungeon) {
       // Совместимость: если подземелье не сгенерено
       ctx.fillStyle = '#2a2a2a';
-      ctx.fillRect(0, 0, CONFIG.MAP.W, CONFIG.MAP.H);
+      ctx.fillRect(0, 0, this.mapW, this.mapH);
       return;
     }
 
@@ -1155,6 +1442,9 @@ const GameMap = {
         ctx.fillText(h.text, h.x, h.y);
       }
     }
+
+    // Шаг 13: портал
+    this.renderPortal(ctx, cam, viewW, viewH);
   },
 
   _isOnScreen(x, y, w, h, cam, vw, vh) {
@@ -1162,17 +1452,19 @@ const GameMap = {
   },
 
   _renderPillars(ctx, cam, vw, vh) {
-    ctx.fillStyle = '#4a4a4a';
+    const biome = this.currentBiome;
+    ctx.fillStyle = biome ? biome.pillarColor : '#4a4a4a';
     ctx.strokeStyle = '#1a1a1a';
     ctx.lineWidth = 2;
+    const capColor = biome ? biome.pillarCapColor : '#5a5a5a';
     for (const p of this.dungeon.pillars) {
       if (!this._isOnScreen(p.x, p.y, p.w, p.h, cam, vw, vh)) continue;
       ctx.fillRect(p.x, p.y, p.w, p.h);
       ctx.strokeRect(p.x + 0.5, p.y + 0.5, p.w - 1, p.h - 1);
       // Светлая верхушка (имитация капители)
-      ctx.fillStyle = '#5a5a5a';
+      ctx.fillStyle = capColor;
       ctx.fillRect(p.x - 2, p.y, p.w + 4, 4);
-      ctx.fillStyle = '#4a4a4a';
+      ctx.fillStyle = biome ? biome.pillarColor : '#4a4a4a';
     }
   },
 
@@ -1224,6 +1516,13 @@ const GameMap = {
     const t = this.time;
     for (const tr of this.dungeon.traps) {
       if (!this._isOnScreen(tr.x - 10, tr.y - 10, tr.w + 20, tr.h + 20, cam, vw, vh)) continue;
+
+      // Шаг 13: новые ловушки отрисовываются через _renderBiomeTrap
+      if (tr.kind !== 'spike' && tr.kind !== 'fire') {
+        this._renderBiomeTrap(ctx, tr);
+        continue;
+      }
+
       if (tr.kind === 'spike') {
         // База: тёмная плита
         ctx.fillStyle = '#222';
@@ -1382,8 +1681,8 @@ const GameMap = {
     const margin = 12;
     const x0 = viewW - size - margin;
     const y0 = viewH - size - margin;
-    const sx = size / CONFIG.MAP.W;
-    const sy = size / CONFIG.MAP.H;
+    const sx = size / this.mapW;
+    const sy = size / this.mapH;
     // Фон
     ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
     ctx.fillRect(x0, y0, size, size);
@@ -1435,6 +1734,494 @@ const GameMap = {
       ctx.strokeRect(
         x0 + player.x * sx - 2.5, y0 + player.y * sy - 2.5, 5, 5
       );
+    }
+
+    // Шаг 13: портал на миникарте
+    if (this.portal) {
+      const px = x0 + this.portal.x * sx;
+      const py = y0 + this.portal.y * sy;
+      ctx.fillStyle = PORTAL_CONFIG.COLOR_OUTER;
+      ctx.beginPath();
+      ctx.arc(px, py, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = PORTAL_CONFIG.COLOR_INNER;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  },
+
+
+  /* ============================================================
+     Шаг 13: ПОРТАЛ
+     ============================================================ */
+
+  /** Заспавнить портал в случайной не-стартовой комнате. */
+  spawnPortal() {
+    if (!this.dungeon) return;
+    const rooms = this.dungeon.rooms.filter(r => !r.isStart && !r.isSecret && !r.isPuzzle);
+    if (rooms.length === 0) return;
+    // Выбираем комнату случайно
+    const room = rooms[Math.floor(Math.random() * rooms.length)];
+    const pt = this.randomPointInRoom(room, PORTAL_CONFIG.RADIUS);
+    if (!pt) return;
+    this.portal = {
+      x: pt.x,
+      y: pt.y,
+      radius: PORTAL_CONFIG.RADIUS,
+      visualRadius: PORTAL_CONFIG.VISUAL_RADIUS,
+      pulse: 0,
+      active: true,
+    };
+    // Визуальный эффект появления
+    if (window.Particles) {
+      Particles.ring(pt.x, pt.y, 60, 0.5, 'rgba(155, 89, 182, 0.9)', 4);
+      Particles.burst(pt.x, pt.y, 12, {
+        color: '#f1c40f', speedMin: 50, speedMax: 150,
+        lifeMin: 0.5, lifeMax: 1.0, sizeMin: 3, sizeMax: 5,
+      });
+    }
+  },
+
+  /** Проверить, входит ли игрок в портал. */
+  isPlayerInPortal(player) {
+    if (!this.portal || !this.portal.active || !player) return false;
+    const dx = player.x - this.portal.x;
+    const dy = player.y - this.portal.y;
+    return (dx * dx + dy * dy) <= this.portal.radius * this.portal.radius;
+  },
+
+  /** Отрисовать портал (вызывается из render). */
+  renderPortal(ctx, cam, viewW, viewH) {
+    if (!this.portal || !this.portal.active) return;
+    const p = this.portal;
+    if (p.x + 60 < cam.x || p.x - 60 > cam.x + viewW ||
+        p.y + 60 < cam.y || p.y - 60 > cam.y + viewH) return;
+
+    const t = this.time;
+    const pulseScale = 1 + Math.sin(t * PORTAL_CONFIG.PULSE_SPEED) * 0.1;
+    const r = p.visualRadius * pulseScale;
+
+    // Внешнее свечение
+    ctx.save();
+    ctx.shadowColor = PORTAL_CONFIG.COLOR_OUTER;
+    ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(155, 89, 182, 0.3)';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Вихрь (несколько вращающихся дуг)
+    ctx.strokeStyle = PORTAL_CONFIG.COLOR_OUTER;
+    ctx.lineWidth = 3;
+    for (let i = 0; i < 4; i++) {
+      const startAngle = t * 2 + (Math.PI / 2) * i;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r * 0.7, startAngle, startAngle + Math.PI * 0.4);
+      ctx.stroke();
+    }
+
+    // Внутренний золотой круг
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r * 0.4, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(241, 196, 15, 0.6)';
+    ctx.fill();
+    ctx.strokeStyle = PORTAL_CONFIG.COLOR_INNER;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Символ портала
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 16px ui-monospace, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('⟐', p.x, p.y);
+    ctx.restore();
+  },
+
+
+  /* ============================================================
+     Шаг 13: Обновление новых ловушек
+     ============================================================ */
+
+  _updateIceSpikeTrap(t, dt, player) {
+    const c = BIOME_TRAP_CONFIG.ice_spike;
+    t.timer += dt;
+    if (t.phase === 'hidden') {
+      if (t.timer >= c.HIDDEN_TIME) { t.phase = 'warning'; t.timer = 0; }
+    } else if (t.phase === 'warning') {
+      if (t.timer >= c.WARN_TIME) { t.phase = 'active'; t.timer = 0; t._struck = false; }
+    } else if (t.phase === 'active') {
+      if (player && !t._struck) {
+        const dx = player.x - t.cx, dy = player.y - t.cy;
+        if (Math.abs(dx) <= t.w / 2 + player.size / 2 &&
+            Math.abs(dy) <= t.h / 2 + player.size / 2) {
+          if (window.Player && Player.takeDamage) Player.takeDamage(player, t.damage, null);
+          else player.hp -= t.damage;
+          // Замедление
+          player._iceSlow = t.slowPct;
+          player._iceSlowTimer = t.slowDuration;
+          t._struck = true;
+          if (window.Particles) {
+            Particles.burst(player.x, player.y, 5, {
+              color: '#88ccff', speedMin: 60, speedMax: 140,
+              lifeMin: 0.3, lifeMax: 0.5, sizeMin: 2, sizeMax: 3,
+            });
+          }
+        }
+      }
+      if (t.timer >= c.ACTIVE_TIME) { t.phase = 'hidden'; t.timer = 0; t._struck = false; }
+    }
+  },
+
+  _updateSlipperyFloor(t, dt, player) {
+    if (!player) return;
+    const dx = player.x - t.cx, dy = player.y - t.cy;
+    if (Math.abs(dx) <= t.w / 2 + player.size / 2 &&
+        Math.abs(dy) <= t.h / 2 + player.size / 2) {
+      // Игрок на скользком полу: помечаем состояние скольжения
+      if (!player._sliding) {
+        player._sliding = true;
+        player._slideTimer = t.slideDuration;
+        // Направление скольжения — текущее направление движения
+        const move = (window.Input && Input.getMove) ? Input.getMove() : { x: 0, y: 0 };
+        player._slideDirX = move.x;
+        player._slideDirY = move.y;
+      }
+    }
+  },
+
+  _updateFireGeyser(t, dt, player) {
+    t.timer += dt;
+    if (t.phase === 'idle') {
+      if (t.timer >= t.cooldown - t.warnTime) { t.phase = 'warning'; t.timer = 0; }
+    } else if (t.phase === 'warning') {
+      if (t.timer >= t.warnTime) { t.phase = 'active'; t.timer = 0; t._struck = false; }
+    } else if (t.phase === 'active') {
+      if (player && !t._struck) {
+        const dx = player.x - t.cx, dy = player.y - t.cy;
+        if (dx * dx + dy * dy <= t.radius * t.radius) {
+          if (window.Player && Player.takeDamage) Player.takeDamage(player, t.damage, null);
+          else player.hp -= t.damage;
+          t._struck = true;
+          if (window.Particles) {
+            Particles.burst(t.cx, t.cy, 8, {
+              color: '#ff6600', speedMin: 80, speedMax: 200,
+              lifeMin: 0.3, lifeMax: 0.6, sizeMin: 3, sizeMax: 5,
+            });
+          }
+        }
+      }
+      if (t.timer >= t.activeTime) { t.phase = 'idle'; t.timer = 0; }
+    }
+  },
+
+  _updateRockfall(t, dt, player) {
+    t.timer += dt;
+    if (t.phase === 'idle') {
+      if (t.timer >= t.cooldown) {
+        t.phase = 'warning'; t.timer = 0;
+        // Целевая позиция — рядом с игроком (если есть)
+        if (player) {
+          t._targetX = player.x + Utils.rand(-30, 30);
+          t._targetY = player.y + Utils.rand(-30, 30);
+        } else {
+          t._targetX = t.cx; t._targetY = t.cy;
+        }
+      }
+    } else if (t.phase === 'warning') {
+      if (t.timer >= t.warnTime) {
+        t.phase = 'active'; t.timer = 0; t._struck = false;
+        // Урон при приземлении
+        if (player) {
+          const dx = player.x - t._targetX, dy = player.y - t._targetY;
+          if (dx * dx + dy * dy <= t.aoeRadius * t.aoeRadius) {
+            if (window.Player && Player.takeDamage) Player.takeDamage(player, t.damage, null);
+            else player.hp -= t.damage;
+          }
+        }
+        if (window.Particles) {
+          Particles.burst(t._targetX, t._targetY, 6, {
+            color: '#8b6914', speedMin: 40, speedMax: 100,
+            lifeMin: 0.2, lifeMax: 0.4, sizeMin: 3, sizeMax: 5,
+          });
+        }
+      }
+    } else if (t.phase === 'active') {
+      if (t.timer >= 0.5) { t.phase = 'idle'; t.timer = 0; }
+    }
+  },
+
+  _updatePoisonPlant(t, dt, player) {
+    if (t.timer > 0) { t.timer -= dt; return; }
+    if (!player) return;
+    const dx = player.x - t.cx, dy = player.y - t.cy;
+    const dist2 = dx * dx + dy * dy;
+    if (dist2 <= t.triggerRadius * t.triggerRadius) {
+      // Стреляем ядовитым снарядом
+      t.timer = t.cooldown;
+      if (window.Game && Game.projectiles) {
+        const p = Game.projectiles.spawn();
+        if (p) {
+          const dist = Math.sqrt(dist2) || 1;
+          p.kind = 'poison_plant_bolt';
+          p.owner = 'enemy';
+          p.x = t.cx; p.y = t.cy;
+          p.vx = (dx / dist) * t.projSpeed;
+          p.vy = (dy / dist) * t.projSpeed;
+          p.life = 2.0;
+          p.damage = t.projDamage;
+          p.radius = 5;
+          p.angle = Math.atan2(dy, dx);
+          p.explodeRadius = 0;
+          p.source = 'poison_plant';
+          p.poisonDps = t.poisonDps;
+          p.poisonDuration = t.poisonDuration;
+        }
+      }
+    }
+  },
+
+  _updateRootGrab(t, dt, player) {
+    if (!player) return;
+    const dx = player.x - t.cx, dy = player.y - t.cy;
+    if (Math.abs(dx) <= t.w / 2 + player.size / 2 &&
+        Math.abs(dy) <= t.h / 2 + player.size / 2) {
+      // Замедление + урон по времени
+      player._rootSlow = t.slowPct;
+      player._rootSlowTimer = 0.2; // обновляется каждый кадр пока внутри
+      player.hp -= t.dps * dt;
+    }
+  },
+
+  _updateMagicRune(t, dt, player) {
+    if (t.timer > 0) { t.timer -= dt; return; }
+    if (!player) return;
+    const dx = player.x - t.cx, dy = player.y - t.cy;
+    if (Math.abs(dx) <= t.w / 2 + player.size / 2 &&
+        Math.abs(dy) <= t.h / 2 + player.size / 2) {
+      // Мгновенный урон
+      const tc = BIOME_TRAP_CONFIG.magic_rune;
+      if (window.Player && Player.takeDamage) Player.takeDamage(player, t.damage, null);
+      else player.hp -= t.damage;
+      t.timer = t.cooldown;
+      // Случайный эффект
+      const effect = Math.floor(Math.random() * 3);
+      if (effect === 0) {
+        // Отбрасывание
+        const dist = Math.hypot(dx, dy) || 1;
+        player.x += (dx / dist) * tc.KNOCKBACK_FORCE;
+        player.y += (dy / dist) * tc.KNOCKBACK_FORCE;
+      } else if (effect === 1) {
+        // Замедление
+        player._runeSlow = tc.SLOW_PCT;
+        player._runeSlowTimer = tc.SLOW_DURATION;
+      } else {
+        // Молния — AoE урон
+        player.hp -= tc.LIGHTNING_DAMAGE;
+        if (window.Particles) {
+          Particles.ring(t.cx, t.cy, tc.LIGHTNING_RADIUS, 0.3, 'rgba(100, 200, 255, 0.8)', 3);
+        }
+      }
+      if (window.Particles) {
+        Particles.burst(t.cx, t.cy, 6, {
+          color: '#a259ff', speedMin: 60, speedMax: 140,
+          lifeMin: 0.2, lifeMax: 0.4, sizeMin: 2, sizeMax: 4,
+        });
+      }
+    }
+  },
+
+  _updatePortraitTrap(t, dt, player) {
+    if (t.timer > 0) { t.timer -= dt; return; }
+    if (!player) return;
+    const dx = player.x - t.cx, dy = player.y - t.cy;
+    const dist2 = dx * dx + dy * dy;
+    if (dist2 <= t.triggerRadius * t.triggerRadius) {
+      t.timer = t.cooldown;
+      // Выстрел магической стрелой
+      if (window.Game && Game.projectiles) {
+        const p = Game.projectiles.spawn();
+        if (p) {
+          const dist = Math.sqrt(dist2) || 1;
+          p.kind = 'portrait_bolt';
+          p.owner = 'enemy';
+          p.x = t.cx; p.y = t.cy;
+          p.vx = (dx / dist) * t.projSpeed;
+          p.vy = (dy / dist) * t.projSpeed;
+          p.life = 2.0;
+          p.damage = t.projDamage;
+          p.radius = 5;
+          p.angle = Math.atan2(dy, dx);
+          p.explodeRadius = 0;
+          p.source = 'portrait_trap';
+        }
+      }
+    }
+  },
+
+
+  /* ============================================================
+     Шаг 13: Рендер новых ловушек (вызывается из _renderTraps)
+     ============================================================ */
+
+  _renderBiomeTrap(ctx, tr) {
+    const t = this.time;
+    switch (tr.kind) {
+      case 'ice_spike': {
+        ctx.fillStyle = '#1a3a5a';
+        ctx.fillRect(tr.x, tr.y, tr.w, tr.h);
+        ctx.strokeStyle = '#0a2040';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(tr.x + 0.5, tr.y + 0.5, tr.w - 1, tr.h - 1);
+        if (tr.phase === 'warning') {
+          const pulse = (Math.sin(t * 30) + 1) / 2;
+          ctx.fillStyle = `rgba(100, 200, 255, ${0.4 + 0.4 * pulse})`;
+          ctx.fillRect(tr.x + 4, tr.y + 4, tr.w - 8, tr.h - 8);
+        } else if (tr.phase === 'active') {
+          ctx.fillStyle = '#88ccff';
+          for (let s = 0; s < 3; s++) {
+            const sx = tr.x + 6 + s * (tr.w - 12) / 2;
+            ctx.beginPath();
+            ctx.moveTo(sx, tr.y + tr.h - 4);
+            ctx.lineTo(sx + 7, tr.y + 4);
+            ctx.lineTo(sx + 14, tr.y + tr.h - 4);
+            ctx.closePath();
+            ctx.fill();
+          }
+        }
+        break;
+      }
+      case 'slippery_floor': {
+        ctx.fillStyle = 'rgba(100, 180, 240, 0.2)';
+        ctx.fillRect(tr.x, tr.y, tr.w, tr.h);
+        ctx.strokeStyle = 'rgba(100, 180, 240, 0.4)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(tr.x, tr.y, tr.w, tr.h);
+        // Мелкие линии скольжения
+        ctx.strokeStyle = 'rgba(200, 230, 255, 0.3)';
+        for (let i = 0; i < 4; i++) {
+          const ly = tr.y + 10 + i * 14;
+          ctx.beginPath();
+          ctx.moveTo(tr.x + 5, ly);
+          ctx.lineTo(tr.x + tr.w - 5, ly);
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'fire_geyser': {
+        ctx.fillStyle = '#3a1a0a';
+        ctx.beginPath();
+        ctx.arc(tr.cx, tr.cy, tr.w / 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#1a0a0a';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        if (tr.phase === 'warning') {
+          const pulse = (Math.sin(t * 25) + 1) / 2;
+          ctx.fillStyle = `rgba(255, 100, 30, ${0.3 + 0.4 * pulse})`;
+          ctx.beginPath();
+          ctx.arc(tr.cx, tr.cy, tr.w / 3, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (tr.phase === 'active') {
+          ctx.fillStyle = 'rgba(255, 140, 30, 0.8)';
+          ctx.beginPath();
+          ctx.arc(tr.cx, tr.cy, tr.radius * 0.6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = 'rgba(255, 220, 80, 0.6)';
+          ctx.beginPath();
+          ctx.arc(tr.cx, tr.cy, tr.radius * 0.3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        break;
+      }
+      case 'rockfall': {
+        if (tr.phase === 'warning') {
+          // Тень предупреждения
+          const pulse = (Math.sin(t * 20) + 1) / 2;
+          ctx.fillStyle = `rgba(60, 40, 20, ${0.3 + 0.3 * pulse})`;
+          ctx.beginPath();
+          ctx.arc(tr._targetX, tr._targetY, tr.aoeRadius, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (tr.phase === 'active') {
+          ctx.fillStyle = '#6b4a2a';
+          ctx.beginPath();
+          ctx.arc(tr._targetX, tr._targetY, 12, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#3a2a1a';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'poison_plant': {
+        ctx.fillStyle = '#2a6a2a';
+        ctx.beginPath();
+        ctx.arc(tr.cx, tr.cy, tr.w / 2, 0, Math.PI * 2);
+        ctx.fill();
+        // Лепестки
+        ctx.fillStyle = '#4aaa4a';
+        for (let i = 0; i < 5; i++) {
+          const ang = (Math.PI * 2 / 5) * i + t * 0.5;
+          const lx = tr.cx + Math.cos(ang) * (tr.w / 3);
+          const ly = tr.cy + Math.sin(ang) * (tr.h / 3);
+          ctx.beginPath();
+          ctx.arc(lx, ly, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        break;
+      }
+      case 'root_grab': {
+        ctx.fillStyle = 'rgba(80, 60, 30, 0.3)';
+        ctx.fillRect(tr.x, tr.y, tr.w, tr.h);
+        // Корни
+        ctx.strokeStyle = '#5a4020';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 5; i++) {
+          const sx = tr.x + this.rng() * tr.w;
+          const sy = tr.y + this.rng() * tr.h;
+          ctx.beginPath();
+          ctx.moveTo(sx, sy);
+          ctx.quadraticCurveTo(sx + 10, sy + 5, sx + 15, sy - 3);
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'magic_rune': {
+        const alpha = tr.timer > 0 ? 0.2 : (0.4 + Math.sin(t * 3) * 0.2);
+        ctx.fillStyle = `rgba(162, 89, 255, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(tr.cx, tr.cy, tr.w / 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = `rgba(200, 130, 255, ${alpha + 0.2})`;
+        ctx.lineWidth = 1.5;
+        // Pentagram-like lines
+        ctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+          const ang = (Math.PI * 2 / 5) * i - Math.PI / 2;
+          const px = tr.cx + Math.cos(ang) * (tr.w / 2 - 4);
+          const py = tr.cy + Math.sin(ang) * (tr.h / 2 - 4);
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.stroke();
+        break;
+      }
+      case 'portrait_trap': {
+        ctx.fillStyle = '#4a3020';
+        ctx.fillRect(tr.x, tr.y, tr.w, tr.h);
+        ctx.strokeStyle = '#8a6a4a';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(tr.x + 1, tr.y + 1, tr.w - 2, tr.h - 2);
+        // Глаза
+        ctx.fillStyle = tr.timer > 0 ? '#333' : '#ff3333';
+        ctx.beginPath();
+        ctx.arc(tr.cx - 4, tr.cy - 4, 2, 0, Math.PI * 2);
+        ctx.arc(tr.cx + 4, tr.cy - 4, 2, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      }
     }
   },
 };
