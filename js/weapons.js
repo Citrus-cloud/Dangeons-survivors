@@ -168,6 +168,11 @@ const Projectiles = {
               e._slowFactor = m.slowEnemy;
               e._slowTimer = m.slowEnemyDuration;
             }
+            // Шаг 9: гарантированное кровотечение (Казнь)
+            if (m.guaranteedBleed) {
+              if (!e.bleed) e.bleed = { dps: 0, remaining: 0 };
+              e.bleed.dps = 8; e.bleed.remaining = 3;
+            }
             // Pierce: пробивающие снаряды не деактивируются
             if (m.pierce) {
               // Помечаем врага чтобы не бить дважды в одном снаряде
