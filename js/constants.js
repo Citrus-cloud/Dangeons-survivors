@@ -565,3 +565,157 @@ const WEAPON_CONFIGS = {
 };
 
 window.WEAPON_CONFIGS = WEAPON_CONFIGS;
+
+
+
+/* ============================================================
+   PASSIVE_CONFIGS — параметры 16 новых пассивных способностей (Шаг 8).
+   Каждая имеет 5 уровней. Значения — «за уровень» или «на уровне N».
+   ============================================================ */
+const PASSIVE_CONFIGS = {
+  /* === Категория: Защита === */
+  armor: {
+    id: 'armor',
+    name: 'Броня',
+    icon: '🛡',
+    desc: 'Снижение получаемого урона на 5% за уровень.',
+    effectType: 'statModifier',
+    perLevel: 0.05,        // -5% урона за уровень (уровень 5: -25%)
+  },
+  mana_shield: {
+    id: 'mana_shield',
+    name: 'Щит маны',
+    icon: '🔵',
+    desc: 'Блокирует следующий удар полностью (кулдаун уменьшается с уровнем).',
+    effectType: 'periodic',
+    baseCooldown: 12,      // уровень 1: каждые 12 сек, уровень 5: каждые 8 сек
+    cdReductionPerLevel: 1, // -1 сек кулдауна за уровень
+  },
+  fortify: {
+    id: 'fortify',
+    name: 'Укрепление',
+    icon: '❤',
+    desc: '+8% к максимальному HP за уровень.',
+    effectType: 'statModifier',
+    perLevel: 0.08,        // +8% maxHp за уровень
+  },
+  resistance: {
+    id: 'resistance',
+    name: 'Сопротивление',
+    icon: '✜',
+    desc: '-15% длительности отрицательных эффектов за уровень.',
+    effectType: 'statModifier',
+    perLevel: 0.15,        // -15% длительности дебаффов за уровень (макс -75%)
+  },
+
+  /* === Категория: Атака === */
+  bloodlust: {
+    id: 'bloodlust',
+    name: 'Жажда крови',
+    icon: '🦷',
+    desc: '+2% вампиризма (лечение от урона) за уровень.',
+    effectType: 'onHit',
+    perLevel: 0.02,        // 2% lifesteal за уровень
+  },
+  crit_strike: {
+    id: 'crit_strike',
+    name: 'Критический удар',
+    icon: '⚡',
+    desc: '+4% шанс крита (×2 урон) за уровень.',
+    effectType: 'statModifier',
+    perLevel: 0.04,        // +4% шанс крита за уровень
+  },
+  bleed: {
+    id: 'bleed',
+    name: 'Кровотечение',
+    icon: '💧',
+    desc: '10% шанс за уровень наложить кровотечение (4 урон/сек, 3 сек).',
+    effectType: 'onHit',
+    perLevel: 0.10,        // +10% шанс за уровень
+    dotDps: 4,
+    dotDuration: 3,
+  },
+  explosive_death: {
+    id: 'explosive_death',
+    name: 'Взрывная смерть',
+    icon: '💥',
+    desc: '10% шанс за уровень: при убийстве — взрыв (урон 18, радиус 50px).',
+    effectType: 'onKill',
+    perLevel: 0.10,        // +10% шанс за уровень
+    explosionDamage: 18,
+    explosionRadius: 50,
+  },
+
+  /* === Категория: Магия === */
+  quick_fingers: {
+    id: 'quick_fingers',
+    name: 'Быстрые пальцы',
+    icon: '🔄',
+    desc: '-4% кулдауна всех оружий за уровень.',
+    effectType: 'statModifier',
+    perLevel: 0.04,        // -4% CD за уровень (уровень 5: -20%)
+  },
+  frost_aura: {
+    id: 'frost_aura',
+    name: 'Аура холода',
+    icon: '❄',
+    desc: 'Замедляет врагов в радиусе 60px на 8% за уровень.',
+    effectType: 'aura',
+    radius: 60,
+    perLevel: 0.08,        // -8% скорости врагов за уровень
+  },
+  magic_boost: {
+    id: 'magic_boost',
+    name: 'Усиление магии',
+    icon: '✦',
+    desc: '+10% к магическому урону за уровень.',
+    effectType: 'statModifier',
+    perLevel: 0.10,        // +10% magic damage за уровень
+  },
+  magic_echo: {
+    id: 'magic_echo',
+    name: 'Магический отклик',
+    icon: '🔮',
+    desc: '15% шанс за уровень: при получении урона — ответный снаряд (урон 15).',
+    effectType: 'onDamageTaken',
+    perLevel: 0.15,        // +15% шанс за уровень
+    echoDamage: 15,
+    echoSpeed: 350,
+  },
+
+  /* === Категория: Удача и лут === */
+  lucky: {
+    id: 'lucky',
+    name: 'Счастливчик',
+    icon: '🎲',
+    desc: '+1 к мин. результату d20 за уровень.',
+    effectType: 'statModifier',
+    perLevel: 1,           // +1 к минимальному d20 за уровень
+  },
+  double_xp: {
+    id: 'double_xp',
+    name: 'Удвоение опыта',
+    icon: '✕2',
+    desc: '6% шанс за уровень получить удвоенный опыт.',
+    effectType: 'onKill',
+    perLevel: 0.06,        // +6% шанс за уровень
+  },
+  alchemist: {
+    id: 'alchemist',
+    name: 'Алхимик',
+    icon: '⚗',
+    desc: '+12% к урону ядов и огня (DoT) за уровень.',
+    effectType: 'statModifier',
+    perLevel: 0.12,        // +12% DoT damage за уровень
+  },
+  magnet_plus: {
+    id: 'magnet_plus',
+    name: 'Магнит предметов',
+    icon: '⊕',
+    desc: '+20% к радиусу подбора за уровень (стакается с Магнитом опыта).',
+    effectType: 'statModifier',
+    perLevel: 0.20,        // +20% pickup radius за уровень
+  },
+};
+
+window.PASSIVE_CONFIGS = PASSIVE_CONFIGS;

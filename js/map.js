@@ -934,7 +934,8 @@ const GameMap = {
         const dx = player.x - t.cx, dy = player.y - t.cy;
         if (Math.abs(dx) <= t.w / 2 + player.size / 2 &&
             Math.abs(dy) <= t.h / 2 + player.size / 2) {
-          player.hp -= c.DAMAGE;
+          if (window.Player && Player.takeDamage) Player.takeDamage(player, c.DAMAGE, null);
+          else player.hp -= c.DAMAGE;
           t._struck = true;
           if (window.Particles) {
             Particles.burst(player.x, player.y, 5, {
@@ -979,7 +980,8 @@ const GameMap = {
       // Прямой контакт со струёй — мгновенный урон один раз
       if (player && !t._struck) {
         if (this._pointInFireBeam(player.x, player.y, t)) {
-          player.hp -= c.DAMAGE;
+          if (window.Player && Player.takeDamage) Player.takeDamage(player, c.DAMAGE, null);
+          else player.hp -= c.DAMAGE;
           t._struck = true;
         }
       }

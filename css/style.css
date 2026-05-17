@@ -129,6 +129,12 @@ html, body {
   z-index: 0;
 }
 
+/* Шаг 8: вспышка при повышении уровня пассивки */
+.slot.slot-flash {
+  border-color: #ffffff;
+  box-shadow: 0 0 8px 2px rgba(255,255,255,0.8);
+}
+
 /* ----- Dynamic Joystick ----- */
 #joystick {
   position: fixed;

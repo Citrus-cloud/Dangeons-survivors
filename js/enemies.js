@@ -111,9 +111,17 @@ function _tryContactDamage(e, player, dt) {
       const ml = Math.hypot(player.moveDir.x, player.moveDir.y);
       if (ml < 0.05) dmg *= e.cfg.backstabMul || 1.5;
     }
-    player.hp -= dmg;
+    // Шаг 8: используем Player.takeDamage для учёта пассивок
+    if (window.Player && Player.takeDamage) {
+      Player.takeDamage(player, dmg, e);
+    } else {
+      player.hp -= dmg;
+    }
     e.hitCooldown = e.cfg.hitInterval || 0.6;
     e.attackPunch = 0.10;
+
+    // Шаг 8: Сопротивление — уменьшает длительность дебаффов
+    // (poison/webSlow применяется в других местах; тут только контактный урон)
   }
 }
 
@@ -125,6 +133,8 @@ function _currentSpeed(e) {
   if (e.dashing) s *= (e.cfg.dashMul || 2.0);
   // Шаг 7: замедление от ледяной стрелы и т.п.
   if (e._slowFactor && e._slowTimer > 0) s *= (1 - e._slowFactor);
+  // Шаг 8: аура холода
+  if (e.frostSlow && e.frostSlowTimer > 0) s *= (1 - e.frostSlow);
   return s;
 }
 
@@ -605,6 +615,14 @@ const Enemies = {
       e.attackPunch = Math.max(0, e.attackPunch - dt);
       // Шаг 7: тик таймера замедления от оружий
       if (e._slowTimer > 0) e._slowTimer -= dt;
+      // Шаг 8: тик ауры холода (убывающий таймер)
+      if (e.frostSlowTimer > 0) e.frostSlowTimer -= dt;
+      // Шаг 8: кровотечение (DoT)
+      if (e.bleed && e.bleed.remaining > 0) {
+        e.hp -= e.bleed.dps * dt;
+        e.bleed.remaining -= dt;
+        if (e.hp <= 0 && window.Game) { Game.killEnemy(e); continue; }
+      }
       const fn = Behaviors[e.cfg.behavior];
       if (fn) fn(e, player, dt);
       else Behaviors.chase(e, player, dt);
@@ -658,7 +676,8 @@ const Enemies = {
       if (player) {
         const dx = player.x - e.x, dy = player.y - e.y;
         if (dx * dx + dy * dy <= exploded.radius * exploded.radius) {
-          player.hp -= exploded.damage;
+          if (Player.takeDamage) Player.takeDamage(player, exploded.damage, e);
+          else player.hp -= exploded.damage;
         }
       }
       if (window.Particles) {

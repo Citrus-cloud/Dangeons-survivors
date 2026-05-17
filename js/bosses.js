@@ -169,7 +169,8 @@ const Bosses = {
       if (window.Game && Game.player) {
         const dx = Game.player.x - boss.x, dy = Game.player.y - boss.y;
         if (dx * dx + dy * dy <= atk.radius * atk.radius) {
-          Game.player.hp -= atk.damage;
+          if (Player.takeDamage) Player.takeDamage(Game.player, atk.damage, boss);
+          else Game.player.hp -= atk.damage;
         }
       }
       if (window.Particles) {
@@ -305,7 +306,8 @@ const Bosses = {
     const collideR = (Math.max(cfg.w, cfg.h) + player.size) * 0.45;
     const dx = player.x - boss.x, dy = player.y - boss.y;
     if (dx * dx + dy * dy < collideR * collideR) {
-      player.hp -= cfg.damage;
+      if (Player.takeDamage) Player.takeDamage(player, cfg.damage, boss);
+      else player.hp -= cfg.damage;
       boss.hitCooldown = cfg.hitInterval || 1.0;
     }
   },
@@ -376,7 +378,8 @@ const Bosses = {
       boss.whirlwindAnim = 0.3;
       // Урон всем в радиусе (только игроку)
       if (dist <= atk.whirlwind.radius) {
-        player.hp -= atk.whirlwind.damage;
+        if (Player.takeDamage) Player.takeDamage(player, atk.whirlwind.damage, boss);
+        else player.hp -= atk.whirlwind.damage;
       }
       // Визуальный эффект: белая дуга 360°
       if (window.Particles) {
@@ -398,7 +401,8 @@ const Bosses = {
       while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
       const halfArc = (atk.slash.arc / 2) * Math.PI / 180;
       if (Math.abs(angleDiff) <= halfArc) {
-        player.hp -= atk.slash.damage;
+        if (Player.takeDamage) Player.takeDamage(player, atk.slash.damage, boss);
+        else player.hp -= atk.slash.damage;
       }
       // Визуал: белая дуга
       if (window.Particles) {
@@ -454,7 +458,8 @@ const Bosses = {
       boss.darkExplosionAnim = 0.35;
       // Урон, если игрок в радиусе
       if (dist <= atk.darkExplosion.radius) {
-        player.hp -= atk.darkExplosion.damage;
+        if (Player.takeDamage) Player.takeDamage(player, atk.darkExplosion.damage, boss);
+        else player.hp -= atk.darkExplosion.damage;
       }
       // Визуал: фиолетовый расширяющийся круг
       if (window.Particles) {
@@ -579,13 +584,16 @@ const Bosses = {
     // Укус (ближний бой) с ядом — через контактный урон + наложение DoT
     if (boss.hitCooldown <= 0 && dist <= (cfg.attacks.bite.range + player.size * 0.5)) {
       const bite = cfg.attacks.bite;
-      player.hp -= bite.damage;
-      // Яд: урон по времени
+      if (Player.takeDamage) Player.takeDamage(player, bite.damage, boss);
+      else player.hp -= bite.damage;
+      // Яд: урон по времени. Шаг 8: сопротивление уменьшает длительность
+      let poisonDur = bite.poisonDuration;
+      if (player.debuffReduction > 0) poisonDur *= (1 - Math.min(player.debuffReduction, 0.75));
       if (!player.poison || player.poison.remaining <= 0) {
-        player.poison = { dps: bite.poisonDps, remaining: bite.poisonDuration };
+        player.poison = { dps: bite.poisonDps, remaining: poisonDur };
       } else {
         // Обновляем яд
-        player.poison.remaining = bite.poisonDuration;
+        player.poison.remaining = poisonDur;
         player.poison.dps = Math.max(player.poison.dps, bite.poisonDps);
       }
       boss.hitCooldown = cfg.hitInterval || 0.8;

@@ -14,7 +14,7 @@
    ============================================================ */
 const BASIC_UPGRADES = [
   { id: 'b_maxhp',     icon: '❤', title: 'Здоровье +20',     desc: 'Макс. HP +20 (восполняется на ту же величину).',
-    apply(p) { p.maxHp += 20; p.hp = Math.min(p.maxHp, p.hp + 20); }, available() { return true; } },
+    apply(p) { p.bonusMaxHp = (p.bonusMaxHp || 0) + 20; p.maxHp += 20; p.hp = Math.min(p.maxHp, p.hp + 20); }, available() { return true; } },
   { id: 'b_damage',    icon: '⚔', title: 'Урон +15%',         desc: 'Весь урон увеличен на 15%.',
     apply(p) { p.damageMul *= 1.15; }, available() { return true; } },
   { id: 'b_speed',     icon: '➤', title: 'Скорость +10%',     desc: 'Скорость передвижения +10%.',
@@ -379,6 +379,7 @@ const Game = {
 
     // Шаг 6: яд от паука-королевы
     if (this.player.poison && this.player.poison.remaining > 0) {
+      // Шаг 8: сопротивление снижает длительность яда (тик урона остаётся)
       this.player.hp -= this.player.poison.dps * dt;
       this.player.poison.remaining -= dt;
     }
@@ -436,7 +437,7 @@ const Game = {
       pr.vx = Math.cos(a) * CONFIG.MISSILE.SPEED;
       pr.vy = Math.sin(a) * CONFIG.MISSILE.SPEED;
       pr.life = CONFIG.MISSILE.LIFETIME;
-      pr.damage = CONFIG.MISSILE.DAMAGE * p.damageMul;
+      pr.damage = CONFIG.MISSILE.DAMAGE * p.damageMul * (p.magicDamageMul || 1);
       pr.radius = CONFIG.MISSILE.RADIUS;
       pr.angle = a;
       pr.source = 'missile';
@@ -531,7 +532,10 @@ const Game = {
     Input.releaseJoystick();
 
     // Бросок d20 с финальным значением, заданным заранее
-    const finalRoll = 1 + Math.floor(Math.random() * 20);
+    // Шаг 8: пассивка «Счастливчик» повышает минимальный результат
+    let finalRoll = 1 + Math.floor(Math.random() * 20);
+    const minRoll = 1 + (this.player.d20MinBonus || 0);
+    if (finalRoll < minRoll) finalRoll = Math.min(minRoll, 20);
     UI.showD20Roll(finalRoll, () => this.resolveChest(finalRoll));
   },
 
@@ -663,8 +667,33 @@ const Game = {
 
   damageEnemy(e, dmg) {
     if (e.invulnerable) return;
-    e.hp -= dmg;
+
+    // Шаг 8: критический удар
+    let finalDmg = dmg;
+    if (this.player && this.player.critChance > 0 && Math.random() < this.player.critChance) {
+      finalDmg *= 2;
+      // Визуал крита
+      if (window.Particles && Particles.text) {
+        Particles.text(e.x, e.y - 20, 'КРИТ!', 0.6, '#ffff00', 12);
+      }
+    }
+
+    e.hp -= finalDmg;
     e.flash = 0.08;
+
+    // Шаг 8: вампиризм (лечение от нанесённого урона)
+    if (this.player && this.player.lifesteal > 0) {
+      const heal = finalDmg * this.player.lifesteal;
+      this.player.hp = Math.min(this.player.maxHp, this.player.hp + heal);
+    }
+
+    // Шаг 8: кровотечение
+    if (this.player && this.player.bleedChance > 0 && Math.random() < this.player.bleedChance) {
+      if (!e.bleed) e.bleed = { dps: 0, remaining: 0 };
+      e.bleed.dps = 4 * (this.player.dotDamageMul || 1);
+      e.bleed.remaining = 3;
+    }
+
     if (e.hp <= 0) {
       this.killEnemy(e);
     } else if (window.Enemies && Enemies.handleHit) {
@@ -684,6 +713,30 @@ const Game = {
     const tid = (e.cfg && e.cfg.id) || e.type || 'unknown';
     this.killsByType[tid] = (this.killsByType[tid] || 0) + 1;
 
+    // Шаг 8: взрывная смерть
+    if (this.player && this.player.explosiveDeathChance > 0 &&
+        Math.random() < this.player.explosiveDeathChance) {
+      // Взрыв: урон 18, радиус 50px по всем врагам рядом
+      const explosionDmg = 18 * this.player.damageMul;
+      const explosionR2 = 50 * 50;
+      const items = this.enemies.items;
+      for (let i = 0; i < items.length; i++) {
+        const other = items[i];
+        if (!other.active || other === e) continue;
+        const dx = other.x - e.x, dy = other.y - e.y;
+        if (dx * dx + dy * dy <= explosionR2) {
+          this.damageEnemy(other, explosionDmg);
+        }
+      }
+      // Визуальный эффект взрыва
+      if (window.Particles && Particles.burst) {
+        Particles.burst(e.x, e.y, 8, {
+          color: '#ff6600', speedMin: 60, speedMax: 140,
+          lifeMin: 0.2, lifeMax: 0.4, sizeMin: 4, sizeMax: 7,
+        });
+      }
+    }
+
     // Выпадение опыта по конфигу типа
     const cfg = e.cfg;
     const dropChance = (cfg && cfg.dropChance != null) ? cfg.dropChance : 0.6;
@@ -692,7 +745,12 @@ const Game = {
     if (Math.random() < finalDropChance) {
       let xpMin = (cfg && cfg.xp) ? cfg.xp[0] : CONFIG.ENEMY.XP_MIN;
       let xpMax = (cfg && cfg.xp) ? cfg.xp[1] : CONFIG.ENEMY.XP_MAX;
-      const value = Utils.randInt(xpMin, xpMax);
+      let value = Utils.randInt(xpMin, xpMax);
+      // Шаг 8: удвоение опыта
+      if (this.player && this.player.doubleXpChance > 0 &&
+          Math.random() < this.player.doubleXpChance) {
+        value *= 2;
+      }
       Loot.dropXP(this.xpDrops, e.x, e.y, value);
     }
   },
