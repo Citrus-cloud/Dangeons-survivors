@@ -6,10 +6,10 @@
 
 const Player = {
   /** Создать нового героя. */
-  create() {
+  create(startX, startY) {
     const p = {
-      x: CONFIG.MAP.W / 2,
-      y: CONFIG.MAP.H / 2,
+      x: (startX != null) ? startX : CONFIG.MAP.W / 2,
+      y: (startY != null) ? startY : CONFIG.MAP.H / 2,
       size: CONFIG.PLAYER.SIZE,
       hp: CONFIG.PLAYER.MAX_HP,
       maxHp: CONFIG.PLAYER.MAX_HP,
@@ -119,8 +119,18 @@ const Player = {
 
     if (ml > 0.001) {
       const speed = CONFIG.PLAYER.SPEED * player.speedMul;
-      player.x += move.x * speed * dt;
-      player.y += move.y * speed * dt;
+      const dx = move.x * speed * dt;
+      const dy = move.y * speed * dt;
+      // Движение с коллизиями (стены/колонны/закрытые двери)
+      const rad = player.size * 0.4;
+      if (window.GameMap && GameMap.dungeon) {
+        const r = GameMap.moveWithCollision(player.x, player.y, dx, dy, rad);
+        player.x = r.x;
+        player.y = r.y;
+      } else {
+        player.x += dx;
+        player.y += dy;
+      }
       player.facing.x = move.x / ml;
       player.facing.y = move.y / ml;
 
@@ -129,6 +139,11 @@ const Player = {
         player.trailTimer = CONFIG.PLAYER.TRAIL_INTERVAL;
         Game.spawnTrailParticle(player, move);
       }
+    }
+
+    // Взаимодействие с рычагами по касанию
+    if (window.GameMap && GameMap.tryToggleLever) {
+      GameMap.tryToggleLever(player);
     }
 
     // Границы карты
