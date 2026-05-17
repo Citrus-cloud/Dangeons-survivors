@@ -176,6 +176,15 @@ const UI = {
     if (game.state === 'playing' || game.state === 'paused' || game.state === 'levelup') {
       const next = Math.max(0, Math.ceil(game.waveTimer));
       this.waveInfo.textContent = `Волна ${game.waveIndex + 1} через ${next}с`;
+      // Шаг 6: информация о боссе
+      if (window.Bosses && Bosses.isAlive()) {
+        this.waveInfo.textContent = `⚔ БОСС ⚔`;
+      } else if (window.Bosses && !Bosses.current && Bosses.bossIndex < BOSS_CONFIG.SPAWN_TIMES.length) {
+        const bossIn = Math.max(0, Math.ceil(Bosses.nextSpawnTime - game.runTime));
+        if (bossIn <= 30) {
+          this.waveInfo.textContent += ` | Босс: ${bossIn}с`;
+        }
+      }
     }
   },
 

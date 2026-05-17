@@ -146,6 +146,31 @@ const Particles = {
     });
   },
 
+  /** Шаг 6: Эффект появления босса — двойная вспышка + портал. */
+  bossSpawn(x, y, color) {
+    this.ring(x, y, 80, 0.5, 'rgba(255, 200, 50, 0.9)', 4);
+    this.ring(x, y, 50, 0.4, color || 'rgba(255, 80, 30, 0.8)', 3);
+    this.burst(x, y, 15, {
+      color: '#ffd700',
+      speedMin: 80, speedMax: 200,
+      lifeMin: 0.5, lifeMax: 0.9,
+      sizeMin: 3, sizeMax: 5,
+    });
+  },
+
+  /** Шаг 6: Эффект смерти босса — крупная вспышка + много частиц + тряска. */
+  bossDeath(x, y, color) {
+    this.ring(x, y, 120, 0.5, color || '#ff4444', 5);
+    this.ring(x, y, 80, 0.35, 'rgba(255, 255, 200, 0.9)', 3);
+    this.burst(x, y, 25, {
+      color: color || '#ff4444',
+      speedMin: 100, speedMax: 280,
+      lifeMin: 0.5, lifeMax: 1.0,
+      sizeMin: 3, sizeMax: 6,
+    });
+    this.text(x, y - 30, 'БОСС ПОВЕРЖЕН!', 2.0, '#ffd700', 20);
+  },
+
   /** Обновление одной частицы, специфичное для kind.
    *  Возвращает true, если частицу нужно деактивировать. */
   step(p, dt) {

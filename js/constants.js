@@ -408,3 +408,121 @@ const MIMIC_CONFIG = {
 window.ENEMY_TYPES = ENEMY_TYPES;
 window.ENEMY_TIERS = ENEMY_TIERS;
 window.MIMIC_CONFIG = MIMIC_CONFIG;
+
+
+
+/* ============================================================
+   BOSS_CONFIG — конфигурация мини-боссов (Шаг 6).
+   ============================================================ */
+const BOSS_CONFIG = {
+  // Таймер появления боссов (секунды от начала забега)
+  SPAWN_TIMES: [300, 600, 900, 1200], // 5:00, 10:00, 15:00, 20:00
+  // Порядок боссов (фиксированный)
+  SPAWN_ORDER: ['boss_skeleton_knight', 'boss_lich', 'boss_spider_queen', 'boss_fire_lord'],
+  // Снижение спавна обычных врагов при живом боссе (30%)
+  WAVE_REDUCTION: 0.30,
+  // Задержка между смертью босса и возобновлением нормального спавна
+  POST_BOSS_DELAY: 2.0,
+  // Сообщение «Босс повержен!» — длительность (сек)
+  DEFEATED_MSG_DURATION: 2.0,
+};
+
+const BOSS_TYPES = {
+  boss_skeleton_knight: {
+    id: 'boss_skeleton_knight',
+    name: 'Скелет-рыцарь',
+    hp: 300,
+    speed: 72,           // 0.4 от героя (180 * 0.4)
+    damage: 25,
+    xpReward: 200,
+    w: 48, h: 48,
+    color: '#c0c0c0',
+    stroke: '#ffffff',
+    shape: 'rect',
+    letter: 'R',
+    // Атаки
+    attacks: {
+      slash: { cooldown: 1.5, damage: 25, arc: 120, range: 55 },         // конус 120° перед собой
+      whirlwind: { cooldown: 4.0, damage: 18, radius: 60 },              // круговой взмах 360°
+    },
+    // Фаза: при 50% HP — ускорение на 30%
+    phase2HpPct: 0.50,
+    phase2SpeedMul: 1.30,
+  },
+
+  boss_lich: {
+    id: 'boss_lich',
+    name: 'Лич',
+    hp: 200,
+    speed: 108,          // 0.6 от героя (180 * 0.6)
+    damage: 15,
+    xpReward: 250,
+    w: 40, h: 40,
+    color: '#6a0dad',
+    stroke: '#d9b3ff',
+    shape: 'circle',
+    letter: 'L',
+    keepDist: 200,       // держит дистанцию 200px от героя
+    // Атаки
+    attacks: {
+      bolt: { cooldown: 1.5, damage: 15, speed: 250, homing: true },      // самонаводящаяся стрела
+      summon: { cooldown: 6.0, count: 3, childId: 'skeleton' },           // призыв 3 скелетов
+      darkExplosion: { cooldown: 8.0, damage: 25, radius: 120 },          // AoE взрыв
+    },
+    teleportCooldown: 3.0,   // телепортируется при получении урона, не чаще раза в 3 сек
+    // Фаза: при 50% HP — атаки на 25% быстрее
+    phase2HpPct: 0.50,
+    phase2CdMul: 0.75,
+  },
+
+  boss_spider_queen: {
+    id: 'boss_spider_queen',
+    name: 'Паук-королева',
+    hp: 350,
+    speed: 198,          // 1.1 от героя (180 * 1.1)
+    damage: 20,
+    xpReward: 300,
+    w: 56, h: 40,
+    color: '#2d0a2d',
+    stroke: '#a050a0',
+    shape: 'oval',
+    letter: 'Q',
+    // Атаки
+    attacks: {
+      bite: { damage: 20, poisonDps: 5, poisonDuration: 3.0, range: 40 },
+      web: { cooldown: 5.0, speed: 300, slowPct: 0.50, slowDuration: 2.0 },
+      spawnMinions: { hpThreshold: 0.50, count: 4, childId: 'spider', triggered: false },
+    },
+    trailEvery: 0.6,     // оставляет паутину (лужи замедления)
+    trail: { kind: 'slime', radius: 24, life: 3, slow: 0.35 },
+    hitInterval: 0.8,
+  },
+
+  boss_fire_lord: {
+    id: 'boss_fire_lord',
+    name: 'Огненный элементаль-лорд',
+    hp: 500,
+    speed: 54,           // 0.3 от героя (180 * 0.3)
+    damage: 30,
+    xpReward: 400,
+    w: 50, h: 50,
+    color: '#ff4500',
+    stroke: '#ffd700',
+    shape: 'diamond',
+    letter: 'E',
+    // Атаки
+    attacks: {
+      fireball: { cooldown: 3.0, damage: 30, speed: 180, explodeRadius: 100 },
+      fireRing: { cooldown: 5.0, damage: 22, maxRadius: 160, expandTime: 0.8 },
+      deathExplosion: { damage: 40, radius: 150 },   // при смерти
+    },
+    trailEvery: 0.4,     // горящая земля за собой
+    trail: { kind: 'fire', radius: 26, life: 3.0, dps: 8 },
+    // Фаза: при 30% HP — огненные шары каждые 2 сек
+    phase2HpPct: 0.30,
+    phase2FireballCd: 2.0,
+  },
+};
+
+window.BOSS_CONFIG = BOSS_CONFIG;
+window.BOSS_TYPES = BOSS_TYPES;

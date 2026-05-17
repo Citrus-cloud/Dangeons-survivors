@@ -539,8 +539,13 @@ const Enemies = {
    *
    * Шаг 5: враги появляются только в комнатах (не в коридорах,
    * не в секретной).
+   * Шаг 6: при живом боссе количество врагов снижается на 30%.
    */
   spawnWave(pool, player, count, waveIndex) {
+    // Шаг 6: снижение спавна при живом боссе
+    if (window.Bosses && Bosses.isAlive()) {
+      count = Math.max(1, Math.round(count * (1 - BOSS_CONFIG.WAVE_REDUCTION)));
+    }
     const ids = this._availableTierIds(waveIndex);
     const useDungeon = !!(window.GameMap && GameMap.dungeon);
     for (let i = 0; i < count; i++) {

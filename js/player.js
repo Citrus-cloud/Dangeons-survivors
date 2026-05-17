@@ -45,6 +45,10 @@ const Player = {
 
       // Визуал
       trailTimer: 0,
+
+      // Шаг 6: дебаффы от боссов
+      poison: null,        // { dps, remaining }
+      webSlow: 0,          // оставшееся время замедления паутиной
     };
     // Старт: меч в первом слоте оружия
     Player.addWeapon(p, WEAPON_FACTORIES.sword());

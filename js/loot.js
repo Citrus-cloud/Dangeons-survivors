@@ -5,17 +5,48 @@
    ============================================================ */
 
 function createXP() {
-  return { active: false, x: 0, y: 0, value: 0, pulse: 0 };
+  return { active: false, x: 0, y: 0, value: 0, pulse: 0, red: false };
 }
 
 const Loot = {
-  /** Бросить кристалл опыта в точке (x, y). */
+  /**
+   * Бросить кристалл опыта в точке (x, y).
+   * Шаг 6: опыт увеличен в 5 раз. Начиная с 3-й волны —
+   * 15% шанс красного кристалла (даёт опыт в 20 раз больше базового).
+   */
   dropXP(pool, x, y, value) {
+    const xp = pool.spawn();
+    if (!xp) return null;
+    xp.x = x; xp.y = y;
+    xp.pulse = 0;
+
+    // Шаг 6: базовый опыт ×5
+    let finalValue = value * 5;
+
+    // Шаг 6: красный кристалл (15% шанс начиная с 3-й волны)
+    const waveIndex = (window.Game && Game.waveIndex) || 0;
+    if (waveIndex >= 3 && Math.random() < 0.15) {
+      xp.red = true;
+      finalValue = value * 20;  // 20x от оригинального значения
+    } else {
+      xp.red = false;
+    }
+
+    xp.value = finalValue;
+    return xp;
+  },
+
+  /**
+   * Бросить кристалл опыта без модификаторов (используется боссом
+   * для дропа уже посчитанного значения).
+   */
+  dropXPRaw(pool, x, y, value) {
     const xp = pool.spawn();
     if (!xp) return null;
     xp.x = x; xp.y = y;
     xp.value = value;
     xp.pulse = 0;
+    xp.red = false;
     return xp;
   },
 
@@ -55,13 +86,30 @@ const Loot = {
       if (!x.active) continue;
       if (x.x < minX - 20 || x.x > maxX + 20 || x.y < minY - 20 || x.y > maxY + 20) continue;
       const pulse = 1 + Math.sin(x.pulse * 6) * 0.18;
-      ctx.fillStyle = '#3ddc84';
-      ctx.shadowColor = 'rgba(60, 220, 132, 0.7)';
-      ctx.shadowBlur = 10;
-      ctx.beginPath();
-      ctx.arc(x.x, x.y, 6 * pulse, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
+      if (x.red) {
+        // Красный кристалл: крупнее, с красным свечением
+        ctx.fillStyle = '#ff3333';
+        ctx.shadowColor = 'rgba(255, 50, 50, 0.9)';
+        ctx.shadowBlur = 14;
+        ctx.beginPath();
+        ctx.arc(x.x, x.y, 8 * pulse, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        // Внутренний блик
+        ctx.fillStyle = 'rgba(255, 200, 200, 0.6)';
+        ctx.beginPath();
+        ctx.arc(x.x - 2, x.y - 2, 3 * pulse, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        // Обычный зелёный кристалл
+        ctx.fillStyle = '#3ddc84';
+        ctx.shadowColor = 'rgba(60, 220, 132, 0.7)';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(x.x, x.y, 6 * pulse, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
     }
   },
 

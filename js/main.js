@@ -130,6 +130,10 @@ const Game = {
     // Шаг 5: секретный сундук (даётся при открытии секретной комнаты)
     this.secretChest = null;
 
+    // Шаг 6: мини-боссы
+    this.bossChest = null;  // золотой сундук после убийства босса
+    if (window.Bosses) Bosses.init();
+
     // Шаг 4: мимик
     this.mimicState = (window.Enemies && Enemies.initMimicState)
       ? Enemies.initMimicState()
@@ -310,14 +314,18 @@ const Game = {
       // Замедление применим в Player.update в этот же кадр в следующий раз —
       // здесь подкорректируем позицию: поскольку Player уже сдвинулся,
       // компенсируем "лишнее" движение, если есть slow > 0.
-      if (eff.slow > 0) {
+      let totalSlow = eff.slow || 0;
+      // Шаг 6: замедление от паутины босса
+      if (this.player.webSlow && this.player.webSlow > 0) {
+        totalSlow = Math.max(totalSlow, 0.50);
+      }
+      if (totalSlow > 0) {
         const move = Input.getMove();
         const ml = Math.hypot(move.x, move.y);
         if (ml > 0.001) {
-          // Откатываем часть смещения: dx_lost = -move * speed * dt * slow
           const speed = CONFIG.PLAYER.SPEED * this.player.speedMul;
-          this.player.x -= move.x * speed * dt * eff.slow;
-          this.player.y -= move.y * speed * dt * eff.slow;
+          this.player.x -= move.x * speed * dt * totalSlow;
+          this.player.y -= move.y * speed * dt * totalSlow;
         }
       }
     }
@@ -326,6 +334,7 @@ const Game = {
     if (window.GameMap && GameMap.update) GameMap.update(dt);
 
     this.updateWaves(dt);
+    this.updateBoss(dt);
     Enemies.update(this.enemies, this.player, dt);
 
     // Оружия в слотах
@@ -338,6 +347,8 @@ const Game = {
       if (typeof w.tick === 'function') w.tick(dt);
       w.update(this.player, this.enemies, this.projectiles, dt, weaponHelpers);
     }
+    // Шаг 6: проверка мили-оружий на попадание в босса
+    this.checkMeleeVsBoss();
 
     // Встроенный Magic Missile (не в слотах)
     this.updateBuiltInMissile(dt);
@@ -350,9 +361,25 @@ const Game = {
       dt
     );
 
+    // Шаг 6: проверка попадания снарядов игрока в босса
+    this.checkProjectilesVsBoss();
+    // Шаг 6: хоминг для снарядов босса (лич)
+    this.updateHomingProjectiles(dt);
+
+    // Шаг 6: яд от паука-королевы
+    if (this.player.poison && this.player.poison.remaining > 0) {
+      this.player.hp -= this.player.poison.dps * dt;
+      this.player.poison.remaining -= dt;
+    }
+    // Шаг 6: замедление от паутины
+    if (this.player.webSlow && this.player.webSlow > 0) {
+      this.player.webSlow -= dt;
+    }
+
     // Лут и частицы
     Loot.update(this.xpDrops, this.player, dt);
     this.updateChest(dt);
+    this.updateBossChest(dt);
     this.updateParticles(dt);
 
     // Левелап
@@ -649,7 +676,9 @@ const Game = {
     // Выпадение опыта по конфигу типа
     const cfg = e.cfg;
     const dropChance = (cfg && cfg.dropChance != null) ? cfg.dropChance : 0.6;
-    if (Math.random() < dropChance) {
+    // Шаг 6: увеличение выпадения кристаллов на 100% (удвоение шанса, макс 1.0)
+    const finalDropChance = Math.min(1.0, dropChance * 2);
+    if (Math.random() < finalDropChance) {
       let xpMin = (cfg && cfg.xp) ? cfg.xp[0] : CONFIG.ENEMY.XP_MIN;
       let xpMax = (cfg && cfg.xp) ? cfg.xp[1] : CONFIG.ENEMY.XP_MAX;
       const value = Utils.randInt(xpMin, xpMax);
@@ -700,6 +729,10 @@ const Game = {
     if (this.secretChest) Chest.render(ctx, this.secretChest, cam, this.viewW, this.viewH);
     this.renderParticles(ctx, cam);
     Enemies.render(ctx, this.enemies, cam, this.viewW, this.viewH);
+    // Шаг 6: рендер босса
+    if (window.Bosses) Bosses.render(ctx, cam, this.viewW, this.viewH);
+    // Шаг 6: рендер золотого сундука босса
+    if (this.bossChest && window.Bosses) Bosses.renderBossChest(ctx, this.bossChest, cam, this.viewW, this.viewH);
     Player.render(ctx, this.player);
 
     // Оверлей оружий поверх героя (например, взмах меча)
@@ -711,12 +744,189 @@ const Game = {
 
     ctx.restore();
 
+    // Шаг 6: полоса HP босса (экранные координаты)
+    if (window.Bosses) {
+      // Тряска экрана
+      if (Bosses.screenShake > 0) {
+        ctx.save();
+        ctx.translate(Bosses.screenShakeX, Bosses.screenShakeY);
+      }
+      Bosses.renderHPBar(ctx, this.viewW, this.viewH);
+      Bosses.renderDefeatedMsg(ctx, this.viewW, this.viewH);
+      if (Bosses.screenShake > 0) {
+        ctx.restore();
+      }
+    }
+
     // Индикатор сундука — экранные координаты, без сдвига камеры
     if (this.chest) Chest.renderIndicator(ctx, this.chest, cam, this.viewW, this.viewH);
     if (this.secretChest) Chest.renderIndicator(ctx, this.secretChest, cam, this.viewW, this.viewH);
 
     // Шаг 5: миникарта
     if (GameMap.renderMinimap) GameMap.renderMinimap(ctx, this.player, this.viewW, this.viewH);
+  },
+
+  /* ============================================================
+     Шаг 6: Босс — таймер, апдейт, проверка снарядов, хоминг, сундук.
+     ============================================================ */
+
+  /** Таймер и спавн босса. */
+  updateBoss(dt) {
+    if (!window.Bosses) return;
+    Bosses.update(this.player, dt);
+
+    // Проверка таймера спавна
+    if (!Bosses.isAlive() && !Bosses.current && Bosses.bossIndex < BOSS_CONFIG.SPAWN_TIMES.length) {
+      if (this.runTime >= Bosses.nextSpawnTime) {
+        const bossId = BOSS_CONFIG.SPAWN_ORDER[Bosses.bossIndex];
+        Bosses.spawn(bossId, this.player);
+      }
+    }
+  },
+
+  /** Проверка попадания снарядов игрока в босса. */
+  checkProjectilesVsBoss() {
+    if (!window.Bosses || !Bosses.isAlive()) return;
+    const boss = Bosses.current;
+    const bossR = Math.max(boss.cfg.w, boss.cfg.h) * 0.45;
+    const items = this.projectiles.items;
+    for (let i = 0; i < items.length; i++) {
+      const p = items[i];
+      if (!p.active || p.owner !== 'player') continue;
+      const dx = boss.x - p.x, dy = boss.y - p.y;
+      const hitR = bossR + p.radius;
+      if (dx * dx + dy * dy <= hitR * hitR) {
+        Bosses.damage(p.damage);
+        p.active = false;
+        // Частицы попадания
+        if (window.Particles) {
+          Particles.burst(p.x, p.y, 3, {
+            color: '#ffffff', speedMin: 30, speedMax: 80,
+            lifeMin: 0.1, lifeMax: 0.25, sizeMin: 2, sizeMax: 3,
+          });
+        }
+      }
+    }
+  },
+
+  /** Проверка мили-оружий на попадание в босса (отдельная проверка по swing). */
+  checkMeleeVsBoss() {
+    if (!window.Bosses || !Bosses.isAlive()) return;
+    const boss = Bosses.current;
+    const p = this.player;
+    for (const w of p.weaponSlots) {
+      if (!w || !w.swing || !w.swing.active) continue;
+      // Только на первом кадре свинга (t ≈ 0)
+      if (w.swing.t > 0.05) continue;
+      const dx = boss.x - p.x, dy = boss.y - p.y;
+      const d2 = dx * dx + dy * dy;
+      const r = w.radius || 60;
+      if (d2 > r * r) continue;
+      const a = Math.atan2(dy, dx);
+      let diff = a - w.swing.angle;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      const halfArc = (w.arc || Math.PI) * 0.5;
+      if (Math.abs(diff) <= halfArc) {
+        const damage = (w.damageAt ? w.damageAt() : 20) * p.damageMul;
+        Bosses.damage(damage);
+      }
+    }
+  },
+
+  /** Хоминг для снарядов босса (лич: boss_bolt). */
+  updateHomingProjectiles(dt) {
+    if (!this.player) return;
+    const items = this.projectiles.items;
+    for (let i = 0; i < items.length; i++) {
+      const p = items[i];
+      if (!p.active || !p.homing) continue;
+      const dx = this.player.x - p.x, dy = this.player.y - p.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      const strength = p.homingStrength || 2.0;
+      const speed = Math.hypot(p.vx, p.vy) || 250;
+      // Плавно поворачиваем вектор скорости к игроку
+      const targetVx = (dx / dist) * speed;
+      const targetVy = (dy / dist) * speed;
+      p.vx += (targetVx - p.vx) * strength * dt;
+      p.vy += (targetVy - p.vy) * strength * dt;
+      // Нормализуем, чтобы скорость не менялась
+      const curSpeed = Math.hypot(p.vx, p.vy) || 1;
+      p.vx = (p.vx / curSpeed) * speed;
+      p.vy = (p.vy / curSpeed) * speed;
+      p.angle = Math.atan2(p.vy, p.vx);
+    }
+  },
+
+  /** Обновление золотого сундука босса (подбор без d20). */
+  updateBossChest(dt) {
+    if (!this.bossChest) return;
+    // Проверка подбора
+    const r = 30 + this.player.size * 0.5;
+    const dx = this.bossChest.x - this.player.x;
+    const dy = this.bossChest.y - this.player.y;
+    if (dx * dx + dy * dy <= r * r) {
+      this.openBossChest();
+    }
+  },
+
+  /** Открытие золотого сундука босса: сразу карты без d20, с гарантированной редкой. */
+  openBossChest() {
+    if (!this.bossChest) return;
+    if (window.Particles) Particles.chestOpen(this.bossChest.x, this.bossChest.y);
+    this.bossChest = null;
+
+    this.state = 'chest';
+    Input.releaseJoystick();
+
+    // Карты: 3 штуки, одна гарантированно "сильная"
+    const choices = this._buildBossChestChoices();
+    UI.showChestPick(20, choices, (chosen) => {
+      if (chosen) chosen.apply(this.player);
+      this._afterChestClose();
+    });
+  },
+
+  /** Формирует набор карт для сундука босса (одна гарантированно редкая). */
+  _buildBossChestChoices() {
+    const p = this.player;
+    const choices = [];
+
+    // 1) Попытка предложить эволюцию
+    const ready = (window.Evolutions && Evolutions.findReady) ? Evolutions.findReady(p) : [];
+    if (ready.length > 0) {
+      const pair = ready[0];
+      const r = pair.recipe;
+      choices.push({
+        kind: 'weapon',
+        icon: r.resultIcon,
+        title: `Эволюция: ${r.resultName}`,
+        desc: r.desc,
+        apply(player) { Evolutions.apply(player, r); },
+      });
+    }
+
+    // 2) Заполняем оставшиеся слоты из buildLevelUpChoices
+    const fillers = this.buildLevelUpChoices(3 - choices.length + 2); // больше, чтобы было из чего выбрать
+    // Убираем дубликаты
+    for (const f of fillers) {
+      if (choices.length >= 3) break;
+      if (!choices.find(c => c.title === f.title)) choices.push(f);
+    }
+
+    // Если мало вариантов — добавляем мощные разовые
+    while (choices.length < 3) {
+      const big = this._buildBigReward(p);
+      choices.push({
+        kind: 'basic',
+        icon: '★',
+        title: big.title,
+        desc: big.desc,
+        apply(player) { big.apply(player); },
+      });
+    }
+
+    return choices.slice(0, 3);
   },
 
   renderParticles(ctx, cam) {

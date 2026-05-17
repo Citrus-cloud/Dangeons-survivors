@@ -23,7 +23,8 @@ function createProjectile() {
     active: false,
     /** Тип отрисовки/логики:
      *  - игроцкие: 'missile' | 'arrow' | 'dagger' | 'fireball'
-     *  - вражеские: 'arrow_e' | 'magebolt' | 'breath' */
+     *  - вражеские: 'arrow_e' | 'magebolt' | 'breath'
+     *  - босс: 'boss_bolt' | 'boss_web' | 'boss_fireball' */
     kind: 'missile',
     /** 'player' (по умолчанию) — бьёт врагов; 'enemy' — бьёт игрока. */
     owner: 'player',
@@ -38,6 +39,12 @@ function createProjectile() {
     explodeRadius: 0,
     // Идентификатор источника (имя оружия / тип врага)
     source: '',
+    // Шаг 6: самонаведение (boss_bolt лича)
+    homing: false,
+    homingStrength: 0,
+    // Шаг 6: замедление (boss_web паука-королевы)
+    slowPct: 0,
+    slowDuration: 0,
   };
 }
 
@@ -93,6 +100,20 @@ const Projectiles = {
           const dx = player.x - m.x, dy = player.y - m.y;
           if (dx * dx + dy * dy <= r * r) {
             player.hp -= m.damage;
+            // Шаг 6: паутина босса — замедление
+            if (m.kind === 'boss_web' && m.slowPct) {
+              player.webSlow = m.slowDuration || 2.0;
+            }
+            // Шаг 6: огненный шар босса — AoE взрыв
+            if (m.kind === 'boss_fireball' && m.explodeRadius > 0) {
+              if (window.Particles) {
+                Particles.ring(m.x, m.y, m.explodeRadius, 0.3, 'rgba(255, 100, 0, 0.8)', 4);
+                Particles.burst(m.x, m.y, 8, {
+                  color: '#ff6600', speedMin: 50, speedMax: 140,
+                  lifeMin: 0.3, lifeMax: 0.5, sizeMin: 2, sizeMax: 4,
+                });
+              }
+            }
             m.active = false;
           }
         }
@@ -268,6 +289,58 @@ const Projectiles = {
           ctx.fillStyle = '#ffe28a';
           ctx.beginPath();
           ctx.arc(m.x, m.y, m.radius * 0.55, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        }
+        // Шаг 6: снаряды боссов
+        case 'boss_bolt': {
+          // Самонаводящаяся стрела лича — фиолетовая с тёмным ядром
+          ctx.shadowColor = 'rgba(160, 0, 255, 0.95)';
+          ctx.shadowBlur = 16;
+          ctx.fillStyle = '#8b00ff';
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = '#1a001a';
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, m.radius * 0.4, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        }
+        case 'boss_web': {
+          // Паутинный снаряд — белый с сеткой
+          ctx.shadowColor = 'rgba(220, 220, 240, 0.8)';
+          ctx.shadowBlur = 8;
+          ctx.fillStyle = '#e8e8f0';
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+          // Крестик внутри (паутина)
+          ctx.strokeStyle = 'rgba(180, 180, 200, 0.7)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(m.x - m.radius * 0.6, m.y);
+          ctx.lineTo(m.x + m.radius * 0.6, m.y);
+          ctx.moveTo(m.x, m.y - m.radius * 0.6);
+          ctx.lineTo(m.x, m.y + m.radius * 0.6);
+          ctx.stroke();
+          break;
+        }
+        case 'boss_fireball': {
+          // Огненный шар босса — крупный, пульсирующий
+          const fbPulse = 1 + Math.sin(Date.now() * 0.01) * 0.15;
+          ctx.shadowColor = 'rgba(255, 80, 0, 0.95)';
+          ctx.shadowBlur = 22;
+          ctx.fillStyle = '#ff4500';
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, m.radius * fbPulse, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = '#ffcc00';
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, m.radius * 0.5 * fbPulse, 0, Math.PI * 2);
           ctx.fill();
           break;
         }
