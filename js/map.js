@@ -1214,28 +1214,8 @@ const GameMap = {
     }
   },
 
-  _renderTorches(ctx, cam, vw, vh) {
-    const t = this.time;
-    for (const f of this.dungeon.decor.torches) {
-      if (f.x < cam.x - 20 || f.x > cam.x + vw + 20 ||
-          f.y < cam.y - 20 || f.y > cam.y + vh + 20) continue;
-      const flicker = 0.85 + 0.15 * Math.sin(t * 7 + f.phase) +
-                      0.05 * Math.sin(t * 13 + f.phase * 1.7);
-      const r = 4 + 1.5 * Math.sin(t * 5 + f.phase);
-      // Свечение
-      ctx.shadowColor = 'rgba(255, 160, 60, 0.7)';
-      ctx.shadowBlur = 14 * flicker;
-      ctx.fillStyle = 'rgba(255, 180, 80, ' + (0.85 * flicker) + ')';
-      ctx.beginPath();
-      ctx.arc(f.x, f.y, r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      // Сердцевина
-      ctx.fillStyle = '#fff5b8';
-      ctx.beginPath();
-      ctx.arc(f.x, f.y, r * 0.35, 0, Math.PI * 2);
-      ctx.fill();
-    }
+  _renderTorches(/* ctx, cam, vw, vh */) {
+    // Декоративные факелы/огоньки отключены — визуальный мусор.
   },
 
   _renderTraps(ctx, cam, vw, vh) {
