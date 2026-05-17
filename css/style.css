@@ -228,3 +228,122 @@ html, body {
   .slot .slot-icon { font-size: 16px; }
   .card { width: 110px; min-height: 150px; }
 }
+
+
+
+/* ============================================================
+   Step 3: Chest / d20 / Evolution overlay
+   ============================================================ */
+.chest-panel {
+  background: #1c1c1c;
+  border: 2px solid #ffd84a;
+  border-radius: 10px;
+  padding: 18px 22px;
+  max-width: 92vw;
+  display: flex; flex-direction: column; align-items: center;
+  box-shadow: 0 0 24px rgba(255, 216, 74, 0.35);
+}
+.d20-title {
+  font-size: 22px;
+  letter-spacing: 1px;
+  color: #ffd84a;
+  text-shadow: 1px 1px 0 #000;
+  margin-bottom: 4px;
+}
+.d20-sub {
+  font-size: 13px;
+  color: #ddd;
+  margin-bottom: 14px;
+}
+.d20-die {
+  width: 110px; height: 110px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 56px;
+  font-weight: bold;
+  color: #fff;
+  background: #1a1a1a;
+  border: 3px solid #555;
+  border-radius: 14px;
+  text-shadow: 1px 1px 0 #000;
+  margin-bottom: 6px;
+  transition: transform 0.12s ease, border-color 0.18s ease, color 0.18s ease;
+}
+.d20-die.final { transform: scale(1.08); }
+.d20-die.low   { border-color: #888;    color: #d8d8d8; }
+.d20-die.good  { border-color: #2980d9; color: #8ebfff; }
+.d20-die.crit  {
+  border-color: #ffd84a;
+  color: #ffe48a;
+  box-shadow: 0 0 24px rgba(255, 216, 74, 0.7);
+}
+.d20-mini {
+  display: inline-block;
+  min-width: 22px; padding: 1px 6px;
+  border-radius: 4px;
+  background: #333;
+  font-weight: bold;
+}
+.d20-mini.low  { background: #444; color: #ddd; }
+.d20-mini.good { background: #1f4f8a; color: #cfe1ff; }
+.d20-mini.crit { background: #5a4a10; color: #ffe48a; border: 1px solid #ffd84a; }
+
+.reward-desc {
+  margin: 10px 0 4px;
+  font-size: 14px;
+  color: #ddd;
+  text-align: center;
+  max-width: 360px;
+}
+
+.cards-row {
+  display: flex; gap: 10px;
+  flex-wrap: wrap; justify-content: center;
+  margin-top: 8px;
+  max-width: 100%;
+}
+
+.btn-secondary {
+  background: #444;
+  margin-left: 10px;
+}
+.btn-secondary:hover  { background: #555; }
+.btn-secondary:active { background: #333; }
+
+/* Evolution dialog */
+.evo-row {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; margin: 8px 0 12px;
+  flex-wrap: wrap;
+}
+.evo-card {
+  width: 110px; min-height: 110px;
+  background: #232323;
+  border: 2px solid #555;
+  border-radius: 6px;
+  padding: 8px;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+}
+.evo-card.evo-result {
+  border-color: #ffd84a;
+  background: #2a2410;
+  box-shadow: 0 0 14px rgba(255, 216, 74, 0.45);
+  width: 150px;
+}
+.evo-icon { font-size: 30px; margin-bottom: 4px; }
+.evo-name { font-size: 12px; font-weight: bold; color: #ffe084; }
+.evo-lvl  { font-size: 11px; color: #aaa; margin-top: 2px; }
+.evo-desc { font-size: 11px; color: #ddd; margin-top: 4px; line-height: 1.3; }
+.evo-plus,
+.evo-arrow {
+  font-size: 24px; color: #ffd84a;
+  font-weight: bold;
+  padding: 0 4px;
+}
+.evo-buttons { display: flex; gap: 10px; }
+
+@media (max-width: 480px) {
+  .d20-die { width: 90px; height: 90px; font-size: 44px; }
+  .evo-card { width: 100px; min-height: 100px; }
+  .evo-card.evo-result { width: 130px; }
+}

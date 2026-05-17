@@ -15,6 +15,11 @@ const UI = {
   cardsEl: null, lvlNum: null,
   goTime: null, goKills: null, goLevel: null,
 
+  // Шаг 3: оверлей сундука (создаётся динамически)
+  chestOverlay: null,
+  d20DieEl: null,
+  chestPanelEl: null,         // контейнер для текущего "экрана" внутри overlay
+
   // Слоты
   weaponSlotEls: [],
   abilitySlotEls: [],
@@ -41,6 +46,21 @@ const UI = {
 
     // Создать ячейки слотов
     this._buildSlotColumns();
+
+    // Создать оверлей сундука (динамически, чтобы не трогать index.html)
+    this._buildChestOverlay();
+  },
+
+  /** Сбор оверлея сундука: контейнер + общая 'панель', обновляемая под этап. */
+  _buildChestOverlay() {
+    const ov = document.createElement('div');
+    ov.id = 'chestOverlay';
+    ov.className = 'overlay';
+    ov.innerHTML =
+      '<div id="chestPanel" class="chest-panel"></div>';
+    document.body.appendChild(ov);
+    this.chestOverlay = ov;
+    this.chestPanelEl = ov.querySelector('#chestPanel');
   },
 
   _buildSlotColumns() {
@@ -77,6 +97,7 @@ const UI = {
     this.pauseOverlay.classList.remove('active');
     this.levelOverlay.classList.remove('active');
     this.gameOverOverlay.classList.remove('active');
+    if (this.chestOverlay) this.chestOverlay.classList.remove('active');
   },
 
   showPause() { this.hideAll(); this.pauseOverlay.classList.add('active'); },
@@ -192,6 +213,144 @@ const UI = {
     iconEl.textContent = ability.icon || '?';
     levelEl.textContent = Utils.roman(ability.level);
     cdEl.style.height = '100%'; // пассивки всегда "активны"
+  },
+
+
+  /* ============================================================
+     Шаг 3: окна сундука — d20-бросок, награда, эволюция.
+     ============================================================ */
+
+  /**
+   * Анимированный бросок d20.
+   * Показывает быстро меняющиеся цифры 1..20, затем фиксирует финальную
+   * (анимация ~1.0–1.3 с). По завершении — onDone(finalRoll).
+   */
+  showD20Roll(finalRoll, onDone) {
+    this.hideAll();
+    this.chestPanelEl.innerHTML =
+      '<div class="d20-title">СУНДУК</div>' +
+      '<div class="d20-sub">Бросок d20…</div>' +
+      '<div id="d20Die" class="d20-die">?</div>';
+    this.chestOverlay.classList.add('active');
+    const dieEl = this.chestPanelEl.querySelector('#d20Die');
+
+    // Стадия 1: быстрая прокрутка (≈0.7 с, ~14 смен)
+    let elapsed = 0;
+    const rollDuration = 0.7;
+    const tickStart = performance.now();
+    const tick = () => {
+      const now = performance.now();
+      elapsed = (now - tickStart) / 1000;
+      if (elapsed < rollDuration) {
+        dieEl.textContent = String(1 + Math.floor(Math.random() * 20));
+        // ускоряющееся затухание интервала
+        const interval = 30 + (elapsed / rollDuration) * 90;
+        setTimeout(tick, interval);
+      } else {
+        // Стадия 2: финал
+        dieEl.textContent = String(finalRoll);
+        dieEl.classList.add('final');
+        // Цвет в зависимости от диапазона
+        if (finalRoll >= 19)      dieEl.classList.add('crit');
+        else if (finalRoll >= 11) dieEl.classList.add('good');
+        else                       dieEl.classList.add('low');
+        // Пауза, затем callback
+        setTimeout(() => onDone && onDone(finalRoll), 700);
+      }
+    };
+    tick();
+  },
+
+  /**
+   * Окно с описанием результата (для бросков 1..10, либо когда вместо
+   * эволюции выпала "разовая" награда). reward = { title, desc, kind }.
+   * Кнопка "Забрать" закрывает окно.
+   */
+  showChestReward(roll, reward, onAccept) {
+    this.hideAll();
+    this.chestPanelEl.innerHTML =
+      `<div class="d20-title">${reward.title || 'Награда'}</div>` +
+      `<div class="d20-sub">Бросок: <span class="d20-mini ${this._rollClass(roll)}">${roll}</span></div>` +
+      `<div class="reward-desc">${reward.desc || ''}</div>` +
+      '<button id="chestOk" class="btn">Забрать</button>';
+    this.chestOverlay.classList.add('active');
+    this.chestPanelEl.querySelector('#chestOk').addEventListener('click', () => {
+      this.hideAll();
+      onAccept && onAccept();
+    });
+  },
+
+  /**
+   * Окно "карточка-выбор" (как левелап, но без увеличения уровня).
+   * Используется для бросков 11..18.
+   */
+  showChestPick(roll, choices, onPick) {
+    this.hideAll();
+    let html =
+      '<div class="d20-title">УЛУЧШЕНИЕ</div>' +
+      `<div class="d20-sub">Бросок: <span class="d20-mini ${this._rollClass(roll)}">${roll}</span> — выберите карту</div>` +
+      '<div id="chestCards" class="cards-row"></div>';
+    this.chestPanelEl.innerHTML = html;
+    const row = this.chestPanelEl.querySelector('#chestCards');
+    if (!choices || choices.length === 0) {
+      const el = document.createElement('div');
+      el.className = 'card basic';
+      el.innerHTML = '<div class="card-icon">★</div><div class="card-title">Продолжить</div><div class="card-desc">Нет доступных улучшений.</div>';
+      el.addEventListener('click', () => { this.hideAll(); onPick && onPick(null); });
+      row.appendChild(el);
+    } else {
+      choices.forEach((c) => {
+        const el = document.createElement('div');
+        el.className = 'card ' + (c.kind || 'basic');
+        el.innerHTML =
+          `<div class="card-icon">${c.icon || '★'}</div>` +
+          `<div class="card-title">${c.title}</div>` +
+          `<div class="card-desc">${c.desc}</div>`;
+        el.addEventListener('click', () => { this.hideAll(); onPick && onPick(c); });
+        row.appendChild(el);
+      });
+    }
+    this.chestOverlay.classList.add('active');
+  },
+
+  /**
+   * Окно эволюции: оружие + пассивка → результат.
+   * onChoice(true) — принять, onChoice(false) — отказаться.
+   * Если игрок отказывается, вызывающий код может предложить fallback (например,
+   * обычное улучшение).
+   */
+  showEvolutionDialog(roll, pair, onChoice) {
+    this.hideAll();
+    const w = pair.weapon, a = pair.ability, r = pair.recipe;
+    this.chestPanelEl.innerHTML =
+      '<div class="d20-title">ЭВОЛЮЦИЯ!</div>' +
+      `<div class="d20-sub">Бросок: <span class="d20-mini crit">${roll}</span></div>` +
+      '<div class="evo-row">' +
+        `<div class="evo-card"><div class="evo-icon">${w.icon}</div><div class="evo-name">${w.name}</div><div class="evo-lvl">ур. ${Utils.roman(w.level)}</div></div>` +
+        '<div class="evo-plus">+</div>' +
+        `<div class="evo-card"><div class="evo-icon">${a.icon}</div><div class="evo-name">${a.name}</div><div class="evo-lvl">ур. ${Utils.roman(a.level)}</div></div>` +
+        '<div class="evo-arrow">→</div>' +
+        `<div class="evo-card evo-result"><div class="evo-icon">${r.resultIcon}</div><div class="evo-name">${r.resultName}</div><div class="evo-desc">${r.desc}</div></div>` +
+      '</div>' +
+      '<div class="evo-buttons">' +
+        '<button id="evoAccept" class="btn">Принять</button>' +
+        '<button id="evoDecline" class="btn btn-secondary">Отказаться</button>' +
+      '</div>';
+    this.chestOverlay.classList.add('active');
+    this.chestPanelEl.querySelector('#evoAccept').addEventListener('click', () => {
+      this.hideAll();
+      onChoice && onChoice(true);
+    });
+    this.chestPanelEl.querySelector('#evoDecline').addEventListener('click', () => {
+      this.hideAll();
+      onChoice && onChoice(false);
+    });
+  },
+
+  _rollClass(roll) {
+    if (roll >= 19) return 'crit';
+    if (roll >= 11) return 'good';
+    return 'low';
   },
 };
 

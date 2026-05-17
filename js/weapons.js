@@ -114,6 +114,26 @@ const Projectiles = {
         onDamage(e, m.damage);
       }
     }
+    // Визуальный эффект взрыва (расширяющееся кольцо)
+    if (window.Particles && window.Particles.ring) {
+      const isSoul = (m.source === 'soul_flame');
+      Particles.ring(
+        m.x, m.y, m.explodeRadius,
+        0.35,
+        isSoul ? 'rgba(180, 220, 255, 0.95)' : 'rgba(255, 140, 40, 0.9)',
+        4
+      );
+      Particles.burst(m.x, m.y, 8, {
+        color: isSoul ? '#bfe1ff' : '#ff9a3a',
+        speedMin: 60, speedMax: 180,
+        lifeMin: 0.3, lifeMax: 0.6,
+        sizeMin: 2, sizeMax: 4,
+      });
+    }
+    // Эволюция Soul Flame: притягиваем ВСЕ кристаллы опыта на карте
+    if (m.source === 'soul_flame' && window.Game && Game.magnetizeAllXP) {
+      Game.magnetizeAllXP();
+    }
   },
 
   /** Отрисовка снарядов с учётом видимой области. */
@@ -453,6 +473,283 @@ class FireballWeapon extends Weapon {
 }
 
 
+/* ============================================================
+   EVOLUTIONS — эволюционные оружия (Шаг 3).
+
+   Базовый класс EvolutionWeapon помечает оружие как эволюционное
+   (isEvolved = true), хранит ссылку evolvedFrom (id базового
+   оружия) и блокирует возможность дальнейших эволюций.
+   ============================================================ */
+class EvolutionWeapon extends Weapon {
+  constructor(cfg) {
+    super(cfg);
+    this.isEvolved   = true;
+    this.evolvedFrom = cfg.evolvedFrom || '';
+  }
+}
+
+
+/* ---------- 1) Вампирский клинок: меч + регенерация ----------
+   Ближний бой, урон 25 (база), +3 HP за каждое попадание. */
+class VampireBladeWeapon extends EvolutionWeapon {
+  constructor() {
+    super({
+      id: 'vampire_blade', name: 'Вампирский клинок', type: 'melee',
+      baseCooldown: 0.7, baseDamage: 25, icon: '🩸',
+      evolvedFrom: 'sword',
+    });
+    this.radius    = 70;
+    this.arc       = Math.PI; // 180°
+    this.swingTime = 0.18;
+    this.swing     = { active: false, t: 0, angle: 0 };
+    this.lifesteal = 3;       // HP за попадание
+  }
+  tick(dt) {
+    if (this.swing.active) {
+      this.swing.t += dt;
+      if (this.swing.t >= this.swingTime) this.swing.active = false;
+    }
+  }
+  doAttack(player, enemies, _projectiles, helpers) {
+    const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.radius);
+    if (!target) return false;
+    const damage = this.damageAt() * player.damageMul;
+    const dirAngle = Math.atan2(target.y - player.y, target.x - player.x);
+    const halfArc = this.arc * 0.5;
+    const r2 = this.radius * this.radius;
+    const items = enemies.items;
+    let hits = 0;
+    for (let i = 0; i < items.length; i++) {
+      const e = items[i];
+      if (!e.active) continue;
+      const dx = e.x - player.x, dy = e.y - player.y;
+      if (dx * dx + dy * dy > r2) continue;
+      const a = Math.atan2(dy, dx);
+      let diff = a - dirAngle;
+      while (diff > Math.PI)  diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      if (Math.abs(diff) <= halfArc) {
+        helpers.damageEnemy(e, damage);
+        hits++;
+      }
+    }
+    if (hits > 0) {
+      // Вампиризм: +3 HP за каждое попадание
+      const heal = this.lifesteal * hits;
+      player.hp = Math.min(player.maxHp, player.hp + heal);
+      // Маленькие красные искры — индикация вампиризма
+      if (window.Particles) {
+        Particles.burst(player.x, player.y, 4, {
+          color: '#c0392b',
+          speedMin: 30, speedMax: 80,
+          lifeMin: 0.25, lifeMax: 0.45,
+          sizeMin: 2, sizeMax: 3,
+        });
+      }
+    }
+    this.swing.active = true;
+    this.swing.t = 0;
+    this.swing.angle = dirAngle;
+    return true;
+  }
+  renderOverlay(ctx, player) {
+    if (!this.swing.active) return;
+    const t = this.swing.t / this.swingTime;
+    const alpha = (1 - t) * 0.9;
+    const r = this.radius;
+    const half = this.arc * 0.5;
+    const a0 = this.swing.angle - half + this.arc * t * 0.4;
+    const a1 = this.swing.angle + half + this.arc * t * 0.4;
+    // Кроваво-красный взмах
+    ctx.strokeStyle = `rgba(220, 60, 50, ${alpha})`;
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, r, a0, a1);
+    ctx.stroke();
+    ctx.strokeStyle = `rgba(255, 200, 200, ${alpha * 0.6})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, r - 5, a0, a1);
+    ctx.stroke();
+  }
+}
+
+
+/* ---------- 2) Скорострельный лук: лук + ускорение ----------
+   Стрельба очередями по 3 стрелы (с малым интервалом), урон 15. */
+class RapidBowWeapon extends EvolutionWeapon {
+  constructor() {
+    super({
+      id: 'rapid_bow', name: 'Скорострельный лук', type: 'ranged',
+      baseCooldown: 1.4, baseDamage: 15, icon: '🌪',
+      evolvedFrom: 'bow',
+    });
+    this.arrowSpeed   = 580;
+    this.arrowLife    = 1.6;
+    this.range        = 560;
+    this.burstCount   = 3;
+    this.burstInterval= 0.10; // секунда между стрелами в очереди
+    this._burstLeft   = 0;    // оставшиеся выстрелы текущей очереди
+    this._burstTimer  = 0;    // таймер до следующей стрелы в очереди
+    this._lastDir     = { x: 1, y: 0 };
+  }
+
+  // Переопределяем update, чтобы реализовать "очередь"
+  update(player, enemies, projectiles, dt /*, helpers */) {
+    // Пока идёт очередь — шлём стрелы по таймеру, не трогая основной CD
+    if (this._burstLeft > 0) {
+      this._burstTimer -= dt;
+      while (this._burstLeft > 0 && this._burstTimer <= 0) {
+        this._fireOne(player, projectiles, this._lastDir);
+        this._burstLeft -= 1;
+        this._burstTimer += this.burstInterval;
+      }
+      if (this._burstLeft <= 0) {
+        // Очередь завершена — стандартный кулдаун
+        this.cooldown = this.cooldownAt(player);
+      }
+      return;
+    }
+    // Обычный путь: ждём CD, выбираем цель, начинаем очередь
+    this.cooldown -= dt;
+    if (this.cooldown > 0) return;
+    const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range);
+    if (!target) { this.cooldown = 0.1; return; }
+    const dir = Utils.norm(target.x - player.x, target.y - player.y);
+    this._lastDir = dir;
+    this._burstLeft = this.burstCount;
+    this._burstTimer = 0; // выстрелим первую стрелу немедленно
+  }
+
+  _fireOne(player, projectiles, dir) {
+    const p = projectiles.spawn();
+    if (!p) return;
+    p.kind = 'arrow';
+    p.x = player.x; p.y = player.y;
+    // Маленький вертикальный разлёт между стрелами очереди
+    const jitter = (Math.random() - 0.5) * 0.05;
+    const a = Math.atan2(dir.y, dir.x) + jitter;
+    p.vx = Math.cos(a) * this.arrowSpeed;
+    p.vy = Math.sin(a) * this.arrowSpeed;
+    p.life = this.arrowLife;
+    p.damage = this.damageAt() * player.damageMul;
+    p.radius = 4;
+    p.angle = a;
+    p.source = this.id;
+  }
+}
+
+
+/* ---------- 3) Шквал клинков: кинжалы + усиление урона ----------
+   5 кинжалов веером, урон 12, крит. шанс 20% (×2). */
+class BladeStormWeapon extends EvolutionWeapon {
+  constructor() {
+    super({
+      id: 'blade_storm', name: 'Шквал клинков', type: 'multi',
+      baseCooldown: 1.4, baseDamage: 12, icon: '💥',
+      evolvedFrom: 'daggers',
+    });
+    this.speed     = 520;
+    this.life      = 1.2;
+    this.spread    = (18 * Math.PI) / 180;  // ±18° от центра
+    this.range     = 600;
+    this.count     = 5;
+    this.critChance= 0.20;
+    this.critMul   = 2.0;
+  }
+  doAttack(player, enemies, projectiles) {
+    let dx, dy;
+    const moveLen = Math.hypot(player.moveDir.x, player.moveDir.y);
+    if (moveLen > 0.1) {
+      dx = player.moveDir.x; dy = player.moveDir.y;
+    } else {
+      const t = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range);
+      if (!t) { dx = player.facing.x; dy = player.facing.y; }
+      else {
+        const n = Utils.norm(t.x - player.x, t.y - player.y);
+        dx = n.x; dy = n.y;
+      }
+    }
+    const baseAngle = Math.atan2(dy, dx);
+    // Веером: count кинжалов от -spread*2 до +spread*2
+    const total = this.count;
+    const halfSpan = this.spread * 2;
+    let any = false;
+    for (let i = 0; i < total; i++) {
+      // i = 0..total-1 -> offset = -halfSpan..+halfSpan
+      const t = total === 1 ? 0 : (i / (total - 1)) * 2 - 1; // -1..1
+      const a = baseAngle + t * halfSpan;
+      const p = projectiles.spawn();
+      if (!p) break;
+      p.kind = 'dagger';
+      p.x = player.x; p.y = player.y;
+      p.vx = Math.cos(a) * this.speed;
+      p.vy = Math.sin(a) * this.speed;
+      p.life = this.life;
+      let dmg = this.damageAt() * player.damageMul;
+      if (Math.random() < this.critChance) dmg *= this.critMul;
+      p.damage = dmg;
+      p.radius = 5;
+      p.angle = a;
+      p.source = this.id;
+      any = true;
+    }
+    return any;
+  }
+}
+
+
+/* ---------- 4) Пламя души: огненный шар + магнит опыта ----------
+   Взрыв (урон 30) дополнительно притягивает весь опыт на карте. */
+class SoulFlameWeapon extends EvolutionWeapon {
+  constructor() {
+    super({
+      id: 'soul_flame', name: 'Пламя души', type: 'aoe',
+      baseCooldown: 2.4, baseDamage: 30, icon: '👻',
+      evolvedFrom: 'fireball',
+    });
+    this.flightTime    = 0.6;
+    this.explodeRadius = 110;   // увеличенный AoE
+    this.range         = 720;
+    this.speed         = 300;
+  }
+  doAttack(player, enemies, projectiles) {
+    let dx, dy;
+    const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range);
+    if (target) {
+      const n = Utils.norm(target.x - player.x, target.y - player.y);
+      dx = n.x; dy = n.y;
+    } else {
+      const moveLen = Math.hypot(player.moveDir.x, player.moveDir.y);
+      if (moveLen > 0.1) { dx = player.moveDir.x; dy = player.moveDir.y; }
+      else { dx = player.facing.x; dy = player.facing.y; }
+    }
+    const p = projectiles.spawn();
+    if (!p) return false;
+    p.kind = 'fireball';
+    p.x = player.x; p.y = player.y;
+    p.vx = dx * this.speed;
+    p.vy = dy * this.speed;
+    p.life = this.flightTime;
+    p.damage = this.damageAt() * player.damageMul;
+    p.radius = 14;
+    p.explodeRadius = this.explodeRadius;
+    p.angle = Math.atan2(dy, dx);
+    p.source = this.id;        // помечаем "soul_flame" — обработчик взрыва видит
+    return true;
+  }
+}
+
+
+/* Реестр эволюционных оружий */
+const EVOLVED_WEAPON_FACTORIES = {
+  vampire_blade: () => new VampireBladeWeapon(),
+  rapid_bow:     () => new RapidBowWeapon(),
+  blade_storm:   () => new BladeStormWeapon(),
+  soul_flame:    () => new SoulFlameWeapon(),
+};
+
+
 /* ---------- Реестр доступных оружий ---------- */
 const WEAPON_FACTORIES = {
   sword:    () => new SwordWeapon(),
@@ -480,3 +777,11 @@ window.WEAPON_INFO = WEAPON_INFO;
 window.MAX_WEAPON_LEVEL = MAX_WEAPON_LEVEL;
 window.createProjectile = createProjectile;
 window.Projectiles = Projectiles;
+
+// Эволюции (Шаг 3)
+window.EvolutionWeapon = EvolutionWeapon;
+window.VampireBladeWeapon = VampireBladeWeapon;
+window.RapidBowWeapon = RapidBowWeapon;
+window.BladeStormWeapon = BladeStormWeapon;
+window.SoulFlameWeapon = SoulFlameWeapon;
+window.EVOLVED_WEAPON_FACTORIES = EVOLVED_WEAPON_FACTORIES;
