@@ -66,7 +66,7 @@ const CONFIG = {
 
   POOLS: {
     ENEMIES: 80,
-    PROJECTILES: 100,       // Шаг 4: расширено до 100 (плюс вражеские снаряды)
+    PROJECTILES: 120,       // Шаг 7: расширено до 120 (20 оружий)
     PARTICLES: 120,
     XP: 200,
     GROUND_EFFECTS: 30,     // Шаг 4: лужи/следы (гниль, слизь, огонь)
@@ -526,3 +526,42 @@ const BOSS_TYPES = {
 
 window.BOSS_CONFIG = BOSS_CONFIG;
 window.BOSS_TYPES = BOSS_TYPES;
+
+
+/* ============================================================
+   WEAPON_CONFIGS — базовые параметры всех 20 оружий (Шаг 7).
+   Формула прокачки: +15% урона, -5% кулдауна за уровень.
+   ============================================================ */
+const WEAPON_CONFIGS = {
+  // --- Существующие 4 ---
+  sword:    { baseDamage: 15, baseCooldown: 0.8,  type: 'melee'  },
+  bow:      { baseDamage: 12, baseCooldown: 1.2,  type: 'ranged' },
+  daggers:  { baseDamage: 6,  baseCooldown: 1.5,  type: 'multi'  },
+  fireball: { baseDamage: 20, baseCooldown: 2.5,  type: 'aoe'    },
+
+  // --- Категория 1: Ближний бой ---
+  axe:      { baseDamage: 22, baseCooldown: 1.0,  type: 'melee'  },
+  spear:    { baseDamage: 18, baseCooldown: 0.9,  type: 'melee'  },
+  hammer:   { baseDamage: 20, baseCooldown: 1.5,  type: 'melee'  },
+  whip:     { baseDamage: 14, baseCooldown: 0.7,  type: 'melee'  },
+
+  // --- Категория 2: Дальний бой ---
+  crossbow:       { baseDamage: 28, baseCooldown: 1.8, type: 'ranged' },
+  throwing_axes:  { baseDamage: 10, baseCooldown: 1.0, type: 'ranged' },
+  darts:          { baseDamage: 6,  baseCooldown: 0.6, type: 'ranged' },
+  sling:          { baseDamage: 14, baseCooldown: 0.9, type: 'ranged' },
+
+  // --- Категория 3: Магия ---
+  ice_arrow:      { baseDamage: 13, baseCooldown: 1.3, type: 'magic'  },
+  chain_lightning:{ baseDamage: 16, baseCooldown: 1.6, type: 'magic'  },
+  poison_cloud:   { baseDamage: 8,  baseCooldown: 2.0, type: 'magic'  },
+  spellbook:      { baseDamage: 10, baseCooldown: 0.8, type: 'magic'  },
+
+  // --- Категория 4: AoE / Контроль ---
+  firestorm:      { baseDamage: 18, baseCooldown: 2.5, type: 'aoe'    },
+  holy_aura:      { baseDamage: 4,  baseCooldown: 0,   type: 'aoe'    }, // постоянное (без CD)
+  spike_ring:     { baseDamage: 14, baseCooldown: 0,   type: 'aoe'    }, // постоянное вращение
+  earthquake:     { baseDamage: 15, baseCooldown: 3.0, type: 'aoe'    },
+};
+
+window.WEAPON_CONFIGS = WEAPON_CONFIGS;

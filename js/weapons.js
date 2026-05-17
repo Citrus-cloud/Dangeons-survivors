@@ -1,14 +1,12 @@
 'use strict';
 /* ============================================================
-   weapons.js — оружие и снаряды.
+   weapons.js — оружие и снаряды (Шаг 7: 20 оружий).
 
-   - Класс Weapon — базовый, конкретные подклассы:
-       SwordWeapon, BowWeapon, DaggerWeapon, FireballWeapon
+   - Класс Weapon — базовый, конкретные подклассы для каждого.
    - createProjectile() — фабрика для общего пула снарядов.
    - Projectiles.update / render — обработка и отрисовка пула.
 
-   Уровни 1..5: каждый уровень даёт +15% урона и -5% кулдауна
-   (см. WEAPON_LEVEL_DAMAGE / WEAPON_LEVEL_COOLDOWN_MUL ниже).
+   Уровни 1..5: каждый уровень даёт +15% урона и -5% кулдауна.
    ============================================================ */
 
 // Множители на уровень оружия (индекс = level - 1)
@@ -21,30 +19,29 @@ const MAX_WEAPON_LEVEL = 5;
 function createProjectile() {
   return {
     active: false,
-    /** Тип отрисовки/логики:
-     *  - игроцкие: 'missile' | 'arrow' | 'dagger' | 'fireball'
-     *  - вражеские: 'arrow_e' | 'magebolt' | 'breath'
-     *  - босс: 'boss_bolt' | 'boss_web' | 'boss_fireball' */
     kind: 'missile',
-    /** 'player' (по умолчанию) — бьёт врагов; 'enemy' — бьёт игрока. */
     owner: 'player',
     x: 0, y: 0,
     vx: 0, vy: 0,
     life: 0,
     damage: 0,
     radius: 6,
-    // Для стрел/кинжалов/дыхания: направление для отрисовки
     angle: 0,
-    // Для огненного шара: радиус взрыва
     explodeRadius: 0,
-    // Идентификатор источника (имя оружия / тип врага)
     source: '',
-    // Шаг 6: самонаведение (boss_bolt лича)
     homing: false,
     homingStrength: 0,
-    // Шаг 6: замедление (boss_web паука-королевы)
     slowPct: 0,
     slowDuration: 0,
+    // Шаг 7: pierce (пробивание — для арбалета)
+    pierce: false,
+    // Шаг 7: для вращающихся снарядов (топоры)
+    spin: 0,
+    // Шаг 7: AoE при приземлении (праща)
+    aoeRadius: 0,
+    // Шаг 7: замедление от ледяной стрелы
+    slowEnemy: 0,
+    slowEnemyDuration: 0,
   };
 }
 
@@ -64,6 +61,22 @@ const Projectiles = {
     return best;
   },
 
+  /** Найти N ближайших врагов. */
+  findNearestEnemies(enemies, x, y, maxRadius, count) {
+    const r2 = maxRadius * maxRadius;
+    const found = [];
+    const items = enemies.items;
+    for (let i = 0; i < items.length; i++) {
+      const e = items[i];
+      if (!e.active) continue;
+      const dx = e.x - x, dy = e.y - y;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < r2) found.push({ e, d2 });
+    }
+    found.sort((a, b) => a.d2 - b.d2);
+    return found.slice(0, count).map(f => f.e);
+  },
+
   /** Обновление пула снарядов: движение, столкновения, отключение за экраном. */
   update(pool, enemies, cam, viewW, viewH, onDamage, dt) {
     const items = pool.items;
@@ -79,10 +92,18 @@ const Projectiles = {
       m.x += m.vx * dt;
       m.y += m.vy * dt;
       m.life -= dt;
+      if (m.spin) m.angle += m.spin * dt;
 
-      // Огненный шар: при истечении life — взрыв (AoE). Иначе двигается дальше.
+      // Огненный шар: при истечении life — взрыв (AoE)
       if (m.kind === 'fireball' && m.life <= 0) {
         Projectiles._fireballExplode(m, enemies, onDamage);
+        m.active = false;
+        continue;
+      }
+
+      // Праща: при истечении — AoE приземление
+      if (m.kind === 'sling_stone' && m.life <= 0) {
+        Projectiles._slingExplode(m, enemies, onDamage);
         m.active = false;
         continue;
       }
@@ -100,11 +121,9 @@ const Projectiles = {
           const dx = player.x - m.x, dy = player.y - m.y;
           if (dx * dx + dy * dy <= r * r) {
             player.hp -= m.damage;
-            // Шаг 6: паутина босса — замедление
             if (m.kind === 'boss_web' && m.slowPct) {
               player.webSlow = m.slowDuration || 2.0;
             }
-            // Шаг 6: огненный шар босса — AoE взрыв
             if (m.kind === 'boss_fireball' && m.explodeRadius > 0) {
               if (window.Particles) {
                 Particles.ring(m.x, m.y, m.explodeRadius, 0.3, 'rgba(255, 100, 0, 0.8)', 4);
@@ -123,8 +142,9 @@ const Projectiles = {
         for (let j = 0; j < eItems.length; j++) {
           const e = eItems[j];
           if (!e.active) continue;
-          if (e.invulnerable) continue;             // мимик в idle / shadow в invisible
-          // Bat: 20% шанс уйти от снаряда
+          if (e.invulnerable) continue;
+          // Пробивающий снаряд: пропускаем уже поражённых
+          if (m.pierce && m._hitSet && m._hitSet.has(j)) continue;
           if (e.cfg && e.cfg.behavior === 'bat' && (e.cfg.dodgeChance || 0) > 0) {
             if (Math.random() < e.cfg.dodgeChance) continue;
           }
@@ -134,8 +154,21 @@ const Projectiles = {
           if (dx * dx + dy * dy <= r * r) {
             if (m.kind === 'fireball') {
               Projectiles._fireballExplode(m, enemies, onDamage);
-            } else {
-              onDamage(e, m.damage);
+              m.active = false;
+              break;
+            }
+            onDamage(e, m.damage);
+            // Замедление от ледяной стрелы
+            if (m.slowEnemy > 0) {
+              e._slowFactor = m.slowEnemy;
+              e._slowTimer = m.slowEnemyDuration;
+            }
+            // Pierce: пробивающие снаряды не деактивируются
+            if (m.pierce) {
+              // Помечаем врага чтобы не бить дважды в одном снаряде
+              if (!m._hitSet) m._hitSet = new Set();
+              m._hitSet.add(j);
+              continue;
             }
             m.active = false;
             break;
@@ -145,7 +178,7 @@ const Projectiles = {
     }
   },
 
-  /** AoE-урон от огненного шара по всем активным врагам в радиусе. */
+  /** AoE-урон от огненного шара. */
   _fireballExplode(m, enemies, onDamage) {
     const er2 = m.explodeRadius * m.explodeRadius;
     const eItems = enemies.items;
@@ -158,29 +191,42 @@ const Projectiles = {
         onDamage(e, m.damage);
       }
     }
-    // Визуальный эффект взрыва (расширяющееся кольцо)
     if (window.Particles && window.Particles.ring) {
       const isSoul = (m.source === 'soul_flame');
-      Particles.ring(
-        m.x, m.y, m.explodeRadius,
-        0.35,
-        isSoul ? 'rgba(180, 220, 255, 0.95)' : 'rgba(255, 140, 40, 0.9)',
-        4
-      );
+      Particles.ring(m.x, m.y, m.explodeRadius, 0.35,
+        isSoul ? 'rgba(180, 220, 255, 0.95)' : 'rgba(255, 140, 40, 0.9)', 4);
       Particles.burst(m.x, m.y, 8, {
         color: isSoul ? '#bfe1ff' : '#ff9a3a',
-        speedMin: 60, speedMax: 180,
-        lifeMin: 0.3, lifeMax: 0.6,
-        sizeMin: 2, sizeMax: 4,
+        speedMin: 60, speedMax: 180, lifeMin: 0.3, lifeMax: 0.6, sizeMin: 2, sizeMax: 4,
       });
     }
-    // Эволюция Soul Flame: притягиваем ВСЕ кристаллы опыта на карте
     if (m.source === 'soul_flame' && window.Game && Game.magnetizeAllXP) {
       Game.magnetizeAllXP();
     }
   },
 
-  /** Отрисовка снарядов с учётом видимой области. */
+  /** AoE-урон от пращи при приземлении. */
+  _slingExplode(m, enemies, onDamage) {
+    const er2 = m.aoeRadius * m.aoeRadius;
+    const eItems = enemies.items;
+    for (let j = 0; j < eItems.length; j++) {
+      const e = eItems[j];
+      if (!e.active || e.invulnerable) continue;
+      const dx = e.x - m.x, dy = e.y - m.y;
+      if (dx * dx + dy * dy <= er2) {
+        onDamage(e, m.damage);
+      }
+    }
+    if (window.Particles) {
+      Particles.ring(m.x, m.y, m.aoeRadius, 0.25, 'rgba(160, 140, 100, 0.8)', 3);
+      Particles.burst(m.x, m.y, 5, {
+        color: '#a09070', speedMin: 40, speedMax: 100,
+        lifeMin: 0.2, lifeMax: 0.4, sizeMin: 2, sizeMax: 3,
+      });
+    }
+  },
+
+  /** Отрисовка снарядов. */
   render(ctx, pool, cam, viewW, viewH) {
     const minX = cam.x, minY = cam.y;
     const maxX = cam.x + viewW, maxY = cam.y + viewH;
@@ -192,156 +238,133 @@ const Projectiles = {
 
       switch (m.kind) {
         case 'missile': {
-          // Magic Missile (фиолетовый, glow)
           ctx.shadowColor = 'rgba(220, 180, 255, 0.9)';
           ctx.shadowBlur = 12;
           ctx.fillStyle = '#a259ff';
-          ctx.beginPath();
-          ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2); ctx.fill();
           ctx.shadowBlur = 0;
           ctx.fillStyle = '#ffffff';
-          ctx.beginPath();
-          ctx.arc(m.x, m.y, m.radius * 0.45, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius * 0.45, 0, Math.PI * 2); ctx.fill();
           break;
         }
         case 'arrow': {
-          // Жёлтая стрела 20x4 px, ориентирована по углу
-          ctx.save();
-          ctx.translate(m.x, m.y);
-          ctx.rotate(m.angle);
-          ctx.fillStyle = '#f4d03f';
-          ctx.fillRect(-10, -2, 20, 4);
-          ctx.fillStyle = '#fff8c4';
-          ctx.fillRect(-10, -1, 20, 1);
-          ctx.restore();
-          break;
+          ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.angle);
+          ctx.fillStyle = '#f4d03f'; ctx.fillRect(-10, -2, 20, 4);
+          ctx.fillStyle = '#fff8c4'; ctx.fillRect(-10, -1, 20, 1);
+          ctx.restore(); break;
         }
         case 'dagger': {
-          // Серебристый кинжал (узкий ромб)
-          ctx.save();
-          ctx.translate(m.x, m.y);
-          ctx.rotate(m.angle);
+          ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.angle);
           ctx.fillStyle = '#cfd8dc';
-          ctx.beginPath();
-          ctx.moveTo(8, 0);
-          ctx.lineTo(0, 3);
-          ctx.lineTo(-6, 0);
-          ctx.lineTo(0, -3);
-          ctx.closePath();
-          ctx.fill();
-          ctx.fillStyle = '#7a5230';
-          ctx.fillRect(-7, -1.5, 3, 3);
-          ctx.restore();
-          break;
+          ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(0, 3); ctx.lineTo(-6, 0); ctx.lineTo(0, -3); ctx.closePath(); ctx.fill();
+          ctx.fillStyle = '#7a5230'; ctx.fillRect(-7, -1.5, 3, 3);
+          ctx.restore(); break;
         }
         case 'fireball': {
-          ctx.shadowColor = 'rgba(255, 140, 40, 0.95)';
-          ctx.shadowBlur = 18;
+          ctx.shadowColor = 'rgba(255, 140, 40, 0.95)'; ctx.shadowBlur = 18;
           ctx.fillStyle = '#ff7a1a';
-          ctx.beginPath();
-          ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2); ctx.fill();
           ctx.shadowBlur = 0;
           ctx.fillStyle = '#fff1a8';
-          ctx.beginPath();
-          ctx.arc(m.x, m.y, m.radius * 0.5, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius * 0.5, 0, Math.PI * 2); ctx.fill();
+          break;
+        }
+        case 'crossbow_bolt': {
+          ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.angle);
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(-12, -3, 24, 6);
+          ctx.fillStyle = '#cccccc'; ctx.fillRect(-12, -1, 24, 2);
+          // Наконечник
+          ctx.fillStyle = '#aaaaaa';
+          ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(16, -4); ctx.lineTo(16, 4); ctx.closePath(); ctx.fill();
+          ctx.restore(); break;
+        }
+        case 'throwing_axe': {
+          ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.angle);
+          ctx.fillStyle = '#888888';
+          ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(7, 4); ctx.lineTo(-7, 4); ctx.closePath(); ctx.fill();
+          ctx.fillStyle = '#666666';
+          ctx.fillRect(-2, 2, 4, 6);
+          ctx.restore(); break;
+        }
+        case 'dart': {
+          ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.angle);
+          ctx.strokeStyle = '#f4d03f'; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(-8, 0); ctx.lineTo(8, 0); ctx.stroke();
+          ctx.restore(); break;
+        }
+        case 'sling_stone': {
+          ctx.fillStyle = '#8a8070';
+          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#b0a090';
+          ctx.beginPath(); ctx.arc(m.x - 1, m.y - 1, m.radius * 0.4, 0, Math.PI * 2); ctx.fill();
+          break;
+        }
+        case 'ice_arrow': {
+          ctx.shadowColor = 'rgba(100, 200, 255, 0.8)'; ctx.shadowBlur = 10;
+          ctx.fillStyle = '#6ec6ff';
+          ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.angle);
+          ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(-4, 5); ctx.lineTo(-2, 0); ctx.lineTo(-4, -5); ctx.closePath(); ctx.fill();
+          ctx.restore(); ctx.shadowBlur = 0;
+          break;
+        }
+        case 'spellbook_proj': {
+          const colors = ['#ff7a1a', '#6ec6ff', '#f4d03f'];
+          ctx.fillStyle = colors[Math.floor(m.angle * 10) % 3] || '#a259ff';
+          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2); ctx.fill();
           break;
         }
         case 'arrow_e': {
-          // Вражеская стрела (костяная, тёмно-серая)
-          ctx.save();
-          ctx.translate(m.x, m.y);
-          ctx.rotate(m.angle);
-          ctx.fillStyle = '#cfcfcf';
-          ctx.fillRect(-9, -2, 18, 4);
-          ctx.fillStyle = '#7d3a1f';
-          ctx.fillRect(-9, -1, 18, 1);
-          ctx.restore();
-          break;
+          ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.angle);
+          ctx.fillStyle = '#cfcfcf'; ctx.fillRect(-9, -2, 18, 4);
+          ctx.fillStyle = '#7d3a1f'; ctx.fillRect(-9, -1, 18, 1);
+          ctx.restore(); break;
         }
         case 'magebolt': {
-          // Фиолетовый снаряд мага
-          ctx.shadowColor = 'rgba(180, 90, 255, 0.95)';
-          ctx.shadowBlur = 14;
+          ctx.shadowColor = 'rgba(180, 90, 255, 0.95)'; ctx.shadowBlur = 14;
           ctx.fillStyle = '#7e57c2';
-          ctx.beginPath();
-          ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2); ctx.fill();
           ctx.shadowBlur = 0;
           ctx.fillStyle = '#e0c8ff';
-          ctx.beginPath();
-          ctx.arc(m.x, m.y, m.radius * 0.45, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius * 0.45, 0, Math.PI * 2); ctx.fill();
           break;
         }
         case 'breath': {
-          // Дыхание дракончика — оранжевый импульс
-          ctx.shadowColor = 'rgba(255, 160, 60, 0.7)';
-          ctx.shadowBlur = 10;
+          ctx.shadowColor = 'rgba(255, 160, 60, 0.7)'; ctx.shadowBlur = 10;
           ctx.fillStyle = '#ff8a3a';
-          ctx.beginPath();
-          ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2); ctx.fill();
           ctx.shadowBlur = 0;
           ctx.fillStyle = '#ffe28a';
-          ctx.beginPath();
-          ctx.arc(m.x, m.y, m.radius * 0.55, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius * 0.55, 0, Math.PI * 2); ctx.fill();
           break;
         }
-        // Шаг 6: снаряды боссов
         case 'boss_bolt': {
-          // Самонаводящаяся стрела лича — фиолетовая с тёмным ядром
-          ctx.shadowColor = 'rgba(160, 0, 255, 0.95)';
-          ctx.shadowBlur = 16;
+          ctx.shadowColor = 'rgba(160, 0, 255, 0.95)'; ctx.shadowBlur = 16;
           ctx.fillStyle = '#8b00ff';
-          ctx.beginPath();
-          ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2); ctx.fill();
           ctx.shadowBlur = 0;
           ctx.fillStyle = '#1a001a';
-          ctx.beginPath();
-          ctx.arc(m.x, m.y, m.radius * 0.4, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius * 0.4, 0, Math.PI * 2); ctx.fill();
           break;
         }
         case 'boss_web': {
-          // Паутинный снаряд — белый с сеткой
-          ctx.shadowColor = 'rgba(220, 220, 240, 0.8)';
-          ctx.shadowBlur = 8;
+          ctx.shadowColor = 'rgba(220, 220, 240, 0.8)'; ctx.shadowBlur = 8;
           ctx.fillStyle = '#e8e8f0';
-          ctx.beginPath();
-          ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2); ctx.fill();
           ctx.shadowBlur = 0;
-          // Крестик внутри (паутина)
-          ctx.strokeStyle = 'rgba(180, 180, 200, 0.7)';
-          ctx.lineWidth = 1;
+          ctx.strokeStyle = 'rgba(180, 180, 200, 0.7)'; ctx.lineWidth = 1;
           ctx.beginPath();
-          ctx.moveTo(m.x - m.radius * 0.6, m.y);
-          ctx.lineTo(m.x + m.radius * 0.6, m.y);
-          ctx.moveTo(m.x, m.y - m.radius * 0.6);
-          ctx.lineTo(m.x, m.y + m.radius * 0.6);
-          ctx.stroke();
-          break;
+          ctx.moveTo(m.x - m.radius * 0.6, m.y); ctx.lineTo(m.x + m.radius * 0.6, m.y);
+          ctx.moveTo(m.x, m.y - m.radius * 0.6); ctx.lineTo(m.x, m.y + m.radius * 0.6);
+          ctx.stroke(); break;
         }
         case 'boss_fireball': {
-          // Огненный шар босса — крупный, пульсирующий
           const fbPulse = 1 + Math.sin(Date.now() * 0.01) * 0.15;
-          ctx.shadowColor = 'rgba(255, 80, 0, 0.95)';
-          ctx.shadowBlur = 22;
+          ctx.shadowColor = 'rgba(255, 80, 0, 0.95)'; ctx.shadowBlur = 22;
           ctx.fillStyle = '#ff4500';
-          ctx.beginPath();
-          ctx.arc(m.x, m.y, m.radius * fbPulse, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius * fbPulse, 0, Math.PI * 2); ctx.fill();
           ctx.shadowBlur = 0;
           ctx.fillStyle = '#ffcc00';
-          ctx.beginPath();
-          ctx.arc(m.x, m.y, m.radius * 0.5 * fbPulse, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius * 0.5 * fbPulse, 0, Math.PI * 2); ctx.fill();
           break;
         }
       }
@@ -350,61 +373,47 @@ const Projectiles = {
 };
 
 
+
 /* ============================================================
    Weapon — базовый класс
    ============================================================ */
 class Weapon {
-  /**
-   * @param {object} cfg { id, name, type, baseCooldown, baseDamage, icon }
-   */
   constructor(cfg) {
     this.id           = cfg.id;
     this.name         = cfg.name;
-    this.type         = cfg.type;          // 'melee' | 'ranged' | 'multi' | 'aoe'
+    this.type         = cfg.type;
     this.baseCooldown = cfg.baseCooldown;
     this.baseDamage   = cfg.baseDamage;
     this.icon         = cfg.icon;
+    this.desc         = cfg.desc || '';
     this.level        = 1;
-    this.cooldown     = 0;                 // текущий таймер
+    this.cooldown     = 0;
     this.slotIndex    = -1;
-    // Визуальные эффекты, если оружие хочет показать что-то поверх героя
-    // (см. Sword.swing). Опционально.
   }
 
   get maxLevel() { return MAX_WEAPON_LEVEL; }
 
-  /** Текущий урон с учётом уровня. Глобальный damageMul применит вызывающий. */
   damageAt() { return this.baseDamage * WEAPON_LEVEL_DAMAGE[this.level - 1]; }
   cooldownAt(player) {
     return this.baseCooldown * WEAPON_LEVEL_CD_MUL[this.level - 1] * player.weaponCdMul;
   }
 
-  upgrade() {
-    if (this.level < MAX_WEAPON_LEVEL) this.level += 1;
-  }
+  upgrade() { if (this.level < MAX_WEAPON_LEVEL) this.level += 1; }
 
-  /**
-   * Базовая реализация — таймер и вызов doAttack(), который переопределяют
-   * наследники. Возвращает true, если выстрел произошёл (для UI).
-   */
   update(player, enemies, projectiles, dt, helpers) {
     this.cooldown -= dt;
     if (this.cooldown > 0) return false;
-
     const fired = this.doAttack(player, enemies, projectiles, helpers);
     if (fired) {
       this.cooldown = this.cooldownAt(player);
     } else {
-      // если не нашли цель — попробуем снова чуть позже (короткий ретрай)
       this.cooldown = 0.1;
     }
     return fired;
   }
 
-  /** @abstract */
-  doAttack(/* player, enemies, projectiles, helpers */) { return false; }
+  doAttack() { return false; }
 
-  /** Прогресс готовности 0..1 (для CD-индикатора в HUD). */
   readyProgress(player) {
     const total = this.cooldownAt(player);
     if (total <= 0) return 1;
@@ -414,26 +423,16 @@ class Weapon {
 
 
 /* ============================================================
-   1) Sword — ближний бой, AoE по дуге к ближайшему врагу.
+   1) Sword — ближний бой, AoE по дуге.
    ============================================================ */
 class SwordWeapon extends Weapon {
   constructor() {
-    super({
-      id: 'sword', name: 'Меч', type: 'melee',
-      baseCooldown: 0.8, baseDamage: 15, icon: '⚔',
-    });
-    this.radius      = 60;
-    this.arc         = Math.PI * 0.9;
-    this.swingTime   = 0.18;
-    this.swing       = { active: false, t: 0, angle: 0 };
+    super({ id: 'sword', name: 'Меч', type: 'melee', baseCooldown: 0.8, baseDamage: 15, icon: '⚔', desc: 'Удар по ближайшему врагу в радиусе 60 px.' });
+    this.radius = 60; this.arc = Math.PI * 0.9; this.swingTime = 0.18;
+    this.swing = { active: false, t: 0, angle: 0 };
   }
-  tick(dt) {
-    if (this.swing.active) {
-      this.swing.t += dt;
-      if (this.swing.t >= this.swingTime) this.swing.active = false;
-    }
-  }
-  doAttack(player, enemies, _projectiles, helpers) {
+  tick(dt) { if (this.swing.active) { this.swing.t += dt; if (this.swing.t >= this.swingTime) this.swing.active = false; } }
+  doAttack(player, enemies, _proj, helpers) {
     const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.radius);
     if (!target) return false;
     const damage = this.damageAt() * player.damageMul;
@@ -446,20 +445,14 @@ class SwordWeapon extends Weapon {
       if (!e.active) continue;
       const dx = e.x - player.x, dy = e.y - player.y;
       if (dx * dx + dy * dy > r2) continue;
-      const a = Math.atan2(dy, dx);
-      let diff = a - dirAngle;
-      while (diff > Math.PI)  diff -= Math.PI * 2;
+      let diff = Math.atan2(dy, dx) - dirAngle;
+      while (diff > Math.PI) diff -= Math.PI * 2;
       while (diff < -Math.PI) diff += Math.PI * 2;
-      if (Math.abs(diff) <= halfArc) {
-        helpers.damageEnemy(e, damage);
-      }
+      if (Math.abs(diff) <= halfArc) helpers.damageEnemy(e, damage);
     }
-    this.swing.active = true;
-    this.swing.t = 0;
-    this.swing.angle = dirAngle;
+    this.swing.active = true; this.swing.t = 0; this.swing.angle = dirAngle;
     return true;
   }
-  /** Отрисовка взмаха меча. ctx сдвинут на -cam. */
   renderOverlay(ctx, player) {
     if (!this.swing.active) return;
     const t = this.swing.t / this.swingTime;
@@ -468,190 +461,112 @@ class SwordWeapon extends Weapon {
     const half = this.arc * 0.5;
     const a0 = this.swing.angle - half + this.arc * t * 0.4;
     const a1 = this.swing.angle + half + this.arc * t * 0.4;
-    ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, r, a0, a1);
-    ctx.stroke();
-    ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.6})`;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, r - 4, a0, a1);
-    ctx.stroke();
+    ctx.strokeStyle = `rgba(255,255,255,${alpha})`; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.arc(player.x, player.y, r, a0, a1); ctx.stroke();
+    ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.6})`; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(player.x, player.y, r - 4, a0, a1); ctx.stroke();
   }
 }
 
 
 /* ============================================================
-   2) Bow — выстрел стрелы в ближайшего врага.
+   2) Bow — выстрел стрелы.
    ============================================================ */
 class BowWeapon extends Weapon {
   constructor() {
-    super({
-      id: 'bow', name: 'Лук', type: 'ranged',
-      baseCooldown: 1.2, baseDamage: 12, icon: '🏹',
-    });
-    this.arrowSpeed = 520;
-    this.arrowLife  = 1.6;
-    this.range      = 520;
+    super({ id: 'bow', name: 'Лук', type: 'ranged', baseCooldown: 1.2, baseDamage: 12, icon: '🏹', desc: 'Стреляет в ближайшего врага.' });
+    this.arrowSpeed = 520; this.arrowLife = 1.6; this.range = 520;
   }
   doAttack(player, enemies, projectiles) {
     const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range);
     if (!target) return false;
     const dir = Utils.norm(target.x - player.x, target.y - player.y);
-    const p = projectiles.spawn();
-    if (!p) return true; // считаем, что атака произошла, но снарядов не хватило
-    p.kind = 'arrow';
-    p.owner = 'player';
-    p.x = player.x; p.y = player.y;
-    p.vx = dir.x * this.arrowSpeed;
-    p.vy = dir.y * this.arrowSpeed;
-    p.life = this.arrowLife;
-    p.damage = this.damageAt() * player.damageMul;
-    p.radius = 4;
-    p.angle = Math.atan2(dir.y, dir.x);
-    p.source = this.id;
+    const p = projectiles.spawn(); if (!p) return true;
+    p.kind = 'arrow'; p.owner = 'player'; p.x = player.x; p.y = player.y;
+    p.vx = dir.x * this.arrowSpeed; p.vy = dir.y * this.arrowSpeed;
+    p.life = this.arrowLife; p.damage = this.damageAt() * player.damageMul;
+    p.radius = 4; p.angle = Math.atan2(dir.y, dir.x); p.source = this.id;
+    p.pierce = false; p.slowEnemy = 0;
     return true;
   }
 }
 
 
 /* ============================================================
-   3) Daggers — три кинжала веером (±20°).
+   3) Daggers — три кинжала веером.
    ============================================================ */
 class DaggerWeapon extends Weapon {
   constructor() {
-    super({
-      id: 'daggers', name: 'Кинжалы', type: 'multi',
-      baseCooldown: 1.5, baseDamage: 6, icon: '🗡',
-    });
-    this.speed = 480;
-    this.life  = 1.2;
-    this.spread = (20 * Math.PI) / 180; // 20°
-    this.range = 600;
+    super({ id: 'daggers', name: 'Кинжалы', type: 'multi', baseCooldown: 1.5, baseDamage: 6, icon: '🗡', desc: 'Бросок 3 кинжалов веером.' });
+    this.speed = 480; this.life = 1.2; this.spread = (20 * Math.PI) / 180; this.range = 600;
   }
   doAttack(player, enemies, projectiles) {
-    // Направление — по движению либо к ближайшему врагу
     let dx, dy;
     const moveLen = Math.hypot(player.moveDir.x, player.moveDir.y);
-    if (moveLen > 0.1) {
-      dx = player.moveDir.x; dy = player.moveDir.y;
-    } else {
+    if (moveLen > 0.1) { dx = player.moveDir.x; dy = player.moveDir.y; }
+    else {
       const t = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range);
-      if (!t) {
-        // Используем последний facing — атака всегда производится.
-        dx = player.facing.x; dy = player.facing.y;
-      } else {
-        const n = Utils.norm(t.x - player.x, t.y - player.y);
-        dx = n.x; dy = n.y;
-      }
+      if (!t) { dx = player.facing.x; dy = player.facing.y; }
+      else { const n = Utils.norm(t.x - player.x, t.y - player.y); dx = n.x; dy = n.y; }
     }
     const baseAngle = Math.atan2(dy, dx);
     const offsets = [-this.spread, 0, this.spread];
-    let spawnedAny = false;
+    let any = false;
     for (let i = 0; i < offsets.length; i++) {
       const a = baseAngle + offsets[i];
-      const p = projectiles.spawn();
-      if (!p) break;
-      p.kind = 'dagger';
-      p.owner = 'player';
-      p.x = player.x; p.y = player.y;
-      p.vx = Math.cos(a) * this.speed;
-      p.vy = Math.sin(a) * this.speed;
-      p.life = this.life;
-      p.damage = this.damageAt() * player.damageMul;
-      p.radius = 5;
-      p.angle = a;
-      p.source = this.id;
-      spawnedAny = true;
+      const p = projectiles.spawn(); if (!p) break;
+      p.kind = 'dagger'; p.owner = 'player'; p.x = player.x; p.y = player.y;
+      p.vx = Math.cos(a) * this.speed; p.vy = Math.sin(a) * this.speed;
+      p.life = this.life; p.damage = this.damageAt() * player.damageMul;
+      p.radius = 5; p.angle = a; p.source = this.id; p.pierce = false; p.slowEnemy = 0;
+      any = true;
     }
-    return spawnedAny;
+    return any;
   }
 }
 
 
 /* ============================================================
-   4) Fireball — медленный снаряд с AoE-взрывом по таймеру.
+   4) Fireball — снаряд с AoE-взрывом.
    ============================================================ */
 class FireballWeapon extends Weapon {
   constructor() {
-    super({
-      id: 'fireball', name: 'Огненный шар', type: 'aoe',
-      baseCooldown: 2.5, baseDamage: 20, icon: '🔥',
-    });
-    this.flightTime    = 0.6;   // секунды полёта до взрыва
-    this.explodeRadius = 80;
-    this.range         = 700;
+    super({ id: 'fireball', name: 'Огненный шар', type: 'aoe', baseCooldown: 2.5, baseDamage: 20, icon: '🔥', desc: 'Снаряд с AoE-взрывом 80 px.' });
+    this.flightTime = 0.6; this.explodeRadius = 80; this.range = 700;
   }
   doAttack(player, enemies, projectiles) {
-    // Цель: ближайший враг или направление движения
     let dx, dy;
     const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range);
-    if (target) {
-      const n = Utils.norm(target.x - player.x, target.y - player.y);
-      dx = n.x; dy = n.y;
-    } else {
+    if (target) { const n = Utils.norm(target.x - player.x, target.y - player.y); dx = n.x; dy = n.y; }
+    else {
       const moveLen = Math.hypot(player.moveDir.x, player.moveDir.y);
       if (moveLen > 0.1) { dx = player.moveDir.x; dy = player.moveDir.y; }
       else { dx = player.facing.x; dy = player.facing.y; }
     }
-    const speed = 280;          // медленный, чтобы видеть полёт
-    const p = projectiles.spawn();
-    if (!p) return false;
-    p.kind = 'fireball';
-    p.owner = 'player';
-    p.x = player.x; p.y = player.y;
-    p.vx = dx * speed;
-    p.vy = dy * speed;
-    p.life = this.flightTime;
-    p.damage = this.damageAt() * player.damageMul;
-    p.radius = 12;
-    p.explodeRadius = this.explodeRadius;
-    p.angle = Math.atan2(dy, dx);
-    p.source = this.id;
+    const speed = 280;
+    const p = projectiles.spawn(); if (!p) return false;
+    p.kind = 'fireball'; p.owner = 'player'; p.x = player.x; p.y = player.y;
+    p.vx = dx * speed; p.vy = dy * speed;
+    p.life = this.flightTime; p.damage = this.damageAt() * player.damageMul;
+    p.radius = 12; p.explodeRadius = this.explodeRadius;
+    p.angle = Math.atan2(dy, dx); p.source = this.id; p.pierce = false; p.slowEnemy = 0;
     return true;
   }
 }
 
 
+
 /* ============================================================
-   EVOLUTIONS — эволюционные оружия (Шаг 3).
-
-   Базовый класс EvolutionWeapon помечает оружие как эволюционное
-   (isEvolved = true), хранит ссылку evolvedFrom (id базового
-   оружия) и блокирует возможность дальнейших эволюций.
+   5) Axe — Секира: широкий конус 140°.
    ============================================================ */
-class EvolutionWeapon extends Weapon {
-  constructor(cfg) {
-    super(cfg);
-    this.isEvolved   = true;
-    this.evolvedFrom = cfg.evolvedFrom || '';
-  }
-}
-
-
-/* ---------- 1) Вампирский клинок: меч + регенерация ----------
-   Ближний бой, урон 25 (база), +3 HP за каждое попадание. */
-class VampireBladeWeapon extends EvolutionWeapon {
+class AxeWeapon extends Weapon {
   constructor() {
-    super({
-      id: 'vampire_blade', name: 'Вампирский клинок', type: 'melee',
-      baseCooldown: 0.7, baseDamage: 25, icon: '🩸',
-      evolvedFrom: 'sword',
-    });
-    this.radius    = 70;
-    this.arc       = Math.PI; // 180°
-    this.swingTime = 0.18;
-    this.swing     = { active: false, t: 0, angle: 0 };
-    this.lifesteal = 3;       // HP за попадание
+    super({ id: 'axe', name: 'Секира', type: 'melee', baseCooldown: 1.0, baseDamage: 22, icon: '🪓', desc: 'Широкий взмах перед героем (конус 140°).' });
+    this.radius = 65; this.arc = (140 * Math.PI) / 180; this.swingTime = 0.20;
+    this.swing = { active: false, t: 0, angle: 0 };
   }
-  tick(dt) {
-    if (this.swing.active) {
-      this.swing.t += dt;
-      if (this.swing.t >= this.swingTime) this.swing.active = false;
-    }
-  }
-  doAttack(player, enemies, _projectiles, helpers) {
+  tick(dt) { if (this.swing.active) { this.swing.t += dt; if (this.swing.t >= this.swingTime) this.swing.active = false; } }
+  doAttack(player, enemies, _proj, helpers) {
     const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.radius);
     if (!target) return false;
     const damage = this.damageAt() * player.damageMul;
@@ -659,38 +574,17 @@ class VampireBladeWeapon extends EvolutionWeapon {
     const halfArc = this.arc * 0.5;
     const r2 = this.radius * this.radius;
     const items = enemies.items;
-    let hits = 0;
     for (let i = 0; i < items.length; i++) {
       const e = items[i];
       if (!e.active) continue;
       const dx = e.x - player.x, dy = e.y - player.y;
       if (dx * dx + dy * dy > r2) continue;
-      const a = Math.atan2(dy, dx);
-      let diff = a - dirAngle;
-      while (diff > Math.PI)  diff -= Math.PI * 2;
+      let diff = Math.atan2(dy, dx) - dirAngle;
+      while (diff > Math.PI) diff -= Math.PI * 2;
       while (diff < -Math.PI) diff += Math.PI * 2;
-      if (Math.abs(diff) <= halfArc) {
-        helpers.damageEnemy(e, damage);
-        hits++;
-      }
+      if (Math.abs(diff) <= halfArc) helpers.damageEnemy(e, damage);
     }
-    if (hits > 0) {
-      // Вампиризм: +3 HP за каждое попадание
-      const heal = this.lifesteal * hits;
-      player.hp = Math.min(player.maxHp, player.hp + heal);
-      // Маленькие красные искры — индикация вампиризма
-      if (window.Particles) {
-        Particles.burst(player.x, player.y, 4, {
-          color: '#c0392b',
-          speedMin: 30, speedMax: 80,
-          lifeMin: 0.25, lifeMax: 0.45,
-          sizeMin: 2, sizeMax: 3,
-        });
-      }
-    }
-    this.swing.active = true;
-    this.swing.t = 0;
-    this.swing.angle = dirAngle;
+    this.swing.active = true; this.swing.t = 0; this.swing.angle = dirAngle;
     return true;
   }
   renderOverlay(ctx, player) {
@@ -701,140 +595,193 @@ class VampireBladeWeapon extends EvolutionWeapon {
     const half = this.arc * 0.5;
     const a0 = this.swing.angle - half + this.arc * t * 0.4;
     const a1 = this.swing.angle + half + this.arc * t * 0.4;
-    // Кроваво-красный взмах
-    ctx.strokeStyle = `rgba(220, 60, 50, ${alpha})`;
-    ctx.lineWidth = 7;
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, r, a0, a1);
-    ctx.stroke();
-    ctx.strokeStyle = `rgba(255, 200, 200, ${alpha * 0.6})`;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, r - 5, a0, a1);
-    ctx.stroke();
+    ctx.strokeStyle = `rgba(200,200,200,${alpha})`; ctx.lineWidth = 8;
+    ctx.beginPath(); ctx.arc(player.x, player.y, r, a0, a1); ctx.stroke();
+    ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.5})`; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(player.x, player.y, r - 5, a0, a1); ctx.stroke();
   }
 }
 
 
-/* ---------- 2) Скорострельный лук: лук + ускорение ----------
-   Стрельба очередями по 3 стрелы (с малым интервалом), урон 15. */
-class RapidBowWeapon extends EvolutionWeapon {
+/* ============================================================
+   6) Spear — Копьё: удар по прямой.
+   ============================================================ */
+class SpearWeapon extends Weapon {
   constructor() {
-    super({
-      id: 'rapid_bow', name: 'Скорострельный лук', type: 'ranged',
-      baseCooldown: 1.4, baseDamage: 15, icon: '🌪',
-      evolvedFrom: 'bow',
-    });
-    this.arrowSpeed   = 580;
-    this.arrowLife    = 1.6;
-    this.range        = 560;
-    this.burstCount   = 3;
-    this.burstInterval= 0.10; // секунда между стрелами в очереди
-    this._burstLeft   = 0;    // оставшиеся выстрелы текущей очереди
-    this._burstTimer  = 0;    // таймер до следующей стрелы в очереди
-    this._lastDir     = { x: 1, y: 0 };
+    super({ id: 'spear', name: 'Копьё', type: 'melee', baseCooldown: 0.9, baseDamage: 18, icon: '🔱', desc: 'Удар вперёд по прямой (100 px).' });
+    this.range = 100; this.width = 20; this.thrustTime = 0.15;
+    this.thrust = { active: false, t: 0, angle: 0 };
   }
-
-  // Переопределяем update, чтобы реализовать "очередь"
-  update(player, enemies, projectiles, dt /*, helpers */) {
-    // Пока идёт очередь — шлём стрелы по таймеру, не трогая основной CD
-    if (this._burstLeft > 0) {
-      this._burstTimer -= dt;
-      while (this._burstLeft > 0 && this._burstTimer <= 0) {
-        this._fireOne(player, projectiles, this._lastDir);
-        this._burstLeft -= 1;
-        this._burstTimer += this.burstInterval;
+  tick(dt) { if (this.thrust.active) { this.thrust.t += dt; if (this.thrust.t >= this.thrustTime) this.thrust.active = false; } }
+  doAttack(player, enemies, _proj, helpers) {
+    const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range + 30);
+    if (!target) return false;
+    const damage = this.damageAt() * player.damageMul;
+    const dirAngle = Math.atan2(target.y - player.y, target.x - player.x);
+    const cos = Math.cos(dirAngle), sin = Math.sin(dirAngle);
+    const items = enemies.items;
+    for (let i = 0; i < items.length; i++) {
+      const e = items[i];
+      if (!e.active) continue;
+      const dx = e.x - player.x, dy = e.y - player.y;
+      const along = dx * cos + dy * sin;
+      const across = -dx * sin + dy * cos;
+      if (along >= 0 && along <= this.range && Math.abs(across) <= this.width / 2) {
+        helpers.damageEnemy(e, damage);
       }
-      if (this._burstLeft <= 0) {
-        // Очередь завершена — стандартный кулдаун
-        this.cooldown = this.cooldownAt(player);
-      }
-      return;
     }
-    // Обычный путь: ждём CD, выбираем цель, начинаем очередь
-    this.cooldown -= dt;
-    if (this.cooldown > 0) return;
-    const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range);
-    if (!target) { this.cooldown = 0.1; return; }
-    const dir = Utils.norm(target.x - player.x, target.y - player.y);
-    this._lastDir = dir;
-    this._burstLeft = this.burstCount;
-    this._burstTimer = 0; // выстрелим первую стрелу немедленно
+    this.thrust.active = true; this.thrust.t = 0; this.thrust.angle = dirAngle;
+    return true;
   }
-
-  _fireOne(player, projectiles, dir) {
-    const p = projectiles.spawn();
-    if (!p) return;
-    p.kind = 'arrow';
-    p.owner = 'player';
-    p.x = player.x; p.y = player.y;
-    // Маленький вертикальный разлёт между стрелами очереди
-    const jitter = (Math.random() - 0.5) * 0.05;
-    const a = Math.atan2(dir.y, dir.x) + jitter;
-    p.vx = Math.cos(a) * this.arrowSpeed;
-    p.vy = Math.sin(a) * this.arrowSpeed;
-    p.life = this.arrowLife;
-    p.damage = this.damageAt() * player.damageMul;
-    p.radius = 4;
-    p.angle = a;
-    p.source = this.id;
+  renderOverlay(ctx, player) {
+    if (!this.thrust.active) return;
+    const t = this.thrust.t / this.thrustTime;
+    const alpha = (1 - t) * 0.9;
+    const len = this.range * (0.5 + 0.5 * (1 - t));
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    ctx.rotate(this.thrust.angle);
+    ctx.strokeStyle = `rgba(180,180,180,${alpha})`; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(len, 0); ctx.stroke();
+    // Наконечник
+    ctx.fillStyle = `rgba(220,220,220,${alpha})`;
+    ctx.beginPath(); ctx.moveTo(len, 0); ctx.lineTo(len - 8, -5); ctx.lineTo(len - 8, 5); ctx.closePath(); ctx.fill();
+    ctx.restore();
   }
 }
 
 
-/* ---------- 3) Шквал клинков: кинжалы + усиление урона ----------
-   5 кинжалов веером, урон 12, крит. шанс 20% (×2). */
-class BladeStormWeapon extends EvolutionWeapon {
+/* ============================================================
+   7) Hammer — Молот: AoE вокруг героя.
+   ============================================================ */
+class HammerWeapon extends Weapon {
   constructor() {
-    super({
-      id: 'blade_storm', name: 'Шквал клинков', type: 'multi',
-      baseCooldown: 1.4, baseDamage: 12, icon: '💥',
-      evolvedFrom: 'daggers',
-    });
-    this.speed     = 520;
-    this.life      = 1.2;
-    this.spread    = (18 * Math.PI) / 180;  // ±18° от центра
-    this.range     = 600;
-    this.count     = 5;
-    this.critChance= 0.20;
-    this.critMul   = 2.0;
+    super({ id: 'hammer', name: 'Молот', type: 'melee', baseCooldown: 1.5, baseDamage: 20, icon: '🔨', desc: 'Удар по земле — AoE вокруг героя (70 px).' });
+    this.radius = 70; this.slamTime = 0.25;
+    this.slam = { active: false, t: 0 };
+  }
+  tick(dt) { if (this.slam.active) { this.slam.t += dt; if (this.slam.t >= this.slamTime) this.slam.active = false; } }
+  doAttack(player, enemies, _proj, helpers) {
+    const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.radius);
+    if (!target) return false;
+    const damage = this.damageAt() * player.damageMul;
+    const r2 = this.radius * this.radius;
+    const items = enemies.items;
+    for (let i = 0; i < items.length; i++) {
+      const e = items[i];
+      if (!e.active) continue;
+      const dx = e.x - player.x, dy = e.y - player.y;
+      if (dx * dx + dy * dy <= r2) helpers.damageEnemy(e, damage);
+    }
+    this.slam.active = true; this.slam.t = 0;
+    if (window.Particles) {
+      Particles.ring(player.x, player.y, this.radius, 0.2, 'rgba(180,180,180,0.7)', 3);
+      Particles.burst(player.x, player.y, 6, { color: '#999', speedMin: 40, speedMax: 100, lifeMin: 0.2, lifeMax: 0.4, sizeMin: 2, sizeMax: 3 });
+    }
+    return true;
+  }
+  renderOverlay(ctx, player) {
+    if (!this.slam.active) return;
+    const t = this.slam.t / this.slamTime;
+    const alpha = (1 - t) * 0.6;
+    ctx.strokeStyle = `rgba(180,180,180,${alpha})`; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(player.x, player.y, this.radius * t, 0, Math.PI * 2); ctx.stroke();
+  }
+}
+
+
+/* ============================================================
+   8) Whip — Кнут: атака по дальнему врагу в радиусе.
+   ============================================================ */
+class WhipWeapon extends Weapon {
+  constructor() {
+    super({ id: 'whip', name: 'Кнут', type: 'melee', baseCooldown: 0.7, baseDamage: 14, icon: '〰', desc: 'Атака по дальнему врагу в радиусе 120 px.' });
+    this.range = 120; this.whipTime = 0.2;
+    this.whipAnim = { active: false, t: 0, tx: 0, ty: 0 };
+  }
+  tick(dt) { if (this.whipAnim.active) { this.whipAnim.t += dt; if (this.whipAnim.t >= this.whipTime) this.whipAnim.active = false; } }
+  doAttack(player, enemies, _proj, helpers) {
+    // Бьём самого дальнего врага в радиусе (а не ближайшего)
+    let farthest = null, farthestD2 = 0;
+    const r2 = this.range * this.range;
+    const items = enemies.items;
+    for (let i = 0; i < items.length; i++) {
+      const e = items[i];
+      if (!e.active) continue;
+      const dx = e.x - player.x, dy = e.y - player.y;
+      const d2 = dx * dx + dy * dy;
+      if (d2 <= r2 && d2 > farthestD2) { farthestD2 = d2; farthest = e; }
+    }
+    if (!farthest) return false;
+    helpers.damageEnemy(farthest, this.damageAt() * player.damageMul);
+    this.whipAnim.active = true; this.whipAnim.t = 0;
+    this.whipAnim.tx = farthest.x; this.whipAnim.ty = farthest.y;
+    return true;
+  }
+  renderOverlay(ctx, player) {
+    if (!this.whipAnim.active) return;
+    const t = this.whipAnim.t / this.whipTime;
+    const alpha = (1 - t) * 0.9;
+    ctx.strokeStyle = `rgba(200,160,100,${alpha})`; ctx.lineWidth = 2;
+    ctx.beginPath();
+    const mx = (player.x + this.whipAnim.tx) / 2 + Math.sin(t * Math.PI * 3) * 15;
+    const my = (player.y + this.whipAnim.ty) / 2 + Math.cos(t * Math.PI * 3) * 15;
+    ctx.moveTo(player.x, player.y);
+    ctx.quadraticCurveTo(mx, my, this.whipAnim.tx, this.whipAnim.ty);
+    ctx.stroke();
+  }
+}
+
+
+
+/* ============================================================
+   9) Crossbow — Арбалет: пробивающий выстрел.
+   ============================================================ */
+class CrossbowWeapon extends Weapon {
+  constructor() {
+    super({ id: 'crossbow', name: 'Арбалет', type: 'ranged', baseCooldown: 1.8, baseDamage: 28, icon: '⊕', desc: 'Пробивающий выстрел сквозь врагов.' });
+    this.speed = 450; this.life = 2.0; this.range = 600;
   }
   doAttack(player, enemies, projectiles) {
+    const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range);
+    if (!target) return false;
+    const dir = Utils.norm(target.x - player.x, target.y - player.y);
+    const p = projectiles.spawn(); if (!p) return true;
+    p.kind = 'crossbow_bolt'; p.owner = 'player'; p.x = player.x; p.y = player.y;
+    p.vx = dir.x * this.speed; p.vy = dir.y * this.speed;
+    p.life = this.life; p.damage = this.damageAt() * player.damageMul;
+    p.radius = 5; p.angle = Math.atan2(dir.y, dir.x); p.source = this.id;
+    p.pierce = true; p._hitSet = new Set(); p.slowEnemy = 0;
+    return true;
+  }
+}
+
+
+/* ============================================================
+   10) Throwing Axes — Метательные топоры: 2 веером.
+   ============================================================ */
+class ThrowingAxesWeapon extends Weapon {
+  constructor() {
+    super({ id: 'throwing_axes', name: 'Мет. топоры', type: 'ranged', baseCooldown: 1.0, baseDamage: 10, icon: '⚒', desc: '2 вращающихся топора веером.' });
+    this.speed = 400; this.life = 1.4; this.range = 500;
+    this.spreadAngle = (10 * Math.PI) / 180;
+  }
+  doAttack(player, enemies, projectiles) {
+    const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range);
     let dx, dy;
-    const moveLen = Math.hypot(player.moveDir.x, player.moveDir.y);
-    if (moveLen > 0.1) {
-      dx = player.moveDir.x; dy = player.moveDir.y;
-    } else {
-      const t = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range);
-      if (!t) { dx = player.facing.x; dy = player.facing.y; }
-      else {
-        const n = Utils.norm(t.x - player.x, t.y - player.y);
-        dx = n.x; dy = n.y;
-      }
-    }
+    if (target) { const n = Utils.norm(target.x - player.x, target.y - player.y); dx = n.x; dy = n.y; }
+    else { dx = player.facing.x; dy = player.facing.y; }
     const baseAngle = Math.atan2(dy, dx);
-    // Веером: count кинжалов от -spread*2 до +spread*2
-    const total = this.count;
-    const halfSpan = this.spread * 2;
+    const offsets = [-this.spreadAngle, this.spreadAngle];
     let any = false;
-    for (let i = 0; i < total; i++) {
-      // i = 0..total-1 -> offset = -halfSpan..+halfSpan
-      const t = total === 1 ? 0 : (i / (total - 1)) * 2 - 1; // -1..1
-      const a = baseAngle + t * halfSpan;
-      const p = projectiles.spawn();
-      if (!p) break;
-      p.kind = 'dagger';
-      p.owner = 'player';
-      p.x = player.x; p.y = player.y;
-      p.vx = Math.cos(a) * this.speed;
-      p.vy = Math.sin(a) * this.speed;
-      p.life = this.life;
-      let dmg = this.damageAt() * player.damageMul;
-      if (Math.random() < this.critChance) dmg *= this.critMul;
-      p.damage = dmg;
-      p.radius = 5;
-      p.angle = a;
-      p.source = this.id;
+    for (const off of offsets) {
+      const a = baseAngle + off;
+      const p = projectiles.spawn(); if (!p) break;
+      p.kind = 'throwing_axe'; p.owner = 'player'; p.x = player.x; p.y = player.y;
+      p.vx = Math.cos(a) * this.speed; p.vy = Math.sin(a) * this.speed;
+      p.life = this.life; p.damage = this.damageAt() * player.damageMul;
+      p.radius = 8; p.angle = a; p.spin = 12; p.source = this.id;
+      p.pierce = false; p.slowEnemy = 0;
       any = true;
     }
     return any;
@@ -842,50 +789,639 @@ class BladeStormWeapon extends EvolutionWeapon {
 }
 
 
-/* ---------- 4) Пламя души: огненный шар + магнит опыта ----------
-   Взрыв (урон 30) дополнительно притягивает весь опыт на карте. */
-class SoulFlameWeapon extends EvolutionWeapon {
+/* ============================================================
+   11) Darts — Дротики: 3 подряд (очередь).
+   ============================================================ */
+class DartsWeapon extends Weapon {
   constructor() {
-    super({
-      id: 'soul_flame', name: 'Пламя души', type: 'aoe',
-      baseCooldown: 2.4, baseDamage: 30, icon: '👻',
-      evolvedFrom: 'fireball',
-    });
-    this.flightTime    = 0.6;
-    this.explodeRadius = 110;   // увеличенный AoE
-    this.range         = 720;
-    this.speed         = 300;
+    super({ id: 'darts', name: 'Дротики', type: 'ranged', baseCooldown: 0.6, baseDamage: 6, icon: '↗', desc: 'Очередь из 3 быстрых дротиков.' });
+    this.speed = 550; this.life = 1.2; this.range = 500;
+    this.burstCount = 3; this.burstInterval = 0.15;
+    this._burstLeft = 0; this._burstTimer = 0; this._lastDir = { x: 1, y: 0 };
+  }
+  update(player, enemies, projectiles, dt) {
+    if (this._burstLeft > 0) {
+      this._burstTimer -= dt;
+      while (this._burstLeft > 0 && this._burstTimer <= 0) {
+        this._fireOne(player, projectiles);
+        this._burstLeft -= 1;
+        this._burstTimer += this.burstInterval;
+      }
+      if (this._burstLeft <= 0) this.cooldown = this.cooldownAt(player);
+      return;
+    }
+    this.cooldown -= dt;
+    if (this.cooldown > 0) return;
+    const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range);
+    if (!target) { this.cooldown = 0.1; return; }
+    this._lastDir = Utils.norm(target.x - player.x, target.y - player.y);
+    this._burstLeft = this.burstCount;
+    this._burstTimer = 0;
+  }
+  _fireOne(player, projectiles) {
+    const dir = this._lastDir;
+    const p = projectiles.spawn(); if (!p) return;
+    p.kind = 'dart'; p.owner = 'player'; p.x = player.x; p.y = player.y;
+    const jitter = (Math.random() - 0.5) * 0.06;
+    const a = Math.atan2(dir.y, dir.x) + jitter;
+    p.vx = Math.cos(a) * this.speed; p.vy = Math.sin(a) * this.speed;
+    p.life = this.life; p.damage = this.damageAt() * player.damageMul;
+    p.radius = 3; p.angle = a; p.source = this.id;
+    p.pierce = false; p.slowEnemy = 0; p.spin = 0;
+  }
+}
+
+
+/* ============================================================
+   12) Sling — Праща: камень по дуге с AoE.
+   ============================================================ */
+class SlingWeapon extends Weapon {
+  constructor() {
+    super({ id: 'sling', name: 'Праща', type: 'ranged', baseCooldown: 0.9, baseDamage: 14, icon: '●', desc: 'Камень по дуге с AoE 30 px.' });
+    this.speed = 350; this.range = 500; this.aoeRadius = 30;
   }
   doAttack(player, enemies, projectiles) {
-    let dx, dy;
     const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range);
-    if (target) {
-      const n = Utils.norm(target.x - player.x, target.y - player.y);
-      dx = n.x; dy = n.y;
-    } else {
-      const moveLen = Math.hypot(player.moveDir.x, player.moveDir.y);
-      if (moveLen > 0.1) { dx = player.moveDir.x; dy = player.moveDir.y; }
-      else { dx = player.facing.x; dy = player.facing.y; }
-    }
-    const p = projectiles.spawn();
-    if (!p) return false;
-    p.kind = 'fireball';
-    p.owner = 'player';
-    p.x = player.x; p.y = player.y;
-    p.vx = dx * this.speed;
-    p.vy = dy * this.speed;
-    p.life = this.flightTime;
-    p.damage = this.damageAt() * player.damageMul;
-    p.radius = 14;
-    p.explodeRadius = this.explodeRadius;
-    p.angle = Math.atan2(dy, dx);
-    p.source = this.id;        // помечаем "soul_flame" — обработчик взрыва видит
+    if (!target) return false;
+    const dir = Utils.norm(target.x - player.x, target.y - player.y);
+    const dist = Math.hypot(target.x - player.x, target.y - player.y);
+    const flightTime = Math.max(0.3, dist / this.speed);
+    const p = projectiles.spawn(); if (!p) return true;
+    p.kind = 'sling_stone'; p.owner = 'player'; p.x = player.x; p.y = player.y;
+    p.vx = dir.x * this.speed; p.vy = dir.y * this.speed;
+    p.life = flightTime; p.damage = this.damageAt() * player.damageMul;
+    p.radius = 6; p.angle = Math.atan2(dir.y, dir.x); p.source = this.id;
+    p.aoeRadius = this.aoeRadius; p.pierce = false; p.slowEnemy = 0; p.spin = 0;
     return true;
   }
 }
 
 
-/* Реестр эволюционных оружий */
+
+/* ============================================================
+   13) Ice Arrow — Ледяная стрела: замедляет.
+   ============================================================ */
+class IceArrowWeapon extends Weapon {
+  constructor() {
+    super({ id: 'ice_arrow', name: 'Ледяная стрела', type: 'magic', baseCooldown: 1.3, baseDamage: 13, icon: '❄', desc: 'Снаряд, замедляющий врага на 40% (2 сек).' });
+    this.speed = 420; this.life = 1.6; this.range = 500;
+  }
+  doAttack(player, enemies, projectiles) {
+    const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range);
+    if (!target) return false;
+    const dir = Utils.norm(target.x - player.x, target.y - player.y);
+    const p = projectiles.spawn(); if (!p) return true;
+    p.kind = 'ice_arrow'; p.owner = 'player'; p.x = player.x; p.y = player.y;
+    p.vx = dir.x * this.speed; p.vy = dir.y * this.speed;
+    p.life = this.life; p.damage = this.damageAt() * player.damageMul;
+    p.radius = 5; p.angle = Math.atan2(dir.y, dir.x); p.source = this.id;
+    p.pierce = false; p.slowEnemy = 0.40; p.slowEnemyDuration = 2.0; p.spin = 0;
+    return true;
+  }
+}
+
+
+/* ============================================================
+   14) Chain Lightning — Цепная молния: прыгает на 2 соседей.
+   ============================================================ */
+class ChainLightningWeapon extends Weapon {
+  constructor() {
+    super({ id: 'chain_lightning', name: 'Цеп. молния', type: 'magic', baseCooldown: 1.6, baseDamage: 16, icon: '⚡', desc: 'Бьёт врага, перескакивая на 2 соседних.' });
+    this.range = 300; this.chainRadius = 70; this.chains = 2;
+    this.lightningAnim = { active: false, t: 0, points: [] };
+  }
+  tick(dt) { if (this.lightningAnim.active) { this.lightningAnim.t += dt; if (this.lightningAnim.t >= 0.25) this.lightningAnim.active = false; } }
+  doAttack(player, enemies, _proj, helpers) {
+    const first = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range);
+    if (!first) return false;
+    const baseDmg = this.damageAt() * player.damageMul;
+    const points = [{ x: player.x, y: player.y }];
+    const hit = new Set();
+    // Первый удар
+    helpers.damageEnemy(first, baseDmg);
+    hit.add(first);
+    points.push({ x: first.x, y: first.y });
+    // Цепь
+    let current = first;
+    const dmgFalloff = [0.75, 0.50];
+    for (let c = 0; c < this.chains; c++) {
+      let nextTarget = null, bestD2 = this.chainRadius * this.chainRadius;
+      const items = enemies.items;
+      for (let i = 0; i < items.length; i++) {
+        const e = items[i];
+        if (!e.active || hit.has(e) || e.invulnerable) continue;
+        const dx = e.x - current.x, dy = e.y - current.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < bestD2) { bestD2 = d2; nextTarget = e; }
+      }
+      if (!nextTarget) break;
+      helpers.damageEnemy(nextTarget, baseDmg * dmgFalloff[c]);
+      hit.add(nextTarget);
+      points.push({ x: nextTarget.x, y: nextTarget.y });
+      current = nextTarget;
+    }
+    this.lightningAnim.active = true; this.lightningAnim.t = 0;
+    this.lightningAnim.points = points;
+    return true;
+  }
+  renderOverlay(ctx) {
+    if (!this.lightningAnim.active) return;
+    const t = this.lightningAnim.t / 0.25;
+    const alpha = (1 - t) * 0.9;
+    const pts = this.lightningAnim.points;
+    if (pts.length < 2) return;
+    ctx.strokeStyle = `rgba(255, 255, 80, ${alpha})`; ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) {
+      // Зигзаг между точками
+      const px = pts[i - 1], nx = pts[i];
+      const mx = (px.x + nx.x) / 2 + (Math.random() - 0.5) * 20;
+      const my = (px.y + nx.y) / 2 + (Math.random() - 0.5) * 20;
+      ctx.lineTo(mx, my); ctx.lineTo(nx.x, nx.y);
+    }
+    ctx.stroke();
+  }
+}
+
+
+/* ============================================================
+   15) Poison Cloud — Ядовитое облако (зона урона).
+   ============================================================ */
+class PoisonCloudWeapon extends Weapon {
+  constructor() {
+    super({ id: 'poison_cloud', name: 'Яд. облако', type: 'magic', baseCooldown: 2.0, baseDamage: 8, icon: '☠', desc: 'Облако яда (радиус 60, 3 сек, 8 урон/с).' });
+    this.range = 300; this.cloudRadius = 60; this.cloudLife = 3.0;
+    this._clouds = []; // Активные облака { x, y, life, dps }
+  }
+  doAttack(player, enemies) {
+    const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range);
+    if (!target) return false;
+    this._clouds.push({
+      x: target.x, y: target.y,
+      life: this.cloudLife,
+      maxLife: this.cloudLife,
+      dps: this.damageAt() * player.damageMul,
+      radius: this.cloudRadius,
+    });
+    return true;
+  }
+  update(player, enemies, projectiles, dt, helpers) {
+    // Обновляем существующие облака
+    for (let i = this._clouds.length - 1; i >= 0; i--) {
+      const c = this._clouds[i];
+      c.life -= dt;
+      if (c.life <= 0) { this._clouds.splice(i, 1); continue; }
+      // Наносим урон врагам в радиусе
+      const r2 = c.radius * c.radius;
+      const items = enemies.items;
+      for (let j = 0; j < items.length; j++) {
+        const e = items[j];
+        if (!e.active || e.invulnerable) continue;
+        const dx = e.x - c.x, dy = e.y - c.y;
+        if (dx * dx + dy * dy <= r2) {
+          helpers.damageEnemy(e, c.dps * dt);
+        }
+      }
+    }
+    // Стандартный CD для нового облака
+    this.cooldown -= dt;
+    if (this.cooldown > 0) return;
+    const fired = this.doAttack(player, enemies);
+    if (fired) this.cooldown = this.cooldownAt(player);
+    else this.cooldown = 0.1;
+  }
+  renderOverlay(ctx) {
+    for (const c of this._clouds) {
+      const t = c.life / c.maxLife;
+      const alpha = 0.15 + 0.2 * t;
+      const pulse = 1 + Math.sin(c.life * 4) * 0.05;
+      ctx.fillStyle = `rgba(80, 200, 80, ${alpha})`;
+      ctx.beginPath(); ctx.arc(c.x, c.y, c.radius * pulse, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = `rgba(50, 180, 50, ${alpha * 1.5})`; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(c.x, c.y, c.radius * pulse, 0, Math.PI * 2); ctx.stroke();
+    }
+  }
+}
+
+
+/* ============================================================
+   16) Spellbook — Книга заклинаний: 2 случайных снаряда.
+   ============================================================ */
+class SpellbookWeapon extends Weapon {
+  constructor() {
+    super({ id: 'spellbook', name: 'Книга закл.', type: 'magic', baseCooldown: 0.8, baseDamage: 10, icon: '📖', desc: '2 случайных снаряда в случайных направлениях.' });
+    this.speed = 380; this.life = 1.2;
+  }
+  doAttack(player, _enemies, projectiles) {
+    let any = false;
+    for (let i = 0; i < 2; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const p = projectiles.spawn(); if (!p) break;
+      p.kind = 'spellbook_proj'; p.owner = 'player'; p.x = player.x; p.y = player.y;
+      p.vx = Math.cos(a) * this.speed; p.vy = Math.sin(a) * this.speed;
+      p.life = this.life; p.damage = this.damageAt() * player.damageMul;
+      p.radius = 6; p.angle = a; p.source = this.id;
+      p.pierce = false; p.slowEnemy = 0; p.spin = 0;
+      any = true;
+    }
+    return any;
+  }
+}
+
+
+
+/* ============================================================
+   17) Firestorm — Огненный шторм: 4 столба вокруг героя.
+   ============================================================ */
+class FirestormWeapon extends Weapon {
+  constructor() {
+    super({ id: 'firestorm', name: 'Огн. шторм', type: 'aoe', baseCooldown: 2.5, baseDamage: 18, icon: '🌋', desc: '4 огненных столба вокруг героя (120 px).' });
+    this.spawnRadius = 120; this.aoeRadius = 40; this.pillarLife = 0.6;
+    this._pillars = []; // { x, y, life, maxLife, damage, radius }
+  }
+  doAttack(player) {
+    const damage = this.damageAt() * player.damageMul;
+    for (let i = 0; i < 4; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const r = 40 + Math.random() * (this.spawnRadius - 40);
+      this._pillars.push({
+        x: player.x + Math.cos(a) * r,
+        y: player.y + Math.sin(a) * r,
+        life: this.pillarLife,
+        maxLife: this.pillarLife,
+        damage: damage,
+        radius: this.aoeRadius,
+        hit: false,
+      });
+    }
+    return true;
+  }
+  update(player, enemies, projectiles, dt, helpers) {
+    // Обновляем столбы
+    for (let i = this._pillars.length - 1; i >= 0; i--) {
+      const p = this._pillars[i];
+      p.life -= dt;
+      if (p.life <= 0) { this._pillars.splice(i, 1); continue; }
+      // Урон только 1 раз при появлении
+      if (!p.hit) {
+        p.hit = true;
+        const r2 = p.radius * p.radius;
+        const items = enemies.items;
+        for (let j = 0; j < items.length; j++) {
+          const e = items[j];
+          if (!e.active || e.invulnerable) continue;
+          const dx = e.x - p.x, dy = e.y - p.y;
+          if (dx * dx + dy * dy <= r2) helpers.damageEnemy(e, p.damage);
+        }
+      }
+    }
+    // Стандартный CD
+    this.cooldown -= dt;
+    if (this.cooldown > 0) return;
+    const fired = this.doAttack(player);
+    if (fired) this.cooldown = this.cooldownAt(player);
+    else this.cooldown = 0.1;
+  }
+  renderOverlay(ctx) {
+    for (const p of this._pillars) {
+      const t = p.life / p.maxLife;
+      const alpha = 0.3 + 0.5 * t;
+      ctx.fillStyle = `rgba(255, 140, 40, ${alpha})`;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.radius * (1.2 - t * 0.2), 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = `rgba(255, 220, 80, ${alpha * 0.7})`;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.radius * 0.5, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+}
+
+
+/* ============================================================
+   18) Holy Aura — Святая аура: постоянный урон вокруг героя.
+   Не создаёт снарядов. Только визуал + проверка коллизий.
+   ============================================================ */
+class HolyAuraWeapon extends Weapon {
+  constructor() {
+    super({ id: 'holy_aura', name: 'Св. аура', type: 'aoe', baseCooldown: 0, baseDamage: 4, icon: '✡', desc: 'Постоянное свечение (50 px), урон 4/с (нежити 10/с).' });
+    this.radius = 50;
+    this.undeadDps = 10;
+    this._tickAcc = 0;
+  }
+  update(player, enemies, _proj, dt, helpers) {
+    // Постоянный урон каждые 0.25 сек
+    this._tickAcc += dt;
+    if (this._tickAcc < 0.25) return;
+    const ticks = this._tickAcc;
+    this._tickAcc = 0;
+    const baseDps = this.damageAt() * player.damageMul;
+    const undeadDps = this.undeadDps * WEAPON_LEVEL_DAMAGE[this.level - 1] * player.damageMul;
+    const r2 = this.radius * this.radius;
+    const items = enemies.items;
+    for (let i = 0; i < items.length; i++) {
+      const e = items[i];
+      if (!e.active || e.invulnerable) continue;
+      const dx = e.x - player.x, dy = e.y - player.y;
+      if (dx * dx + dy * dy > r2) continue;
+      // Нежить: скелеты, зомби, скелет-маг, скелет-капитан, лич
+      const isUndead = e.cfg && (e.cfg.id === 'skeleton' || e.cfg.id === 'zombie' ||
+        e.cfg.id === 'mage' || e.cfg.id === 'captain' || e.cfg.id === 'archer');
+      const dmg = (isUndead ? undeadDps : baseDps) * ticks;
+      helpers.damageEnemy(e, dmg);
+    }
+  }
+  renderOverlay(ctx, player) {
+    const pulse = 0.6 + 0.2 * Math.sin(Date.now() * 0.004);
+    ctx.fillStyle = `rgba(255, 240, 150, ${0.08 * pulse})`;
+    ctx.beginPath(); ctx.arc(player.x, player.y, this.radius, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = `rgba(255, 230, 100, ${0.25 * pulse})`; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(player.x, player.y, this.radius, 0, Math.PI * 2); ctx.stroke();
+  }
+  readyProgress() { return 1; } // Всегда готово
+}
+
+
+/* ============================================================
+   19) Spike Ring — Кольцо шипов: 4 вращающихся шипа.
+   Не создаёт снарядов. Только визуал + проверка коллизий.
+   ============================================================ */
+class SpikeRingWeapon extends Weapon {
+  constructor() {
+    super({ id: 'spike_ring', name: 'Кольцо шипов', type: 'aoe', baseCooldown: 0, baseDamage: 14, icon: '✸', desc: '4 вращающихся шипа вокруг героя (60 px).' });
+    this.radius = 60; this.spikeCount = 4; this.rotSpeed = Math.PI; // полный оборот за 2 сек
+    this._angle = 0; this._hitCooldowns = new Map(); // enemy -> cooldown
+  }
+  update(player, enemies, _proj, dt, helpers) {
+    this._angle += this.rotSpeed * dt;
+    // Обновляем кулдауны
+    for (const [key, val] of this._hitCooldowns) {
+      const newVal = val - dt;
+      if (newVal <= 0) this._hitCooldowns.delete(key);
+      else this._hitCooldowns.set(key, newVal);
+    }
+    // Проверяем коллизии шипов с врагами
+    const damage = this.damageAt() * player.damageMul;
+    const spikeR = 10;
+    for (let s = 0; s < this.spikeCount; s++) {
+      const a = this._angle + (Math.PI * 2 / this.spikeCount) * s;
+      const sx = player.x + Math.cos(a) * this.radius;
+      const sy = player.y + Math.sin(a) * this.radius;
+      const items = enemies.items;
+      for (let i = 0; i < items.length; i++) {
+        const e = items[i];
+        if (!e.active || e.invulnerable) continue;
+        if (this._hitCooldowns.has(i)) continue;
+        const eSize = e.cfg ? Math.max(e.cfg.w, e.cfg.h) * 0.5 : 14;
+        const dx = e.x - sx, dy = e.y - sy;
+        if (dx * dx + dy * dy <= (spikeR + eSize) * (spikeR + eSize)) {
+          helpers.damageEnemy(e, damage);
+          this._hitCooldowns.set(i, 0.5); // 0.5 сек между ударами по одному врагу
+        }
+      }
+    }
+  }
+  renderOverlay(ctx, player) {
+    for (let s = 0; s < this.spikeCount; s++) {
+      const a = this._angle + (Math.PI * 2 / this.spikeCount) * s;
+      const sx = player.x + Math.cos(a) * this.radius;
+      const sy = player.y + Math.sin(a) * this.radius;
+      ctx.save(); ctx.translate(sx, sy); ctx.rotate(a);
+      ctx.fillStyle = '#888888';
+      ctx.beginPath();
+      ctx.moveTo(0, -8); ctx.lineTo(7, 5); ctx.lineTo(-7, 5); ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#555'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.restore();
+    }
+  }
+  readyProgress() { return 1; }
+}
+
+
+/* ============================================================
+   20) Earthquake — Землетрясение: расширяющаяся волна.
+   ============================================================ */
+class EarthquakeWeapon extends Weapon {
+  constructor() {
+    super({ id: 'earthquake', name: 'Землетрясение', type: 'aoe', baseCooldown: 3.0, baseDamage: 15, icon: '◉', desc: 'Ударная волна (расширяющееся кольцо, 150 px).' });
+    this.maxRadius = 150; this.expandTime = 0.5;
+    this._waves = []; // { x, y, life, maxLife, radius, maxRadius, damage, hit }
+  }
+  doAttack(player, enemies, _proj, helpers) {
+    const damage = this.damageAt() * player.damageMul;
+    this._waves.push({
+      x: player.x, y: player.y,
+      life: this.expandTime, maxLife: this.expandTime,
+      radius: 0, maxRadius: this.maxRadius,
+      damage: damage, hitSet: new Set(),
+    });
+    return true;
+  }
+  update(player, enemies, projectiles, dt, helpers) {
+    // Обновляем волны
+    for (let i = this._waves.length - 1; i >= 0; i--) {
+      const w = this._waves[i];
+      w.life -= dt;
+      if (w.life <= 0) { this._waves.splice(i, 1); continue; }
+      const t = 1 - w.life / w.maxLife;
+      w.radius = w.maxRadius * t;
+      // Урон врагам на фронте волны
+      const items = enemies.items;
+      const innerR = w.radius - 20;
+      for (let j = 0; j < items.length; j++) {
+        const e = items[j];
+        if (!e.active || e.invulnerable) continue;
+        if (w.hitSet.has(j)) continue;
+        const dx = e.x - w.x, dy = e.y - w.y;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d <= w.radius && d >= innerR) {
+          helpers.damageEnemy(e, w.damage);
+          w.hitSet.add(j);
+        }
+      }
+    }
+    // Стандартный CD
+    this.cooldown -= dt;
+    if (this.cooldown > 0) return;
+    // Автоатака если есть враги в расстоянии
+    const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.maxRadius + 50);
+    if (!target) { this.cooldown = 0.1; return; }
+    this.doAttack(player, enemies, projectiles, helpers);
+    this.cooldown = this.cooldownAt(player);
+  }
+  renderOverlay(ctx) {
+    for (const w of this._waves) {
+      const t = 1 - w.life / w.maxLife;
+      const alpha = (1 - t) * 0.6;
+      ctx.strokeStyle = `rgba(160, 120, 60, ${alpha})`; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(w.x, w.y, w.radius, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = `rgba(200, 160, 80, ${alpha * 0.5})`; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(w.x, w.y, w.radius * 0.8, 0, Math.PI * 2); ctx.stroke();
+    }
+  }
+}
+
+
+
+/* ============================================================
+   EVOLUTIONS — эволюционные оружия (Шаг 3).
+   ============================================================ */
+class EvolutionWeapon extends Weapon {
+  constructor(cfg) {
+    super(cfg);
+    this.isEvolved = true;
+    this.evolvedFrom = cfg.evolvedFrom || '';
+  }
+}
+
+/* ---------- 1) Вампирский клинок ---------- */
+class VampireBladeWeapon extends EvolutionWeapon {
+  constructor() {
+    super({ id: 'vampire_blade', name: 'Вампирский клинок', type: 'melee', baseCooldown: 0.7, baseDamage: 25, icon: '🩸', evolvedFrom: 'sword' });
+    this.radius = 70; this.arc = Math.PI; this.swingTime = 0.18;
+    this.swing = { active: false, t: 0, angle: 0 }; this.lifesteal = 3;
+  }
+  tick(dt) { if (this.swing.active) { this.swing.t += dt; if (this.swing.t >= this.swingTime) this.swing.active = false; } }
+  doAttack(player, enemies, _proj, helpers) {
+    const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.radius);
+    if (!target) return false;
+    const damage = this.damageAt() * player.damageMul;
+    const dirAngle = Math.atan2(target.y - player.y, target.x - player.x);
+    const halfArc = this.arc * 0.5;
+    const r2 = this.radius * this.radius;
+    const items = enemies.items; let hits = 0;
+    for (let i = 0; i < items.length; i++) {
+      const e = items[i];
+      if (!e.active) continue;
+      const dx = e.x - player.x, dy = e.y - player.y;
+      if (dx * dx + dy * dy > r2) continue;
+      let diff = Math.atan2(dy, dx) - dirAngle;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      if (Math.abs(diff) <= halfArc) { helpers.damageEnemy(e, damage); hits++; }
+    }
+    if (hits > 0) {
+      player.hp = Math.min(player.maxHp, player.hp + this.lifesteal * hits);
+      if (window.Particles) Particles.burst(player.x, player.y, 4, { color: '#c0392b', speedMin: 30, speedMax: 80, lifeMin: 0.25, lifeMax: 0.45, sizeMin: 2, sizeMax: 3 });
+    }
+    this.swing.active = true; this.swing.t = 0; this.swing.angle = dirAngle;
+    return true;
+  }
+  renderOverlay(ctx, player) {
+    if (!this.swing.active) return;
+    const t = this.swing.t / this.swingTime;
+    const alpha = (1 - t) * 0.9;
+    const r = this.radius; const half = this.arc * 0.5;
+    const a0 = this.swing.angle - half + this.arc * t * 0.4;
+    const a1 = this.swing.angle + half + this.arc * t * 0.4;
+    ctx.strokeStyle = `rgba(220, 60, 50, ${alpha})`; ctx.lineWidth = 7;
+    ctx.beginPath(); ctx.arc(player.x, player.y, r, a0, a1); ctx.stroke();
+    ctx.strokeStyle = `rgba(255, 200, 200, ${alpha * 0.6})`; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(player.x, player.y, r - 5, a0, a1); ctx.stroke();
+  }
+}
+
+/* ---------- 2) Скорострельный лук ---------- */
+class RapidBowWeapon extends EvolutionWeapon {
+  constructor() {
+    super({ id: 'rapid_bow', name: 'Скорострельный лук', type: 'ranged', baseCooldown: 1.4, baseDamage: 15, icon: '🌪', evolvedFrom: 'bow' });
+    this.arrowSpeed = 580; this.arrowLife = 1.6; this.range = 560;
+    this.burstCount = 3; this.burstInterval = 0.10;
+    this._burstLeft = 0; this._burstTimer = 0; this._lastDir = { x: 1, y: 0 };
+  }
+  update(player, enemies, projectiles, dt) {
+    if (this._burstLeft > 0) {
+      this._burstTimer -= dt;
+      while (this._burstLeft > 0 && this._burstTimer <= 0) {
+        this._fireOne(player, projectiles, this._lastDir);
+        this._burstLeft -= 1; this._burstTimer += this.burstInterval;
+      }
+      if (this._burstLeft <= 0) this.cooldown = this.cooldownAt(player);
+      return;
+    }
+    this.cooldown -= dt;
+    if (this.cooldown > 0) return;
+    const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range);
+    if (!target) { this.cooldown = 0.1; return; }
+    this._lastDir = Utils.norm(target.x - player.x, target.y - player.y);
+    this._burstLeft = this.burstCount; this._burstTimer = 0;
+  }
+  _fireOne(player, projectiles, dir) {
+    const p = projectiles.spawn(); if (!p) return;
+    p.kind = 'arrow'; p.owner = 'player'; p.x = player.x; p.y = player.y;
+    const jitter = (Math.random() - 0.5) * 0.05;
+    const a = Math.atan2(dir.y, dir.x) + jitter;
+    p.vx = Math.cos(a) * this.arrowSpeed; p.vy = Math.sin(a) * this.arrowSpeed;
+    p.life = this.arrowLife; p.damage = this.damageAt() * player.damageMul;
+    p.radius = 4; p.angle = a; p.source = this.id; p.pierce = false; p.slowEnemy = 0;
+  }
+}
+
+/* ---------- 3) Шквал клинков ---------- */
+class BladeStormWeapon extends EvolutionWeapon {
+  constructor() {
+    super({ id: 'blade_storm', name: 'Шквал клинков', type: 'multi', baseCooldown: 1.4, baseDamage: 12, icon: '💥', evolvedFrom: 'daggers' });
+    this.speed = 520; this.life = 1.2; this.spread = (18 * Math.PI) / 180;
+    this.range = 600; this.count = 5; this.critChance = 0.20; this.critMul = 2.0;
+  }
+  doAttack(player, enemies, projectiles) {
+    let dx, dy;
+    const moveLen = Math.hypot(player.moveDir.x, player.moveDir.y);
+    if (moveLen > 0.1) { dx = player.moveDir.x; dy = player.moveDir.y; }
+    else {
+      const t = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range);
+      if (!t) { dx = player.facing.x; dy = player.facing.y; }
+      else { const n = Utils.norm(t.x - player.x, t.y - player.y); dx = n.x; dy = n.y; }
+    }
+    const baseAngle = Math.atan2(dy, dx);
+    const halfSpan = this.spread * 2;
+    let any = false;
+    for (let i = 0; i < this.count; i++) {
+      const tt = this.count === 1 ? 0 : (i / (this.count - 1)) * 2 - 1;
+      const a = baseAngle + tt * halfSpan;
+      const p = projectiles.spawn(); if (!p) break;
+      p.kind = 'dagger'; p.owner = 'player'; p.x = player.x; p.y = player.y;
+      p.vx = Math.cos(a) * this.speed; p.vy = Math.sin(a) * this.speed;
+      p.life = this.life;
+      let dmg = this.damageAt() * player.damageMul;
+      if (Math.random() < this.critChance) dmg *= this.critMul;
+      p.damage = dmg; p.radius = 5; p.angle = a; p.source = this.id;
+      p.pierce = false; p.slowEnemy = 0;
+      any = true;
+    }
+    return any;
+  }
+}
+
+/* ---------- 4) Пламя души ---------- */
+class SoulFlameWeapon extends EvolutionWeapon {
+  constructor() {
+    super({ id: 'soul_flame', name: 'Пламя души', type: 'aoe', baseCooldown: 2.4, baseDamage: 30, icon: '👻', evolvedFrom: 'fireball' });
+    this.flightTime = 0.6; this.explodeRadius = 110; this.range = 720; this.speed = 300;
+  }
+  doAttack(player, enemies, projectiles) {
+    let dx, dy;
+    const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range);
+    if (target) { const n = Utils.norm(target.x - player.x, target.y - player.y); dx = n.x; dy = n.y; }
+    else {
+      const moveLen = Math.hypot(player.moveDir.x, player.moveDir.y);
+      if (moveLen > 0.1) { dx = player.moveDir.x; dy = player.moveDir.y; }
+      else { dx = player.facing.x; dy = player.facing.y; }
+    }
+    const p = projectiles.spawn(); if (!p) return false;
+    p.kind = 'fireball'; p.owner = 'player'; p.x = player.x; p.y = player.y;
+    p.vx = dx * this.speed; p.vy = dy * this.speed;
+    p.life = this.flightTime; p.damage = this.damageAt() * player.damageMul;
+    p.radius = 14; p.explodeRadius = this.explodeRadius;
+    p.angle = Math.atan2(dy, dx); p.source = this.id;
+    p.pierce = false; p.slowEnemy = 0;
+    return true;
+  }
+}
+
+
+/* ============================================================
+   Реестр эволюционных фабрик
+   ============================================================ */
 const EVOLVED_WEAPON_FACTORIES = {
   vampire_blade: () => new VampireBladeWeapon(),
   rapid_bow:     () => new RapidBowWeapon(),
@@ -894,35 +1430,87 @@ const EVOLVED_WEAPON_FACTORIES = {
 };
 
 
-/* ---------- Реестр доступных оружий ---------- */
+/* ============================================================
+   Реестр доступных оружий (для левелапа)
+   ============================================================ */
 const WEAPON_FACTORIES = {
-  sword:    () => new SwordWeapon(),
-  bow:      () => new BowWeapon(),
-  daggers:  () => new DaggerWeapon(),
-  fireball: () => new FireballWeapon(),
+  sword:            () => new SwordWeapon(),
+  bow:              () => new BowWeapon(),
+  daggers:          () => new DaggerWeapon(),
+  fireball:         () => new FireballWeapon(),
+  axe:              () => new AxeWeapon(),
+  spear:            () => new SpearWeapon(),
+  hammer:           () => new HammerWeapon(),
+  whip:             () => new WhipWeapon(),
+  crossbow:         () => new CrossbowWeapon(),
+  throwing_axes:    () => new ThrowingAxesWeapon(),
+  darts:            () => new DartsWeapon(),
+  sling:            () => new SlingWeapon(),
+  ice_arrow:        () => new IceArrowWeapon(),
+  chain_lightning:  () => new ChainLightningWeapon(),
+  poison_cloud:     () => new PoisonCloudWeapon(),
+  spellbook:        () => new SpellbookWeapon(),
+  firestorm:        () => new FirestormWeapon(),
+  holy_aura:        () => new HolyAuraWeapon(),
+  spike_ring:       () => new SpikeRingWeapon(),
+  earthquake:       () => new EarthquakeWeapon(),
 };
 
 const WEAPON_INFO = [
-  { id: 'sword',    name: 'Меч',           icon: '⚔', desc: 'Удар по ближайшему врагу в радиусе 60 px.' },
-  { id: 'bow',      name: 'Лук',           icon: '🏹', desc: 'Стреляет в ближайшего врага.' },
-  { id: 'daggers',  name: 'Кинжалы',       icon: '🗡', desc: 'Бросок 3 кинжалов веером.' },
-  { id: 'fireball', name: 'Огненный шар',  icon: '🔥', desc: 'Снаряд с AoE-взрывом 80 px.' },
+  { id: 'sword',           name: 'Меч',             icon: '⚔',  desc: 'Удар по ближайшему врагу в радиусе 60 px.' },
+  { id: 'bow',             name: 'Лук',             icon: '🏹', desc: 'Стреляет в ближайшего врага.' },
+  { id: 'daggers',         name: 'Кинжалы',         icon: '🗡',  desc: 'Бросок 3 кинжалов веером.' },
+  { id: 'fireball',        name: 'Огненный шар',    icon: '🔥', desc: 'Снаряд с AoE-взрывом 80 px.' },
+  { id: 'axe',             name: 'Секира',          icon: '🪓', desc: 'Широкий взмах конусом 140°.' },
+  { id: 'spear',           name: 'Копьё',           icon: '🔱', desc: 'Удар вперёд по прямой (100 px).' },
+  { id: 'hammer',          name: 'Молот',           icon: '🔨', desc: 'Удар по земле — AoE 70 px.' },
+  { id: 'whip',            name: 'Кнут',            icon: '〰', desc: 'Атака по дальнему врагу (120 px).' },
+  { id: 'crossbow',        name: 'Арбалет',         icon: '⊕',  desc: 'Пробивающий выстрел сквозь врагов.' },
+  { id: 'throwing_axes',   name: 'Мет. топоры',     icon: '⚒',  desc: '2 вращающихся топора веером.' },
+  { id: 'darts',           name: 'Дротики',         icon: '↗',  desc: 'Очередь из 3 быстрых дротиков.' },
+  { id: 'sling',           name: 'Праща',           icon: '●',  desc: 'Камень по дуге с AoE 30 px.' },
+  { id: 'ice_arrow',       name: 'Ледяная стрела',  icon: '❄',  desc: 'Замедляет врага на 40% (2 сек).' },
+  { id: 'chain_lightning', name: 'Цеп. молния',     icon: '⚡', desc: 'Бьёт врага, перескакивая на 2 соседних.' },
+  { id: 'poison_cloud',    name: 'Яд. облако',      icon: '☠',  desc: 'Облако яда (60 px, 3 сек, 8 дпс).' },
+  { id: 'spellbook',       name: 'Книга закл.',     icon: '📖', desc: '2 случайных снаряда.' },
+  { id: 'firestorm',       name: 'Огн. шторм',      icon: '🌋', desc: '4 огненных столба вокруг героя.' },
+  { id: 'holy_aura',       name: 'Св. аура',        icon: '✡',  desc: 'Постоянный урон вокруг (50 px).' },
+  { id: 'spike_ring',      name: 'Кольцо шипов',    icon: '✸',  desc: '4 вращающихся шипа (60 px).' },
+  { id: 'earthquake',      name: 'Землетрясение',   icon: '◉',  desc: 'Ударная волна (150 px).' },
 ];
 
 
-// Экспорт
+/* ============================================================
+   Экспорт
+   ============================================================ */
 window.Weapon = Weapon;
 window.SwordWeapon = SwordWeapon;
 window.BowWeapon = BowWeapon;
 window.DaggerWeapon = DaggerWeapon;
 window.FireballWeapon = FireballWeapon;
+window.AxeWeapon = AxeWeapon;
+window.SpearWeapon = SpearWeapon;
+window.HammerWeapon = HammerWeapon;
+window.WhipWeapon = WhipWeapon;
+window.CrossbowWeapon = CrossbowWeapon;
+window.ThrowingAxesWeapon = ThrowingAxesWeapon;
+window.DartsWeapon = DartsWeapon;
+window.SlingWeapon = SlingWeapon;
+window.IceArrowWeapon = IceArrowWeapon;
+window.ChainLightningWeapon = ChainLightningWeapon;
+window.PoisonCloudWeapon = PoisonCloudWeapon;
+window.SpellbookWeapon = SpellbookWeapon;
+window.FirestormWeapon = FirestormWeapon;
+window.HolyAuraWeapon = HolyAuraWeapon;
+window.SpikeRingWeapon = SpikeRingWeapon;
+window.EarthquakeWeapon = EarthquakeWeapon;
+
 window.WEAPON_FACTORIES = WEAPON_FACTORIES;
 window.WEAPON_INFO = WEAPON_INFO;
 window.MAX_WEAPON_LEVEL = MAX_WEAPON_LEVEL;
 window.createProjectile = createProjectile;
 window.Projectiles = Projectiles;
 
-// Эволюции (Шаг 3)
 window.EvolutionWeapon = EvolutionWeapon;
 window.VampireBladeWeapon = VampireBladeWeapon;
 window.RapidBowWeapon = RapidBowWeapon;

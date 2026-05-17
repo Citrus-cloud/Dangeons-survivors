@@ -273,12 +273,23 @@ const Game = {
       });
     }
 
-    // Случайные n без повторений
+    // Шаг 7: Взвешенная выборка — оружие/пассивки чаще, базовые улучшения реже.
+    // Вес: weapon/ability = 3, basic = 1
+    const weighted = [];
+    for (const item of all) {
+      const weight = (item.kind === 'basic') ? 1 : 3;
+      for (let w = 0; w < weight; w++) weighted.push(item);
+    }
     const out = [];
-    const pool = all.slice();
-    for (let i = 0; i < n && pool.length > 0; i++) {
-      const idx = Math.floor(Math.random() * pool.length);
-      out.push(pool.splice(idx, 1)[0]);
+    const picked = new Set();
+    for (let i = 0; i < n && picked.size < all.length; i++) {
+      let attempts = 0;
+      while (attempts < 50) {
+        const idx = Math.floor(Math.random() * weighted.length);
+        const item = weighted[idx];
+        if (!picked.has(item)) { picked.add(item); out.push(item); break; }
+        attempts++;
+      }
     }
     return out;
   },
@@ -809,27 +820,54 @@ const Game = {
     }
   },
 
-  /** Проверка мили-оружий на попадание в босса (отдельная проверка по swing). */
+  /** Проверка мили-оружий на попадание в босса (отдельная проверка). */
   checkMeleeVsBoss() {
     if (!window.Bosses || !Bosses.isAlive()) return;
     const boss = Bosses.current;
     const p = this.player;
     for (const w of p.weaponSlots) {
-      if (!w || !w.swing || !w.swing.active) continue;
-      // Только на первом кадре свинга (t ≈ 0)
-      if (w.swing.t > 0.05) continue;
+      if (!w) continue;
+      const r = w.radius || 60;
       const dx = boss.x - p.x, dy = boss.y - p.y;
       const d2 = dx * dx + dy * dy;
-      const r = w.radius || 60;
-      if (d2 > r * r) continue;
-      const a = Math.atan2(dy, dx);
-      let diff = a - w.swing.angle;
-      while (diff > Math.PI) diff -= Math.PI * 2;
-      while (diff < -Math.PI) diff += Math.PI * 2;
-      const halfArc = (w.arc || Math.PI) * 0.5;
-      if (Math.abs(diff) <= halfArc) {
-        const damage = (w.damageAt ? w.damageAt() : 20) * p.damageMul;
-        Bosses.damage(damage);
+
+      // Swing-based (Sword, Axe, VampireBlade)
+      if (w.swing && w.swing.active && w.swing.t <= 0.05) {
+        if (d2 > r * r) continue;
+        const a = Math.atan2(dy, dx);
+        let diff = a - w.swing.angle;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        const halfArc = (w.arc || Math.PI) * 0.5;
+        if (Math.abs(diff) <= halfArc) {
+          Bosses.damage((w.damageAt ? w.damageAt() : 20) * p.damageMul);
+        }
+        continue;
+      }
+      // Thrust-based (Spear)
+      if (w.thrust && w.thrust.active && w.thrust.t <= 0.05) {
+        const cos = Math.cos(w.thrust.angle), sin = Math.sin(w.thrust.angle);
+        const along = dx * cos + dy * sin;
+        const across = -dx * sin + dy * cos;
+        if (along >= 0 && along <= (w.range || 100) && Math.abs(across) <= 30) {
+          Bosses.damage((w.damageAt ? w.damageAt() : 18) * p.damageMul);
+        }
+        continue;
+      }
+      // Slam-based (Hammer)
+      if (w.slam && w.slam.active && w.slam.t <= 0.05) {
+        if (d2 <= r * r) {
+          Bosses.damage((w.damageAt ? w.damageAt() : 20) * p.damageMul);
+        }
+        continue;
+      }
+      // Whip
+      if (w.whipAnim && w.whipAnim.active && w.whipAnim.t <= 0.05) {
+        const bossR = Math.max(boss.cfg.w, boss.cfg.h) * 0.45;
+        if (d2 <= (w.range + bossR) * (w.range + bossR)) {
+          Bosses.damage((w.damageAt ? w.damageAt() : 14) * p.damageMul);
+        }
+        continue;
       }
     }
   },
