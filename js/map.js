@@ -1189,27 +1189,8 @@ const GameMap = {
     }
   },
 
-  _renderRunes(ctx, cam, vw, vh) {
-    const t = this.time;
-    for (const r of this.dungeon.decor.runes) {
-      if (r.x < cam.x - 20 || r.x > cam.x + vw + 20 ||
-          r.y < cam.y - 20 || r.y > cam.y + vh + 20) continue;
-      const pulse = 0.5 + 0.5 * Math.sin(t * 2 + r.phase);
-      ctx.globalAlpha = 0.25 + 0.35 * pulse;
-      ctx.fillStyle = r.color;
-      ctx.beginPath();
-      ctx.arc(r.x, r.y, 6, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = 0.6;
-      ctx.strokeStyle = r.color;
-      ctx.lineWidth = 1;
-      // "Руна" — крест внутри круга
-      ctx.beginPath();
-      ctx.moveTo(r.x - 4, r.y); ctx.lineTo(r.x + 4, r.y);
-      ctx.moveTo(r.x, r.y - 4); ctx.lineTo(r.x, r.y + 4);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
+  _renderRunes(/* ctx, cam, vw, vh */) {
+    // Декоративные мерцающие руны отключены — визуальный мусор (Шаг 7).
   },
 
   _renderWebs(ctx, cam, vw, vh) {

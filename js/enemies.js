@@ -47,6 +47,9 @@ function createEnemy() {
     activated: true,                // мимик стартует с false
     summons: [],                    // активные призванные (для культиста)
     sinPhase: 0,                    // для bat
+    // Шаг 7: замедление от оружий (ледяная стрела и т.п.)
+    _slowFactor: 0,
+    _slowTimer: 0,
   };
 }
 
@@ -114,12 +117,14 @@ function _tryContactDamage(e, player, dt) {
   }
 }
 
-/* Скорость врага с учётом dash и captain aura. */
+/* Скорость врага с учётом dash, captain aura, и замедления от оружий. */
 function _currentSpeed(e) {
   const base = (e.cfg && e.cfg.speed) || 0;
   let s = base;
   if (e.captainBuffed) s *= (ENEMY_TYPES.captain.auraSpeedMul || 1.20);
   if (e.dashing) s *= (e.cfg.dashMul || 2.0);
+  // Шаг 7: замедление от ледяной стрелы и т.п.
+  if (e._slowFactor && e._slowTimer > 0) s *= (1 - e._slowFactor);
   return s;
 }
 
@@ -598,6 +603,8 @@ const Enemies = {
       e.bobPhase += dt * 4;
       e.flash = Math.max(0, e.flash - dt);
       e.attackPunch = Math.max(0, e.attackPunch - dt);
+      // Шаг 7: тик таймера замедления от оружий
+      if (e._slowTimer > 0) e._slowTimer -= dt;
       const fn = Behaviors[e.cfg.behavior];
       if (fn) fn(e, player, dt);
       else Behaviors.chase(e, player, dt);
