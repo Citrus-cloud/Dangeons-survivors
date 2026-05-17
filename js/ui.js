@@ -213,6 +213,7 @@ const UI = {
     const cdEl   = el.children[0];
     if (!ability) {
       el.classList.remove('filled');
+      el.classList.remove('slot-flash');
       iconEl.textContent = '';
       levelEl.textContent = '';
       cdEl.style.height = '0%';
@@ -222,6 +223,13 @@ const UI = {
     iconEl.textContent = ability.icon || '?';
     levelEl.textContent = Utils.roman(ability.level);
     cdEl.style.height = '100%'; // пассивки всегда "активны"
+
+    // Шаг 8: вспышка при повышении уровня (200 мс белая обводка)
+    if (ability._flashUntil && ability._flashUntil > performance.now()) {
+      el.classList.add('slot-flash');
+    } else {
+      el.classList.remove('slot-flash');
+    }
   },
 
 

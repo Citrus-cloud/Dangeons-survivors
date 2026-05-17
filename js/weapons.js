@@ -120,9 +120,14 @@ const Projectiles = {
           const r = m.radius + player.size * 0.5;
           const dx = player.x - m.x, dy = player.y - m.y;
           if (dx * dx + dy * dy <= r * r) {
-            player.hp -= m.damage;
+            // Шаг 8: используем Player.takeDamage
+            if (Player.takeDamage) Player.takeDamage(player, m.damage, null);
+            else player.hp -= m.damage;
             if (m.kind === 'boss_web' && m.slowPct) {
-              player.webSlow = m.slowDuration || 2.0;
+              // Шаг 8: сопротивление снижает длительность замедления
+              let webDur = m.slowDuration || 2.0;
+              if (player.debuffReduction > 0) webDur *= (1 - Math.min(player.debuffReduction, 0.75));
+              player.webSlow = webDur;
             }
             if (m.kind === 'boss_fireball' && m.explodeRadius > 0) {
               if (window.Particles) {
@@ -400,6 +405,13 @@ class Weapon {
 
   upgrade() { if (this.level < MAX_WEAPON_LEVEL) this.level += 1; }
 
+  /** Шаг 8: полный множитель урона с учётом магического усиления. */
+  totalDamageMul(player) {
+    let mul = player.damageMul;
+    if (this.type === 'magic' && player.magicDamageMul) mul *= player.magicDamageMul;
+    return mul;
+  }
+
   update(player, enemies, projectiles, dt, helpers) {
     this.cooldown -= dt;
     if (this.cooldown > 0) return false;
@@ -435,7 +447,7 @@ class SwordWeapon extends Weapon {
   doAttack(player, enemies, _proj, helpers) {
     const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.radius);
     if (!target) return false;
-    const damage = this.damageAt() * player.damageMul;
+    const damage = this.damageAt() * this.totalDamageMul(player);
     const dirAngle = Math.atan2(target.y - player.y, target.x - player.x);
     const halfArc = this.arc * 0.5;
     const r2 = this.radius * this.radius;
@@ -484,7 +496,7 @@ class BowWeapon extends Weapon {
     const p = projectiles.spawn(); if (!p) return true;
     p.kind = 'arrow'; p.owner = 'player'; p.x = player.x; p.y = player.y;
     p.vx = dir.x * this.arrowSpeed; p.vy = dir.y * this.arrowSpeed;
-    p.life = this.arrowLife; p.damage = this.damageAt() * player.damageMul;
+    p.life = this.arrowLife; p.damage = this.damageAt() * this.totalDamageMul(player);
     p.radius = 4; p.angle = Math.atan2(dir.y, dir.x); p.source = this.id;
     p.pierce = false; p.slowEnemy = 0;
     return true;
@@ -517,7 +529,7 @@ class DaggerWeapon extends Weapon {
       const p = projectiles.spawn(); if (!p) break;
       p.kind = 'dagger'; p.owner = 'player'; p.x = player.x; p.y = player.y;
       p.vx = Math.cos(a) * this.speed; p.vy = Math.sin(a) * this.speed;
-      p.life = this.life; p.damage = this.damageAt() * player.damageMul;
+      p.life = this.life; p.damage = this.damageAt() * this.totalDamageMul(player);
       p.radius = 5; p.angle = a; p.source = this.id; p.pierce = false; p.slowEnemy = 0;
       any = true;
     }
@@ -547,7 +559,7 @@ class FireballWeapon extends Weapon {
     const p = projectiles.spawn(); if (!p) return false;
     p.kind = 'fireball'; p.owner = 'player'; p.x = player.x; p.y = player.y;
     p.vx = dx * speed; p.vy = dy * speed;
-    p.life = this.flightTime; p.damage = this.damageAt() * player.damageMul;
+    p.life = this.flightTime; p.damage = this.damageAt() * this.totalDamageMul(player);
     p.radius = 12; p.explodeRadius = this.explodeRadius;
     p.angle = Math.atan2(dy, dx); p.source = this.id; p.pierce = false; p.slowEnemy = 0;
     return true;
@@ -569,7 +581,7 @@ class AxeWeapon extends Weapon {
   doAttack(player, enemies, _proj, helpers) {
     const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.radius);
     if (!target) return false;
-    const damage = this.damageAt() * player.damageMul;
+    const damage = this.damageAt() * this.totalDamageMul(player);
     const dirAngle = Math.atan2(target.y - player.y, target.x - player.x);
     const halfArc = this.arc * 0.5;
     const r2 = this.radius * this.radius;
@@ -616,7 +628,7 @@ class SpearWeapon extends Weapon {
   doAttack(player, enemies, _proj, helpers) {
     const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range + 30);
     if (!target) return false;
-    const damage = this.damageAt() * player.damageMul;
+    const damage = this.damageAt() * this.totalDamageMul(player);
     const dirAngle = Math.atan2(target.y - player.y, target.x - player.x);
     const cos = Math.cos(dirAngle), sin = Math.sin(dirAngle);
     const items = enemies.items;
@@ -664,7 +676,7 @@ class HammerWeapon extends Weapon {
   doAttack(player, enemies, _proj, helpers) {
     const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.radius);
     if (!target) return false;
-    const damage = this.damageAt() * player.damageMul;
+    const damage = this.damageAt() * this.totalDamageMul(player);
     const r2 = this.radius * this.radius;
     const items = enemies.items;
     for (let i = 0; i < items.length; i++) {
@@ -713,7 +725,7 @@ class WhipWeapon extends Weapon {
       if (d2 <= r2 && d2 > farthestD2) { farthestD2 = d2; farthest = e; }
     }
     if (!farthest) return false;
-    helpers.damageEnemy(farthest, this.damageAt() * player.damageMul);
+    helpers.damageEnemy(farthest, this.damageAt() * this.totalDamageMul(player));
     this.whipAnim.active = true; this.whipAnim.t = 0;
     this.whipAnim.tx = farthest.x; this.whipAnim.ty = farthest.y;
     return true;
@@ -749,7 +761,7 @@ class CrossbowWeapon extends Weapon {
     const p = projectiles.spawn(); if (!p) return true;
     p.kind = 'crossbow_bolt'; p.owner = 'player'; p.x = player.x; p.y = player.y;
     p.vx = dir.x * this.speed; p.vy = dir.y * this.speed;
-    p.life = this.life; p.damage = this.damageAt() * player.damageMul;
+    p.life = this.life; p.damage = this.damageAt() * this.totalDamageMul(player);
     p.radius = 5; p.angle = Math.atan2(dir.y, dir.x); p.source = this.id;
     p.pierce = true; p._hitSet = new Set(); p.slowEnemy = 0;
     return true;
@@ -779,7 +791,7 @@ class ThrowingAxesWeapon extends Weapon {
       const p = projectiles.spawn(); if (!p) break;
       p.kind = 'throwing_axe'; p.owner = 'player'; p.x = player.x; p.y = player.y;
       p.vx = Math.cos(a) * this.speed; p.vy = Math.sin(a) * this.speed;
-      p.life = this.life; p.damage = this.damageAt() * player.damageMul;
+      p.life = this.life; p.damage = this.damageAt() * this.totalDamageMul(player);
       p.radius = 8; p.angle = a; p.spin = 12; p.source = this.id;
       p.pierce = false; p.slowEnemy = 0;
       any = true;
@@ -825,7 +837,7 @@ class DartsWeapon extends Weapon {
     const jitter = (Math.random() - 0.5) * 0.06;
     const a = Math.atan2(dir.y, dir.x) + jitter;
     p.vx = Math.cos(a) * this.speed; p.vy = Math.sin(a) * this.speed;
-    p.life = this.life; p.damage = this.damageAt() * player.damageMul;
+    p.life = this.life; p.damage = this.damageAt() * this.totalDamageMul(player);
     p.radius = 3; p.angle = a; p.source = this.id;
     p.pierce = false; p.slowEnemy = 0; p.spin = 0;
   }
@@ -849,7 +861,7 @@ class SlingWeapon extends Weapon {
     const p = projectiles.spawn(); if (!p) return true;
     p.kind = 'sling_stone'; p.owner = 'player'; p.x = player.x; p.y = player.y;
     p.vx = dir.x * this.speed; p.vy = dir.y * this.speed;
-    p.life = flightTime; p.damage = this.damageAt() * player.damageMul;
+    p.life = flightTime; p.damage = this.damageAt() * this.totalDamageMul(player);
     p.radius = 6; p.angle = Math.atan2(dir.y, dir.x); p.source = this.id;
     p.aoeRadius = this.aoeRadius; p.pierce = false; p.slowEnemy = 0; p.spin = 0;
     return true;
@@ -873,7 +885,7 @@ class IceArrowWeapon extends Weapon {
     const p = projectiles.spawn(); if (!p) return true;
     p.kind = 'ice_arrow'; p.owner = 'player'; p.x = player.x; p.y = player.y;
     p.vx = dir.x * this.speed; p.vy = dir.y * this.speed;
-    p.life = this.life; p.damage = this.damageAt() * player.damageMul;
+    p.life = this.life; p.damage = this.damageAt() * this.totalDamageMul(player);
     p.radius = 5; p.angle = Math.atan2(dir.y, dir.x); p.source = this.id;
     p.pierce = false; p.slowEnemy = 0.40; p.slowEnemyDuration = 2.0; p.spin = 0;
     return true;
@@ -894,7 +906,7 @@ class ChainLightningWeapon extends Weapon {
   doAttack(player, enemies, _proj, helpers) {
     const first = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range);
     if (!first) return false;
-    const baseDmg = this.damageAt() * player.damageMul;
+    const baseDmg = this.damageAt() * this.totalDamageMul(player);
     const points = [{ x: player.x, y: player.y }];
     const hit = new Set();
     // Первый удар
@@ -961,7 +973,7 @@ class PoisonCloudWeapon extends Weapon {
       x: target.x, y: target.y,
       life: this.cloudLife,
       maxLife: this.cloudLife,
-      dps: this.damageAt() * player.damageMul,
+      dps: this.damageAt() * this.totalDamageMul(player),
       radius: this.cloudRadius,
     });
     return true;
@@ -1020,7 +1032,7 @@ class SpellbookWeapon extends Weapon {
       const p = projectiles.spawn(); if (!p) break;
       p.kind = 'spellbook_proj'; p.owner = 'player'; p.x = player.x; p.y = player.y;
       p.vx = Math.cos(a) * this.speed; p.vy = Math.sin(a) * this.speed;
-      p.life = this.life; p.damage = this.damageAt() * player.damageMul;
+      p.life = this.life; p.damage = this.damageAt() * this.totalDamageMul(player);
       p.radius = 6; p.angle = a; p.source = this.id;
       p.pierce = false; p.slowEnemy = 0; p.spin = 0;
       any = true;
@@ -1041,7 +1053,7 @@ class FirestormWeapon extends Weapon {
     this._pillars = []; // { x, y, life, maxLife, damage, radius }
   }
   doAttack(player) {
-    const damage = this.damageAt() * player.damageMul;
+    const damage = this.damageAt() * this.totalDamageMul(player);
     for (let i = 0; i < 4; i++) {
       const a = Math.random() * Math.PI * 2;
       const r = 40 + Math.random() * (this.spawnRadius - 40);
@@ -1113,8 +1125,8 @@ class HolyAuraWeapon extends Weapon {
     if (this._tickAcc < 0.25) return;
     const ticks = this._tickAcc;
     this._tickAcc = 0;
-    const baseDps = this.damageAt() * player.damageMul;
-    const undeadDps = this.undeadDps * WEAPON_LEVEL_DAMAGE[this.level - 1] * player.damageMul;
+    const baseDps = this.damageAt() * this.totalDamageMul(player);
+    const undeadDps = this.undeadDps * WEAPON_LEVEL_DAMAGE[this.level - 1] * this.totalDamageMul(player);
     const r2 = this.radius * this.radius;
     const items = enemies.items;
     for (let i = 0; i < items.length; i++) {
@@ -1159,7 +1171,7 @@ class SpikeRingWeapon extends Weapon {
       else this._hitCooldowns.set(key, newVal);
     }
     // Проверяем коллизии шипов с врагами
-    const damage = this.damageAt() * player.damageMul;
+    const damage = this.damageAt() * this.totalDamageMul(player);
     const spikeR = 10;
     for (let s = 0; s < this.spikeCount; s++) {
       const a = this._angle + (Math.PI * 2 / this.spikeCount) * s;
@@ -1207,7 +1219,7 @@ class EarthquakeWeapon extends Weapon {
     this._waves = []; // { x, y, life, maxLife, radius, maxRadius, damage, hit }
   }
   doAttack(player, enemies, _proj, helpers) {
-    const damage = this.damageAt() * player.damageMul;
+    const damage = this.damageAt() * this.totalDamageMul(player);
     this._waves.push({
       x: player.x, y: player.y,
       life: this.expandTime, maxLife: this.expandTime,
@@ -1284,7 +1296,7 @@ class VampireBladeWeapon extends EvolutionWeapon {
   doAttack(player, enemies, _proj, helpers) {
     const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.radius);
     if (!target) return false;
-    const damage = this.damageAt() * player.damageMul;
+    const damage = this.damageAt() * this.totalDamageMul(player);
     const dirAngle = Math.atan2(target.y - player.y, target.x - player.x);
     const halfArc = this.arc * 0.5;
     const r2 = this.radius * this.radius;
@@ -1351,7 +1363,7 @@ class RapidBowWeapon extends EvolutionWeapon {
     const jitter = (Math.random() - 0.5) * 0.05;
     const a = Math.atan2(dir.y, dir.x) + jitter;
     p.vx = Math.cos(a) * this.arrowSpeed; p.vy = Math.sin(a) * this.arrowSpeed;
-    p.life = this.arrowLife; p.damage = this.damageAt() * player.damageMul;
+    p.life = this.arrowLife; p.damage = this.damageAt() * this.totalDamageMul(player);
     p.radius = 4; p.angle = a; p.source = this.id; p.pierce = false; p.slowEnemy = 0;
   }
 }
@@ -1382,7 +1394,7 @@ class BladeStormWeapon extends EvolutionWeapon {
       p.kind = 'dagger'; p.owner = 'player'; p.x = player.x; p.y = player.y;
       p.vx = Math.cos(a) * this.speed; p.vy = Math.sin(a) * this.speed;
       p.life = this.life;
-      let dmg = this.damageAt() * player.damageMul;
+      let dmg = this.damageAt() * this.totalDamageMul(player);
       if (Math.random() < this.critChance) dmg *= this.critMul;
       p.damage = dmg; p.radius = 5; p.angle = a; p.source = this.id;
       p.pierce = false; p.slowEnemy = 0;
@@ -1410,7 +1422,7 @@ class SoulFlameWeapon extends EvolutionWeapon {
     const p = projectiles.spawn(); if (!p) return false;
     p.kind = 'fireball'; p.owner = 'player'; p.x = player.x; p.y = player.y;
     p.vx = dx * this.speed; p.vy = dy * this.speed;
-    p.life = this.flightTime; p.damage = this.damageAt() * player.damageMul;
+    p.life = this.flightTime; p.damage = this.damageAt() * this.totalDamageMul(player);
     p.radius = 14; p.explodeRadius = this.explodeRadius;
     p.angle = Math.atan2(dy, dx); p.source = this.id;
     p.pierce = false; p.slowEnemy = 0;

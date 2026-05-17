@@ -26,6 +26,24 @@ const Player = {
       hpRegen: 0,
       _regenAcc: 0,
 
+      // Шаг 8: новые статы от пассивок
+      damageReduction: 0,    // 0..1 — снижение входящего урона
+      manaShield: null,      // ссылка на ManaShieldAbility (или null)
+      maxHpMul: 1,           // множитель макс. HP (от Укрепления)
+      bonusMaxHp: 0,         // бонус макс. HP от базовых улучшений
+      debuffReduction: 0,    // 0..1 — снижение длительности дебаффов
+      lifesteal: 0,          // 0..1 — % лечения от нанесённого урона
+      critChance: 0,         // 0..1 — шанс крита
+      bleedChance: 0,        // 0..1 — шанс кровотечения при атаке
+      explosiveDeathChance: 0, // 0..1 — шанс взрыва при убийстве
+      frostAura: null,       // { slow, radius } или null
+      magicDamageMul: 1,     // множитель магического урона
+      magicEchoChance: 0,    // 0..1 — шанс ответного снаряда
+      d20MinBonus: 0,        // +N к минимальному d20
+      doubleXpChance: 0,     // 0..1 — шанс удвоения XP
+      dotDamageMul: 1,       // множитель DoT-урона
+
+
       // Встроенный Magic Missile (не занимает слот)
       missileCd: 0,
       missileCount: CONFIG.MISSILE.COUNT,
@@ -103,6 +121,65 @@ const Player = {
     return true;
   },
 
+  /**
+   * Шаг 8: нанести урон герою с учётом пассивных эффектов.
+   * Вызывать вместо прямого player.hp -= dmg.
+   * @param {object} player
+   * @param {number} rawDmg — базовый урон до защиты
+   * @param {object} [source] — источник урона (враг) для магического отклика
+   * @returns {number} финальный нанесённый урон
+   */
+  takeDamage(player, rawDmg, source) {
+    // Щит маны — полная блокировка
+    if (player.manaShield && player.manaShield.tryBlock()) {
+      // Визуал блока
+      if (window.Particles && Particles.burst) {
+        Particles.burst(player.x, player.y, 5, {
+          color: '#66ccff', speedMin: 40, speedMax: 100,
+          lifeMin: 0.15, lifeMax: 0.3, sizeMin: 3, sizeMax: 5,
+        });
+      }
+      return 0;
+    }
+
+    // Броня (снижение урона)
+    let finalDmg = rawDmg;
+    if (player.damageReduction > 0) {
+      finalDmg *= (1 - Math.min(player.damageReduction, 0.75));
+    }
+
+    player.hp -= finalDmg;
+
+    // Магический отклик — ответный снаряд
+    if (player.magicEchoChance > 0 && Math.random() < player.magicEchoChance && source) {
+      Player._fireEchoProjectile(player, source);
+    }
+
+    return finalDmg;
+  },
+
+  /** Шаг 8: выпустить ответный снаряд (магический отклик). */
+  _fireEchoProjectile(player, target) {
+    if (!window.Game || !Game.projectiles) return;
+    const pr = Game.projectiles.spawn();
+    if (!pr) return;
+    const dx = target.x - player.x, dy = target.y - player.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    pr.kind = 'echo';
+    pr.owner = 'player';
+    pr.x = player.x;
+    pr.y = player.y;
+    pr.vx = (dx / dist) * 350;
+    pr.vy = (dy / dist) * 350;
+    pr.life = 2.0;
+    pr.damage = 15 * (player.magicDamageMul || 1) * player.damageMul;
+    pr.radius = 5;
+    pr.angle = Math.atan2(dy, dx);
+    pr.source = 'echo';
+    pr.homing = true;
+    pr.homingStrength = 3.0;
+  },
+
   /** Заменить оружие в указанном слоте. Если слот пустой — просто положить.
    *  Используется для эволюций: новое оружие занимает слот старого. */
   replaceWeapon(player, slotIndex, newWeapon) {
@@ -157,6 +234,27 @@ const Player = {
       player.hp = Math.min(player.maxHp, player.hp + player.hpRegen * dt);
     }
 
+    // Шаг 8: тик щита маны (кулдаун)
+    if (player.manaShield && typeof player.manaShield.tick === 'function') {
+      player.manaShield.tick(dt);
+    }
+
+    // Шаг 8: аура холода — замедление ближайших врагов
+    if (player.frostAura && window.Game && Game.enemies) {
+      const fa = player.frostAura;
+      const r2 = fa.radius * fa.radius;
+      const items = Game.enemies.items;
+      for (let i = 0; i < items.length; i++) {
+        const e = items[i];
+        if (!e.active) continue;
+        const dx = e.x - player.x, dy = e.y - player.y;
+        if (dx * dx + dy * dy <= r2) {
+          e.frostSlow = fa.slow; // будет использоваться в enemies.js при движении
+          e.frostSlowTimer = 0.15; // перезаписывается каждый кадр, пока в ауре
+        }
+      }
+    }
+
     // Встроенный Magic Missile
     player.missileCd = Math.max(0, player.missileCd - dt);
   },
@@ -164,6 +262,38 @@ const Player = {
   /** Отрисовка героя. ctx сдвинут на -cam. */
   render(ctx, player) {
     const ps = player.size;
+
+    // Шаг 8: аура холода — голубое свечение
+    if (player.frostAura) {
+      const fa = player.frostAura;
+      ctx.save();
+      ctx.globalAlpha = 0.12;
+      ctx.fillStyle = '#80d4ff';
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, fa.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 0.3;
+      ctx.strokeStyle = '#80d4ff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Шаг 8: щит маны — полупрозрачный пузырь когда готов
+    if (player.manaShield && player.manaShield.shieldReady) {
+      ctx.save();
+      ctx.globalAlpha = 0.25;
+      ctx.strokeStyle = '#66ccff';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, ps * 0.75, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 0.08;
+      ctx.fillStyle = '#66ccff';
+      ctx.fill();
+      ctx.restore();
+    }
+
     ctx.fillStyle = '#2980d9';
     ctx.fillRect(player.x - ps / 2, player.y - ps / 2, ps, ps);
     ctx.strokeStyle = '#ffffff';
