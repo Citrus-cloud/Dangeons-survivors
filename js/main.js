@@ -113,6 +113,11 @@ const Game = {
     this.particles.clearAll();
     if (window.GameMap && GameMap.clearGroundEffects) GameMap.clearGroundEffects();
 
+    // Шаг 5: генерируем подземелье ДО создания игрока, чтобы поместить его в стартовую комнату.
+    if (window.GameMap && GameMap.generateDungeon) {
+      GameMap.generateDungeon();
+    }
+
     this.kills = 0;
     this.killsByType = Object.create(null);
     this.runTime = 0;
@@ -122,13 +127,21 @@ const Game = {
     // Шаг 3: сундук
     this.chest = null;
     this.chestTimer = CONFIG.CHEST.FIRST_DELAY;
+    // Шаг 5: секретный сундук (даётся при открытии секретной комнаты)
+    this.secretChest = null;
 
     // Шаг 4: мимик
     this.mimicState = (window.Enemies && Enemies.initMimicState)
       ? Enemies.initMimicState()
       : { count: 0, nextCheckTime: 180 };
 
-    this.player = Player.create();
+    // Стартовая позиция героя — центр стартовой комнаты подземелья
+    let startX = CONFIG.MAP.W / 2, startY = CONFIG.MAP.H / 2;
+    if (window.GameMap && GameMap.dungeon && GameMap.dungeon.startRoom) {
+      const sp = GameMap.randomPointInRoom(GameMap.dungeon.startRoom, 18);
+      if (sp) { startX = sp.x; startY = sp.y; }
+    }
+    this.player = Player.create(startX, startY);
 
     UI.hideAll();
     this.state = 'playing';
@@ -309,6 +322,8 @@ const Game = {
       }
     }
     if (window.GameMap && GameMap.updateGroundEffects) GameMap.updateGroundEffects(dt);
+    // Шаг 5: обновление подземелья (ловушки, дверь, кулдауны рычагов)
+    if (window.GameMap && GameMap.update) GameMap.update(dt);
 
     this.updateWaves(dt);
     Enemies.update(this.enemies, this.player, dt);
@@ -419,14 +434,49 @@ const Game = {
       if (Chest.pickedUpBy(this.chest, this.player)) {
         this.openChest();
       }
-      return;
+    } else {
+      // Сундука нет — копится таймер
+      this.chestTimer -= dt;
+      if (this.chestTimer <= 0) {
+        this.chest = Chest.spawnNear(this.player);
+        this.chestTimer = CONFIG.CHEST.INTERVAL;
+      }
     }
-    // Сундука нет — копится таймер
-    this.chestTimer -= dt;
-    if (this.chestTimer <= 0) {
-      this.chest = Chest.spawnNear(this.player);
-      this.chestTimer = CONFIG.CHEST.INTERVAL;
+    // Шаг 5: секретный сундук (за решёткой) — отдельная логика подбора
+    if (this.secretChest) {
+      Chest.update(this.secretChest, dt);
+      if (Chest.pickedUpBy(this.secretChest, this.player)) {
+        this.openSecretChest();
+      }
     }
+  },
+
+  /** Шаг 5: создать сундук в секретной комнате (вызывается из GameMap при
+   *  правильной комбинации рычагов). */
+  spawnSecretChest() {
+    if (this.secretChest) return;
+    if (!window.GameMap || !GameMap.dungeon) return;
+    const pos = GameMap.dungeon.secretChestPos;
+    if (!pos) return;
+    const c = Chest.create();
+    c.x = pos.x; c.y = pos.y;
+    c.guaranteedRare = true;
+    if (window.Particles) Particles.chestGlow(c.x, c.y);
+    this.secretChest = c;
+  },
+
+  /** Открытие секретного сундука: гарантированно бросок 19..20. */
+  openSecretChest() {
+    if (!this.secretChest) return;
+    if (window.Particles) Particles.chestOpen(this.secretChest.x, this.secretChest.y);
+    this.secretChest = null;
+
+    this.state = 'chest';
+    Input.releaseJoystick();
+
+    // Гарантированный редкий бросок: 19 или 20
+    const finalRoll = 19 + Math.floor(Math.random() * 2);
+    UI.showD20Roll(finalRoll, () => this.resolveChest(finalRoll));
   },
 
   /** Подбор сундука: переход в state=chest, эффект открытия, бросок d20. */
@@ -647,6 +697,7 @@ const Game = {
     if (GameMap.renderGroundEffects) GameMap.renderGroundEffects(ctx, cam, this.viewW, this.viewH);
     // Шаг 3: сундук рисуется в мире
     if (this.chest) Chest.render(ctx, this.chest, cam, this.viewW, this.viewH);
+    if (this.secretChest) Chest.render(ctx, this.secretChest, cam, this.viewW, this.viewH);
     this.renderParticles(ctx, cam);
     Enemies.render(ctx, this.enemies, cam, this.viewW, this.viewH);
     Player.render(ctx, this.player);
@@ -662,6 +713,10 @@ const Game = {
 
     // Индикатор сундука — экранные координаты, без сдвига камеры
     if (this.chest) Chest.renderIndicator(ctx, this.chest, cam, this.viewW, this.viewH);
+    if (this.secretChest) Chest.renderIndicator(ctx, this.secretChest, cam, this.viewW, this.viewH);
+
+    // Шаг 5: миникарта
+    if (GameMap.renderMinimap) GameMap.renderMinimap(ctx, this.player, this.viewW, this.viewH);
   },
 
   renderParticles(ctx, cam) {

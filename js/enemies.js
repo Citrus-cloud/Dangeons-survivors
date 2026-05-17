@@ -129,8 +129,33 @@ function _moveTowards(e, tx, ty, dt, sign) {
   const s = _currentSpeed(e) * (sign || 1);
   e.vx = n.x * s;
   e.vy = n.y * s;
-  e.x += e.vx * dt;
-  e.y += e.vy * dt;
+  let dx = e.vx * dt;
+  let dy = e.vy * dt;
+  const rad = Math.max(e.cfg.w, e.cfg.h) * 0.4;
+  // Движение с учётом стен/колонн (если подземелье сгенерировано)
+  if (window.GameMap && GameMap.dungeon) {
+    const res = GameMap.moveWithCollision(e.x, e.y, dx, dy, rad);
+    // Обход препятствия: если упёрлись в одну ось, сместимся вдоль другой
+    let blockedAny = res.blockedX || res.blockedY;
+    if (blockedAny && (Math.abs(res.x - e.x) < Math.abs(dx) * 0.2) &&
+        (Math.abs(res.y - e.y) < Math.abs(dy) * 0.2)) {
+      // Тупик — выберем перпендикулярное направление
+      const perpX = -n.y, perpY = n.x;
+      const slide = (e._slideSign = e._slideSign || 1);
+      const sx = perpX * Math.abs(s) * dt * slide;
+      const sy = perpY * Math.abs(s) * dt * slide;
+      const res2 = GameMap.moveWithCollision(e.x, e.y, sx, sy, rad);
+      e.x = res2.x; e.y = res2.y;
+      // Если и тут не получилось — поменяем знак
+      if (res2.blockedX && res2.blockedY) e._slideSign = -slide;
+    } else {
+      e.x = res.x;
+      e.y = res.y;
+    }
+  } else {
+    e.x += dx;
+    e.y += dy;
+  }
   // границы карты
   const m = Math.max(e.cfg.w, e.cfg.h) * 0.5;
   e.x = Utils.clamp(e.x, m, CONFIG.MAP.W - m);
@@ -215,8 +240,23 @@ const Behaviors = {
       const ang = Math.random() * Math.PI * 2;
       const dist = Utils.rand(e.cfg.teleportMin || 100, e.cfg.teleportMax || 150);
       const m = Math.max(e.cfg.w, e.cfg.h) * 0.5;
-      e.x = Utils.clamp(player.x + Math.cos(ang) * dist, m, CONFIG.MAP.W - m);
-      e.y = Utils.clamp(player.y + Math.sin(ang) * dist, m, CONFIG.MAP.H - m);
+      let tx = Utils.clamp(player.x + Math.cos(ang) * dist, m, CONFIG.MAP.W - m);
+      let ty = Utils.clamp(player.y + Math.sin(ang) * dist, m, CONFIG.MAP.H - m);
+      // Телепорт только в проходимую точку
+      if (window.GameMap && GameMap.dungeon &&
+          !GameMap.rectIsWalkable(tx, ty, m)) {
+        // Попробуем несколько раз другое место
+        let ok = false;
+        for (let k = 0; k < 6; k++) {
+          const a2 = Math.random() * Math.PI * 2;
+          const d2 = Utils.rand(e.cfg.teleportMin || 100, e.cfg.teleportMax || 150);
+          tx = Utils.clamp(player.x + Math.cos(a2) * d2, m, CONFIG.MAP.W - m);
+          ty = Utils.clamp(player.y + Math.sin(a2) * d2, m, CONFIG.MAP.H - m);
+          if (GameMap.rectIsWalkable(tx, ty, m)) { ok = true; break; }
+        }
+        if (!ok) { tx = e.x; ty = e.y; }
+      }
+      e.x = tx; e.y = ty;
       e.specialCooldown = e.cfg.teleportEvery || 4.0;
       // Эффекты телепорта
       if (window.Particles) {
@@ -304,20 +344,21 @@ const Behaviors = {
     const s = _currentSpeed(e);
     // Перпендикуляр к направлению — вектор боковых колебаний
     const perpX = -n.y, perpY = n.x;
-    const sin = Math.sin(e.sinPhase);
-    // Боковая скорость пропорциональна частоте*амплитуде*cos (производная sin)
     const lateral = Math.cos(e.sinPhase) * (e.cfg.sinAmp || 26) * (e.cfg.sinFreq || 6);
     e.vx = n.x * s + perpX * lateral * 0.05;
     e.vy = n.y * s + perpY * lateral * 0.05;
-    e.x += e.vx * dt;
-    e.y += e.vy * dt;
+    let mx = e.vx * dt, my = e.vy * dt;
+    const rad = Math.max(e.cfg.w, e.cfg.h) * 0.4;
+    if (window.GameMap && GameMap.dungeon) {
+      const r = GameMap.moveWithCollision(e.x, e.y, mx, my, rad);
+      e.x = r.x; e.y = r.y;
+    } else {
+      e.x += mx; e.y += my;
+    }
     // Ограничение по карте
     const m = Math.max(e.cfg.w, e.cfg.h) * 0.5;
     e.x = Utils.clamp(e.x, m, CONFIG.MAP.W - m);
     e.y = Utils.clamp(e.y, m, CONFIG.MAP.H - m);
-    // Боковое смещение для рендера и коллизий не нужно — оно уже встроено
-    // в скорость.
-    void sin; // unused (использовали Math.cos для производной)
     _tryContactDamage(e, player, dt);
   },
 
@@ -495,16 +536,28 @@ const Enemies = {
    * Заспавнить волну: берём count врагов из доступных тиров,
    * каждого — на расстоянии SPAWN_DIST_MIN..MAX от игрока.
    * waveIndex — 1-based номер волны (для определения тиров).
+   *
+   * Шаг 5: враги появляются только в комнатах (не в коридорах,
+   * не в секретной).
    */
   spawnWave(pool, player, count, waveIndex) {
     const ids = this._availableTierIds(waveIndex);
+    const useDungeon = !!(window.GameMap && GameMap.dungeon);
     for (let i = 0; i < count; i++) {
       if (pool.countActive() >= CONFIG.POOLS.ENEMIES) break;
       const typeId = this._pickWeightedType(ids);
-      const angle = Math.random() * Math.PI * 2;
-      const dist = Utils.rand(CONFIG.WAVE.SPAWN_DIST_MIN, CONFIG.WAVE.SPAWN_DIST_MAX);
-      const ex = player.x + Math.cos(angle) * dist;
-      const ey = player.y + Math.sin(angle) * dist;
+      let ex, ey;
+      if (useDungeon) {
+        const pt = GameMap.randomEnemySpawnPoint(player,
+          CONFIG.WAVE.SPAWN_DIST_MIN, CONFIG.WAVE.SPAWN_DIST_MAX);
+        if (!pt) continue;
+        ex = pt.x; ey = pt.y;
+      } else {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Utils.rand(CONFIG.WAVE.SPAWN_DIST_MIN, CONFIG.WAVE.SPAWN_DIST_MAX);
+        ex = player.x + Math.cos(angle) * dist;
+        ey = player.y + Math.sin(angle) * dist;
+      }
       this.spawnByType(pool, typeId, ex, ey);
     }
   },
@@ -643,12 +696,20 @@ const Enemies = {
     if (runTime < mimicState.nextCheckTime) return false;
     mimicState.nextCheckTime = runTime + MIMIC_CONFIG.CHECK_INTERVAL;
     if (Math.random() > MIMIC_CONFIG.CHANCE_PER_CHECK) return false;
-    // Координата спавна
-    const ang = Math.random() * Math.PI * 2;
-    const dist = Utils.rand(MIMIC_CONFIG.SPAWN_MIN_DIST, MIMIC_CONFIG.SPAWN_MAX_DIST);
+    // Координата спавна — только в комнатах, если есть подземелье
+    let mx, my;
     const m = Math.max(ENEMY_TYPES.mimic.w, ENEMY_TYPES.mimic.h) * 0.5;
-    let mx = Utils.clamp(player.x + Math.cos(ang) * dist, m, CONFIG.MAP.W - m);
-    let my = Utils.clamp(player.y + Math.sin(ang) * dist, m, CONFIG.MAP.H - m);
+    if (window.GameMap && GameMap.dungeon) {
+      const pt = GameMap.randomEnemySpawnPoint(player,
+        MIMIC_CONFIG.SPAWN_MIN_DIST, MIMIC_CONFIG.SPAWN_MAX_DIST);
+      if (!pt) return false;
+      mx = pt.x; my = pt.y;
+    } else {
+      const ang = Math.random() * Math.PI * 2;
+      const dist = Utils.rand(MIMIC_CONFIG.SPAWN_MIN_DIST, MIMIC_CONFIG.SPAWN_MAX_DIST);
+      mx = Utils.clamp(player.x + Math.cos(ang) * dist, m, CONFIG.MAP.W - m);
+      my = Utils.clamp(player.y + Math.sin(ang) * dist, m, CONFIG.MAP.H - m);
+    }
     const e = Enemies.spawnByType(Game.enemies, 'mimic', mx, my);
     if (e) {
       mimicState.count += 1;

@@ -79,6 +79,57 @@ const CONFIG = {
     MAX_OFFSET: 50,
     DEAD_ZONE: 0.12,        // нормализованный, чтобы не шевелилось от микро-движений
   },
+
+  // Шаг 5: процедурная генерация подземелья
+  DUNGEON: {
+    SEED: 0,                  // фиксированный сид; 0 — случайный (Math.random)
+    GRID_CELL: 20,            // размер ячейки сетки коллизий (px)
+    ROOMS_MIN: 5,
+    ROOMS_MAX: 8,
+    ROOM_W_MIN: 200, ROOM_W_MAX: 400,
+    ROOM_H_MIN: 150, ROOM_H_MAX: 300,
+    ROOM_PADDING: 80,         // мин. расстояние между комнатами
+    CORRIDOR_W_MIN: 80,
+    CORRIDOR_W_MAX: 120,
+    PILLARS_PER_ROOM_MIN: 3,
+    PILLARS_PER_ROOM_MAX: 6,
+    PILLAR_SIZE: 24,
+    WALL_THICKNESS: 16,       // толщина "стен" вокруг комнат/коридоров (визуальная)
+    SPIKE_TRAPS: 4,           // 3..5 штук
+    FIRE_TRAPS: 3,            // 2..4 штук
+    SARCOPHAGI: 2,
+    TORCH_SPACING: 130,       // расстояние между факелами вдоль стен
+    RUNES_PER_ROOM: 4,        // 3..5 декоративных рун
+  },
+
+  // Параметры ловушек
+  TRAP: {
+    SPIKE: {
+      W: 36, H: 36,
+      HIDDEN_TIME: 2.0,
+      ACTIVE_TIME: 1.5,
+      WARN_TIME: 0.5,
+      DAMAGE: 15,
+    },
+    FIRE: {
+      W: 32, H: 32,
+      INTERVAL: 4.0,
+      WARN_TIME: 0.5,
+      RANGE: 100,
+      WIDTH: 40,              // ширина струи огня
+      DAMAGE: 20,
+      DOT_DPS: 5,
+      DOT_TIME: 2.0,
+    },
+  },
+
+  // Загадка с рычагами
+  LEVER: {
+    W: 22, H: 22,
+    INTERACT_RADIUS: 30,
+    RESET_DELAY: 2.0,         // через сколько сбрасываются при неверной комбинации
+    COUNT: 3,
+  },
 };
 
 
