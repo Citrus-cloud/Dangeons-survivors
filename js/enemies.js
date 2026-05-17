@@ -204,8 +204,10 @@ function _moveTowards(e, tx, ty, dt, sign) {
   }
   // границы карты
   const m = Math.max(e.cfg.w, e.cfg.h) * 0.5;
-  e.x = Utils.clamp(e.x, m, CONFIG.MAP.W - m);
-  e.y = Utils.clamp(e.y, m, CONFIG.MAP.H - m);
+  const mapW = (window.GameMap ? GameMap.mapW : CONFIG.MAP.W);
+  const mapH = (window.GameMap ? GameMap.mapH : CONFIG.MAP.H);
+  e.x = Utils.clamp(e.x, m, mapW - m);
+  e.y = Utils.clamp(e.y, m, mapH - m);
 }
 
 
@@ -286,8 +288,10 @@ const Behaviors = {
       const ang = Math.random() * Math.PI * 2;
       const dist = Utils.rand(e.cfg.teleportMin || 100, e.cfg.teleportMax || 150);
       const m = Math.max(e.cfg.w, e.cfg.h) * 0.5;
-      let tx = Utils.clamp(player.x + Math.cos(ang) * dist, m, CONFIG.MAP.W - m);
-      let ty = Utils.clamp(player.y + Math.sin(ang) * dist, m, CONFIG.MAP.H - m);
+      const _mW = (window.GameMap ? GameMap.mapW : CONFIG.MAP.W);
+      const _mH = (window.GameMap ? GameMap.mapH : CONFIG.MAP.H);
+      let tx = Utils.clamp(player.x + Math.cos(ang) * dist, m, _mW - m);
+      let ty = Utils.clamp(player.y + Math.sin(ang) * dist, m, _mH - m);
       // Телепорт только в проходимую точку
       if (window.GameMap && GameMap.dungeon &&
           !GameMap.rectIsWalkable(tx, ty, m)) {
@@ -296,8 +300,8 @@ const Behaviors = {
         for (let k = 0; k < 6; k++) {
           const a2 = Math.random() * Math.PI * 2;
           const d2 = Utils.rand(e.cfg.teleportMin || 100, e.cfg.teleportMax || 150);
-          tx = Utils.clamp(player.x + Math.cos(a2) * d2, m, CONFIG.MAP.W - m);
-          ty = Utils.clamp(player.y + Math.sin(a2) * d2, m, CONFIG.MAP.H - m);
+          tx = Utils.clamp(player.x + Math.cos(a2) * d2, m, _mW - m);
+          ty = Utils.clamp(player.y + Math.sin(a2) * d2, m, _mH - m);
           if (GameMap.rectIsWalkable(tx, ty, m)) { ok = true; break; }
         }
         if (!ok) { tx = e.x; ty = e.y; }
@@ -403,8 +407,8 @@ const Behaviors = {
     }
     // Ограничение по карте
     const m = Math.max(e.cfg.w, e.cfg.h) * 0.5;
-    e.x = Utils.clamp(e.x, m, CONFIG.MAP.W - m);
-    e.y = Utils.clamp(e.y, m, CONFIG.MAP.H - m);
+    e.x = Utils.clamp(e.x, m, (window.GameMap ? GameMap.mapW : CONFIG.MAP.W) - m);
+    e.y = Utils.clamp(e.y, m, (window.GameMap ? GameMap.mapH : CONFIG.MAP.H) - m);
     _tryContactDamage(e, player, dt);
   },
 
@@ -527,8 +531,8 @@ const Enemies = {
     const m = Math.max(cfg.w, cfg.h) * 0.5;
     e.type = typeId;
     e.cfg = cfg;
-    e.x = Utils.clamp(x, m, CONFIG.MAP.W - m);
-    e.y = Utils.clamp(y, m, CONFIG.MAP.H - m);
+    e.x = Utils.clamp(x, m, (window.GameMap ? GameMap.mapW : CONFIG.MAP.W) - m);
+    e.y = Utils.clamp(y, m, (window.GameMap ? GameMap.mapH : CONFIG.MAP.H) - m);
     e.vx = 0; e.vy = 0;
     e.hp = e.maxHp = cfg.hp;
     e.damage = cfg.damage;
@@ -566,6 +570,29 @@ const Enemies = {
     return out.length ? out : ENEMY_TIERS[1].ids.slice();
   },
 
+  /**
+   * Шаг 13: Фильтрация врагов по биому.
+   * Возвращает только тех врагов из ids, которые подходят текущему биому.
+   * Если биом не задан — возвращает все.
+   */
+  _filterByBiome(ids) {
+    if (!window.GameMap || !GameMap.currentBiome) return ids;
+    const biomeEnemies = GameMap.currentBiome.enemyTypes;
+    if (!biomeEnemies || biomeEnemies.length === 0) return ids;
+    const filtered = ids.filter(id => biomeEnemies.includes(id));
+    // Если фильтр убрал всех — вернём хоть что-то из биома
+    return filtered.length > 0 ? filtered : biomeEnemies.filter(id => ENEMY_TYPES[id]);
+  },
+
+  /**
+   * Шаг 13: Получить множители сложности для текущей карты.
+   * Применяется к HP и урону при спавне.
+   */
+  _getDifficultyMul() {
+    if (!window.INFINITE_MODE || !window.GameMap) return { hpMul: 1, dmgMul: 1, xpMul: 1 };
+    return INFINITE_MODE.getDifficultyMultiplier(GameMap.currentMapNumber || 1);
+  },
+
   /** Выбор случайного типа с учётом веса cfg.spawnWeight. */
   _pickWeightedType(ids) {
     let total = 0;
@@ -592,8 +619,12 @@ const Enemies = {
     if (window.Bosses && Bosses.isAlive()) {
       count = Math.max(1, Math.round(count * (1 - BOSS_CONFIG.WAVE_REDUCTION)));
     }
-    const ids = this._availableTierIds(waveIndex);
+    let ids = this._availableTierIds(waveIndex);
+    // Шаг 13: фильтрация по биому
+    ids = this._filterByBiome(ids);
     const useDungeon = !!(window.GameMap && GameMap.dungeon);
+    // Шаг 13: множители сложности
+    const diffMul = this._getDifficultyMul();
     for (let i = 0; i < count; i++) {
       if (pool.countActive() >= CONFIG.POOLS.ENEMIES) break;
       const typeId = this._pickWeightedType(ids);
@@ -609,7 +640,13 @@ const Enemies = {
         ex = player.x + Math.cos(angle) * dist;
         ey = player.y + Math.sin(angle) * dist;
       }
-      this.spawnByType(pool, typeId, ex, ey);
+      const e = this.spawnByType(pool, typeId, ex, ey);
+      // Шаг 13: применяем множители сложности
+      if (e && diffMul.hpMul !== 1) {
+        e.hp = Math.round(e.hp * diffMul.hpMul);
+        e.maxHp = e.hp;
+        e.damage = Math.round(e.damage * diffMul.dmgMul);
+      }
     }
   },
 
@@ -769,8 +806,8 @@ const Enemies = {
     } else {
       const ang = Math.random() * Math.PI * 2;
       const dist = Utils.rand(MIMIC_CONFIG.SPAWN_MIN_DIST, MIMIC_CONFIG.SPAWN_MAX_DIST);
-      mx = Utils.clamp(player.x + Math.cos(ang) * dist, m, CONFIG.MAP.W - m);
-      my = Utils.clamp(player.y + Math.sin(ang) * dist, m, CONFIG.MAP.H - m);
+      mx = Utils.clamp(player.x + Math.cos(ang) * dist, m, (window.GameMap ? GameMap.mapW : CONFIG.MAP.W) - m);
+      my = Utils.clamp(player.y + Math.sin(ang) * dist, m, (window.GameMap ? GameMap.mapH : CONFIG.MAP.H) - m);
     }
     const e = Enemies.spawnByType(Game.enemies, 'mimic', mx, my);
     if (e) {

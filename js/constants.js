@@ -854,6 +854,81 @@ const BOSS_TYPES = {
   },
 };
 
+/* Шаг 13: Добавляем новых боссов-стражей для ледяных пещер, лесных руин и замка */
+BOSS_TYPES.boss_ice_lord = {
+  id: 'boss_ice_lord',
+  name: 'Ледяной элементаль-лорд',
+  hp: 450,
+  speed: 60,
+  damage: 25,
+  xpReward: 350,
+  w: 48, h: 48,
+  color: '#4da6ff',
+  stroke: '#b3d9ff',
+  shape: 'diamond',
+  letter: 'I',
+  // Атаки
+  attacks: {
+    iceBolt: { cooldown: 2.0, damage: 18, speed: 280, slowPct: 0.40, slowDuration: 2.0 },
+    frostNova: { cooldown: 6.0, damage: 20, radius: 120, slowPct: 0.50, slowDuration: 3.0 },
+    iceSpikes: { cooldown: 8.0, damage: 15, count: 6, speed: 220 },  // веер ледяных шипов
+    deathShatter: { damage: 30, radius: 130 },
+  },
+  trailEvery: 0.5,
+  trail: { kind: 'water', radius: 22, life: 3.0, slow: 0.25, dps: 0 },
+  phase2HpPct: 0.40,
+  phase2CdMul: 0.70,
+};
+
+BOSS_TYPES.boss_ancient_ent = {
+  id: 'boss_ancient_ent',
+  name: 'Древний энт',
+  hp: 600,
+  speed: 35,
+  damage: 30,
+  xpReward: 380,
+  w: 56, h: 56,
+  color: '#3a5a2a',
+  stroke: '#6a8a4a',
+  shape: 'rect',
+  letter: 'T',
+  // Атаки
+  attacks: {
+    rootSlam: { cooldown: 4.0, damage: 22, radius: 80 },       // AoE корни из пола
+    poisonSpore: { cooldown: 6.0, count: 3, damage: 8, poisonDps: 5, poisonDuration: 3.0, speed: 180 },
+    branchSwipe: { cooldown: 2.5, damage: 28, range: 55, arc: 140 },  // ближний бой ветками
+  },
+  hitInterval: 0.9,
+  // Фаза 2: при 40% HP — быстрее регенерирует и призывает малых энтлингов
+  phase2HpPct: 0.40,
+  phase2Regen: 3,        // HP/sec регенерация
+  phase2SummonCooldown: 8.0,
+  phase2SummonChild: 'mold',  // малые грибы/плесень
+  phase2SummonCount: 2,
+};
+
+BOSS_TYPES.boss_dark_knight = {
+  id: 'boss_dark_knight',
+  name: 'Тёмный рыцарь',
+  hp: 550,
+  speed: 80,
+  damage: 30,
+  xpReward: 400,
+  w: 50, h: 50,
+  color: '#1a1a2a',
+  stroke: '#cc0000',
+  shape: 'rect',
+  letter: 'D',
+  attacks: {
+    slash: { cooldown: 1.8, damage: 30, arc: 120, range: 55 },
+    darkWave: { cooldown: 5.0, damage: 25, radius: 100, knockback: 60 },
+    summon: { cooldown: 10.0, count: 2, childId: 'shadow' },
+  },
+  phase2HpPct: 0.45,
+  phase2SpeedMul: 1.35,
+  phase2CdMul: 0.80,
+};
+
 window.BOSS_CONFIG = BOSS_CONFIG;
 window.BOSS_TYPES = BOSS_TYPES;
 
@@ -1049,3 +1124,267 @@ const PASSIVE_CONFIGS = {
 };
 
 window.PASSIVE_CONFIGS = PASSIVE_CONFIGS;
+
+
+
+/* ============================================================
+   BIOMES — конфигурация биомов для бесконечного режима (Шаг 13).
+   Каждый биом определяет визуальный стиль карты, доступные ловушки,
+   приоритетных врагов и декоративные элементы.
+   ============================================================ */
+const BIOMES = [
+  {
+    id: 'crypt',
+    name: 'Склеп',
+    floorColor: '#3a3a3a',
+    floorGridColor: '#444444',
+    wallColor: '#1a1a1a',
+    corridorColor: '#2a2a2a',
+    secretFloorColor: '#3a3245',
+    secretGridColor: '#4a3f60',
+    pillarColor: '#4a4a4a',
+    pillarCapColor: '#5a5a5a',
+    decorTypes: ['sarcophagi', 'bones', 'torches'],
+    trapTypes: ['spike', 'fire'],
+    // Враги по тирам, подходящие этому биому (ID из ENEMY_TYPES)
+    enemyTypes: [
+      'skeleton', 'zombie', 'ratcatcher', 'giant_rat', 'cave_bat', 'mold',
+      'archer', 'gasspore', 'ghost', 'alchemist_skel',
+      'mage', 'bat', 'fire_elem',
+      'captain', 'cultist', 'shadow', 'lich_minor',
+      'rotgolem', 'dragonet', 'death_knight', 'bone_colossus', 'archlich',
+    ],
+    guardianBoss: 'boss_skeleton_knight',
+    mosaicColor: 'rgba(120, 90, 60, 0.35)',
+  },
+  {
+    id: 'ice_caves',
+    name: 'Ледяные пещеры',
+    floorColor: '#3a3a4a',
+    floorGridColor: '#4a4a5a',
+    wallColor: '#1a1a2a',
+    corridorColor: '#2a2a3a',
+    secretFloorColor: '#3a3a50',
+    secretGridColor: '#4a4a6a',
+    pillarColor: '#5a5a6a',
+    pillarCapColor: '#7a7a8a',
+    decorTypes: ['ice_crystals', 'stalactites', 'frost_runes'],
+    trapTypes: ['ice_spike', 'slippery_floor'],
+    enemyTypes: [
+      'skeleton', 'cave_bat', 'giant_rat', 'acid_slug',
+      'ooze', 'cave_crab', 'ghost', 'gnoll',
+      'water_elem', 'earth_elem', 'basilisk', 'spider',
+      'stone_golem', 'chimera', 'illithid',
+      'hydra_small', 'bone_colossus', 'observer',
+    ],
+    guardianBoss: 'boss_ice_lord',
+    mosaicColor: 'rgba(100, 140, 200, 0.3)',
+  },
+  {
+    id: 'fire_mines',
+    name: 'Огненные шахты',
+    floorColor: '#3a2a2a',
+    floorGridColor: '#4a3a3a',
+    wallColor: '#2a1a1a',
+    corridorColor: '#2a2020',
+    secretFloorColor: '#4a3030',
+    secretGridColor: '#5a4040',
+    pillarColor: '#5a3a2a',
+    pillarCapColor: '#6a4a3a',
+    decorTypes: ['lava_cracks', 'ore_veins', 'ember_runes'],
+    trapTypes: ['fire_geyser', 'rockfall'],
+    enemyTypes: [
+      'skeleton', 'goblin', 'mold', 'acid_slug',
+      'gasspore', 'gnoll', 'dung_beetle', 'kobold',
+      'fire_elem', 'hell_hound', 'minotaur', 'beholder_spore',
+      'dragonid', 'demon_berserker', 'rust_monster',
+      'young_dragon', 'rotgolem', 'dragonet',
+    ],
+    guardianBoss: 'boss_fire_lord',
+    mosaicColor: 'rgba(200, 80, 40, 0.3)',
+  },
+  {
+    id: 'forest_ruins',
+    name: 'Лесные руины',
+    floorColor: '#3a3a2a',
+    floorGridColor: '#4a4a3a',
+    wallColor: '#1a2a1a',
+    corridorColor: '#2a2a1a',
+    secretFloorColor: '#3a4a30',
+    secretGridColor: '#4a5a40',
+    pillarColor: '#4a5a3a',
+    pillarCapColor: '#5a6a4a',
+    decorTypes: ['trees', 'vines', 'moss_patches'],
+    trapTypes: ['poison_plant', 'root_grab'],
+    enemyTypes: [
+      'goblin', 'giant_rat', 'acid_slug', 'cave_bat', 'mold',
+      'spider', 'ooze', 'harpy', 'dung_beetle', 'cave_crab',
+      'basilisk', 'medusa', 'spider', 'water_elem', 'beholder_spore',
+      'chimera', 'drow', 'rust_monster',
+      'hydra_small', 'young_dragon', 'observer',
+    ],
+    guardianBoss: 'boss_ancient_ent',
+    mosaicColor: 'rgba(60, 140, 60, 0.3)',
+  },
+  {
+    id: 'castle',
+    name: 'Замок',
+    floorColor: '#2a2a3a',
+    floorGridColor: '#3a3a4a',
+    wallColor: '#1a1a2a',
+    corridorColor: '#222230',
+    secretFloorColor: '#3a3040',
+    secretGridColor: '#4a4050',
+    pillarColor: '#4a4a5a',
+    pillarCapColor: '#6a5a4a',
+    decorTypes: ['tapestries', 'armor_stands', 'candelabras'],
+    trapTypes: ['magic_rune', 'portrait_trap'],
+    enemyTypes: [
+      'skeleton', 'zombie', 'ratcatcher', 'cave_bat',
+      'archer', 'ghost', 'alchemist_skel', 'gnoll',
+      'mage', 'doppelganger', 'earth_elem', 'minotaur',
+      'captain', 'shadow', 'illithid', 'stone_golem', 'demon_berserker', 'lich_minor',
+      'death_knight', 'archlich', 'bone_colossus', 'eldritch_horror',
+    ],
+    guardianBoss: 'boss_dark_knight',
+    mosaicColor: 'rgba(140, 100, 180, 0.3)',
+  },
+];
+
+/* ============================================================
+   BIOME_TRAP_CONFIG — параметры новых ловушек по биомам (Шаг 13).
+   ============================================================ */
+const BIOME_TRAP_CONFIG = {
+  ice_spike: {
+    W: 36, H: 36,
+    HIDDEN_TIME: 2.0,
+    ACTIVE_TIME: 1.5,
+    WARN_TIME: 0.5,
+    DAMAGE: 15,
+    SLOW_PCT: 0.40,
+    SLOW_DURATION: 2.0,
+  },
+  slippery_floor: {
+    W: 60, H: 60,       // 3×3 тайла-зона
+    SLIDE_DURATION: 0.5,
+    WALL_DAMAGE: 5,
+  },
+  fire_geyser: {
+    W: 32, H: 32,
+    COOLDOWN: 5.0,
+    WARN_TIME: 0.6,
+    ACTIVE_TIME: 0.8,
+    RADIUS: 40,
+    DAMAGE: 20,
+  },
+  rockfall: {
+    W: 30, H: 30,
+    COOLDOWN: 6.0,
+    WARN_TIME: 0.5,
+    AOE_RADIUS: 30,
+    DAMAGE: 18,
+  },
+  poison_plant: {
+    W: 28, H: 28,
+    TRIGGER_RADIUS: 60,
+    COOLDOWN: 3.0,
+    PROJECTILE_SPEED: 220,
+    PROJECTILE_DAMAGE: 8,
+    POISON_DPS: 5,
+    POISON_DURATION: 3.0,
+  },
+  root_grab: {
+    W: 40, H: 40,       // 2×2 тайла-зона
+    SLOW_PCT: 0.60,
+    DPS: 5,
+  },
+  magic_rune: {
+    W: 36, H: 36,
+    DAMAGE: 15,
+    COOLDOWN: 8.0,
+    // Случайный эффект: 'knockback' | 'slow' | 'lightning'
+    KNOCKBACK_FORCE: 80,
+    SLOW_PCT: 0.50,
+    SLOW_DURATION: 2.0,
+    LIGHTNING_DAMAGE: 10,
+    LIGHTNING_RADIUS: 50,
+  },
+  portrait_trap: {
+    W: 24, H: 40,
+    TRIGGER_RADIUS: 50,
+    COOLDOWN: 4.0,
+    PROJECTILE_SPEED: 300,
+    PROJECTILE_DAMAGE: 12,
+  },
+};
+
+/* ============================================================
+   PORTAL_CONFIG — параметры портала перехода (Шаг 13).
+   ============================================================ */
+const PORTAL_CONFIG = {
+  APPEAR_TIME: 600,         // секунды после начала карты (10 минут)
+  RADIUS: 40,              // радиус взаимодействия
+  VISUAL_RADIUS: 32,       // визуальный радиус
+  PULSE_SPEED: 3.0,        // скорость пульсации
+  COLOR_OUTER: '#9b59b6',  // фиолетовый
+  COLOR_INNER: '#f1c40f',  // золотой
+};
+
+/* ============================================================
+   INFINITE_MODE — конфиг бесконечного режима (Шаг 13).
+   ============================================================ */
+const INFINITE_MODE = {
+  // Множители сложности по номеру карты
+  getDifficultyMultiplier(mapNumber) {
+    const n = Math.max(1, mapNumber);
+    if (n === 1) return { hpMul: 1.0, dmgMul: 1.0, xpMul: 1.0 };
+    if (n === 2) return { hpMul: 1.2, dmgMul: 1.15, xpMul: 1.2 };
+    if (n === 3) return { hpMul: 1.4, dmgMul: 1.3, xpMul: 1.4 };
+    if (n === 4) return { hpMul: 1.7, dmgMul: 1.5, xpMul: 1.7 };
+    // 5+: базовые 2.0 + приращение за каждую карту сверх 4
+    const extra = n - 4;
+    return {
+      hpMul: 2.0 + extra * 0.2,
+      dmgMul: 1.7 + extra * 0.1,
+      xpMul: 2.0 + extra * 0.2,
+    };
+  },
+
+  // Размер карты по номеру
+  getMapSize(mapNumber) {
+    const n = Math.max(1, mapNumber);
+    const size = Math.min(4000, 2000 + (n - 1) * 400);
+    return { w: size, h: size };
+  },
+
+  // Количество комнат по номеру карты
+  getRoomCount(mapNumber) {
+    const n = Math.max(1, mapNumber);
+    if (n <= 2) return { min: 5, max: 8 };
+    return { min: 8, max: 12 };
+  },
+
+  // Количество ловушек по номеру карты (множитель)
+  getTrapMultiplier(mapNumber) {
+    return 1.0 + (Math.max(1, mapNumber) - 1) * 0.3;
+  },
+
+  // Выбрать биом для карты номер mapNumber
+  getBiome(mapNumber) {
+    const n = Math.max(1, mapNumber);
+    if (n === 1) return BIOMES[0]; // Всегда склеп первым
+    // Далее — случайный биом, отличный от предыдущего (управляется внешним кодом)
+    return BIOMES[Math.floor(Math.random() * BIOMES.length)];
+  },
+
+  // Время появления стража карты (секунды от начала карты)
+  GUARDIAN_SPAWN_DELAY: 30,
+
+  // Минимальный номер карты для появления стража (на первой карте — нет)
+  GUARDIAN_MIN_MAP: 2,
+};
+
+window.BIOMES = BIOMES;
+window.BIOME_TRAP_CONFIG = BIOME_TRAP_CONFIG;
+window.PORTAL_CONFIG = PORTAL_CONFIG;
+window.INFINITE_MODE = INFINITE_MODE;

@@ -91,8 +91,8 @@ const Bosses = {
       sx = player.x + Math.cos(ang) * 450;
       sy = player.y + Math.sin(ang) * 450;
     }
-    boss.x = Utils.clamp(sx, m, CONFIG.MAP.W - m);
-    boss.y = Utils.clamp(sy, m, CONFIG.MAP.H - m);
+    boss.x = Utils.clamp(sx, m, (window.GameMap ? GameMap.mapW : CONFIG.MAP.W) - m);
+    boss.y = Utils.clamp(sy, m, (window.GameMap ? GameMap.mapH : CONFIG.MAP.H) - m);
 
     this.current = boss;
 
@@ -293,6 +293,9 @@ const Bosses = {
       case 'boss_lich':            this._updateLich(boss, player, dt); break;
       case 'boss_spider_queen':    this._updateSpiderQueen(boss, player, dt); break;
       case 'boss_fire_lord':       this._updateFireLord(boss, player, dt); break;
+      case 'boss_ice_lord':        this._updateIceLord(boss, player, dt); break;
+      case 'boss_ancient_ent':     this._updateAncientEnt(boss, player, dt); break;
+      case 'boss_dark_knight':     this._updateDarkKnight(boss, player, dt); break;
     }
 
     // Контактный урон
@@ -352,8 +355,8 @@ const Bosses = {
       boss.y += my;
     }
     const m = Math.max(cfg.w, cfg.h) * 0.5;
-    boss.x = Utils.clamp(boss.x, m, CONFIG.MAP.W - m);
-    boss.y = Utils.clamp(boss.y, m, CONFIG.MAP.H - m);
+    boss.x = Utils.clamp(boss.x, m, (window.GameMap ? GameMap.mapW : CONFIG.MAP.W) - m);
+    boss.y = Utils.clamp(boss.y, m, (window.GameMap ? GameMap.mapH : CONFIG.MAP.H) - m);
   },
 
 
@@ -524,8 +527,8 @@ const Bosses = {
       const dist = Utils.rand(boss.cfg.keepDist * 0.8, boss.cfg.keepDist * 1.2);
       let tx = player.x + Math.cos(ang) * dist;
       let ty = player.y + Math.sin(ang) * dist;
-      tx = Utils.clamp(tx, m, CONFIG.MAP.W - m);
-      ty = Utils.clamp(ty, m, CONFIG.MAP.H - m);
+      tx = Utils.clamp(tx, m, (window.GameMap ? GameMap.mapW : CONFIG.MAP.W) - m);
+      ty = Utils.clamp(ty, m, (window.GameMap ? GameMap.mapH : CONFIG.MAP.H) - m);
       if (window.GameMap && GameMap.dungeon && !GameMap.rectIsWalkable(tx, ty, m)) continue;
       // Эффект исчезновения
       if (window.Particles) {
@@ -980,6 +983,339 @@ const Bosses = {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('★', chest.x, chest.y + 1);
+  },
+
+
+  /* ============================================================
+     Шаг 13: ЛЕДЯНОЙ ЭЛЕМЕНТАЛЬ-ЛОРД
+     Медленный, стреляет ледяными болтами (замедление), фрост нова AoE,
+     веер ледяных шипов. При смерти — ледяной взрыв.
+     ============================================================ */
+  _updateIceLord(boss, player, dt) {
+    const cfg = boss.cfg;
+    const dx = player.x - boss.x, dy = player.y - boss.y;
+    const dist = Math.hypot(dx, dy) || 1;
+
+    // Медленная погоня
+    this._moveTowards(boss, player.x, player.y, dt, 1);
+
+    // Кулдауны
+    boss.boltCd = Math.max(0, boss.boltCd - dt);
+    boss.fireRingCd = Math.max(0, boss.fireRingCd - dt);  // используем как frostNovaCd
+    boss.fireballCd = Math.max(0, boss.fireballCd - dt);  // используем как iceSpikeCd
+    boss.trailCd = Math.max(0, boss.trailCd - dt);
+
+    const atk = cfg.attacks;
+    const cdMul = (boss.phase >= 2 && cfg.phase2CdMul) ? cfg.phase2CdMul : 1.0;
+
+    // Ледяной болт (одиночный замедляющий снаряд)
+    if (boss.boltCd <= 0) {
+      boss.boltCd = atk.iceBolt.cooldown * cdMul;
+      this._iceLordBolt(boss, player);
+    }
+
+    // Фрост нова (AoE замедление)
+    if (boss.fireRingCd <= 0 && dist <= atk.frostNova.radius + 40) {
+      boss.fireRingCd = atk.frostNova.cooldown * cdMul;
+      boss.fireRingAnim = 0.35;
+      if (dist <= atk.frostNova.radius) {
+        if (Player.takeDamage) Player.takeDamage(player, atk.frostNova.damage, boss);
+        else player.hp -= atk.frostNova.damage;
+        // Замедление
+        player._iceSlow = atk.frostNova.slowPct;
+        player._iceSlowTimer = atk.frostNova.slowDuration;
+      }
+      if (window.Particles) {
+        Particles.ring(boss.x, boss.y, atk.frostNova.radius, 0.4, 'rgba(77, 166, 255, 0.85)', 4);
+        Particles.burst(boss.x, boss.y, 8, {
+          color: '#88ccff', speedMin: 40, speedMax: 100,
+          lifeMin: 0.3, lifeMax: 0.5, sizeMin: 2, sizeMax: 4,
+        });
+      }
+    }
+
+    // Веер ледяных шипов (фаза 2 или всегда с кулдауном)
+    if (boss.fireballCd <= 0) {
+      boss.fireballCd = atk.iceSpikes.cooldown * cdMul;
+      this._iceLordSpikes(boss, player);
+    }
+
+    // Ледяной след
+    if (boss.trailCd <= 0 && cfg.trailEvery) {
+      boss.trailCd = cfg.trailEvery;
+      if (window.GameMap && typeof GameMap.spawnGroundEffect === 'function') {
+        const trail = cfg.trail;
+        GameMap.spawnGroundEffect(trail.kind || 'water', boss.x, boss.y, {
+          radius: trail.radius, life: trail.life,
+          slow: trail.slow, dps: trail.dps || 0,
+          color: 'rgba(77, 166, 255, 0.4)',
+        });
+      }
+    }
+  },
+
+  _iceLordBolt(boss, player) {
+    if (!window.Game || !Game.projectiles) return;
+    const p = Game.projectiles.spawn();
+    if (!p) return;
+    const atk = boss.cfg.attacks.iceBolt;
+    const dx = player.x - boss.x, dy = player.y - boss.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    p.kind = 'boss_ice_bolt';
+    p.owner = 'enemy';
+    p.x = boss.x; p.y = boss.y;
+    p.vx = (dx / dist) * atk.speed;
+    p.vy = (dy / dist) * atk.speed;
+    p.life = 3.0;
+    p.damage = atk.damage;
+    p.radius = 7;
+    p.angle = Math.atan2(dy, dx);
+    p.explodeRadius = 0;
+    p.source = 'boss_ice_lord';
+    p.slowPct = atk.slowPct;
+    p.slowDuration = atk.slowDuration;
+  },
+
+  _iceLordSpikes(boss, player) {
+    if (!window.Game || !Game.projectiles) return;
+    const atk = boss.cfg.attacks.iceSpikes;
+    const dx = player.x - boss.x, dy = player.y - boss.y;
+    const baseAngle = Math.atan2(dy, dx);
+    const spread = Math.PI / 3; // 60° total spread
+    for (let i = 0; i < atk.count; i++) {
+      const p = Game.projectiles.spawn();
+      if (!p) break;
+      const a = baseAngle + (i - (atk.count - 1) / 2) * (spread / (atk.count - 1));
+      p.kind = 'boss_ice_spike';
+      p.owner = 'enemy';
+      p.x = boss.x; p.y = boss.y;
+      p.vx = Math.cos(a) * atk.speed;
+      p.vy = Math.sin(a) * atk.speed;
+      p.life = 2.5;
+      p.damage = atk.damage;
+      p.radius = 5;
+      p.angle = a;
+      p.explodeRadius = 0;
+      p.source = 'boss_ice_lord';
+    }
+    if (window.Particles) {
+      Particles.burst(boss.x, boss.y, 6, {
+        color: '#88ccff', speedMin: 60, speedMax: 140,
+        lifeMin: 0.2, lifeMax: 0.4, sizeMin: 2, sizeMax: 4,
+      });
+    }
+  },
+
+
+  /* ============================================================
+     Шаг 13: ДРЕВНИЙ ЭНТ
+     Очень медленный, мощный. Корни AoE, ядовитые споры, ближний бой.
+     Фаза 2: регенерация + призыв малых грибов.
+     ============================================================ */
+  _updateAncientEnt(boss, player, dt) {
+    const cfg = boss.cfg;
+    const dx = player.x - boss.x, dy = player.y - boss.y;
+    const dist = Math.hypot(dx, dy) || 1;
+
+    // Медленная погоня
+    this._moveTowards(boss, player.x, player.y, dt, 1);
+
+    // Кулдауны
+    boss.slashCd = Math.max(0, boss.slashCd - dt);      // branchSwipe
+    boss.whirlwindCd = Math.max(0, boss.whirlwindCd - dt); // rootSlam
+    boss.fireballCd = Math.max(0, boss.fireballCd - dt);   // poisonSpore
+    boss.summonCd = Math.max(0, boss.summonCd - dt);
+
+    const atk = cfg.attacks;
+
+    // Удар ветками (ближний бой)
+    if (boss.slashCd <= 0 && dist <= atk.branchSwipe.range) {
+      boss.slashCd = atk.branchSwipe.cooldown;
+      boss.slashAnim = 0.2;
+      // Конусное попадание
+      const angleToPlayer = Math.atan2(dy, dx);
+      const facingAngle = Math.atan2(boss.facing.y, boss.facing.x);
+      let angleDiff = angleToPlayer - facingAngle;
+      while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+      while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+      const halfArc = (atk.branchSwipe.arc / 2) * Math.PI / 180;
+      if (Math.abs(angleDiff) <= halfArc) {
+        if (Player.takeDamage) Player.takeDamage(player, atk.branchSwipe.damage, boss);
+        else player.hp -= atk.branchSwipe.damage;
+      }
+      if (window.Particles) {
+        Particles.burst(boss.x + boss.facing.x * 30, boss.y + boss.facing.y * 30, 5, {
+          color: '#6a8a4a', speedMin: 60, speedMax: 120,
+          lifeMin: 0.15, lifeMax: 0.3, sizeMin: 2, sizeMax: 4,
+        });
+      }
+    }
+
+    // Корни AoE (удар по земле)
+    if (boss.whirlwindCd <= 0 && dist <= atk.rootSlam.radius + 20) {
+      boss.whirlwindCd = atk.rootSlam.cooldown;
+      boss.whirlwindAnim = 0.3;
+      if (dist <= atk.rootSlam.radius) {
+        if (Player.takeDamage) Player.takeDamage(player, atk.rootSlam.damage, boss);
+        else player.hp -= atk.rootSlam.damage;
+      }
+      if (window.Particles) {
+        Particles.ring(boss.x, boss.y, atk.rootSlam.radius, 0.35, 'rgba(90, 140, 50, 0.8)', 4);
+        Particles.burst(boss.x, boss.y, 8, {
+          color: '#5a4020', speedMin: 40, speedMax: 100,
+          lifeMin: 0.3, lifeMax: 0.5, sizeMin: 3, sizeMax: 5,
+        });
+      }
+    }
+
+    // Ядовитые споры (дальний бой)
+    if (boss.fireballCd <= 0 && dist > 60) {
+      boss.fireballCd = atk.poisonSpore.cooldown;
+      this._entPoisonSpores(boss, player);
+    }
+
+    // Фаза 2: регенерация + призыв
+    if (boss.phase >= 2) {
+      if (cfg.phase2Regen) {
+        boss.hp = Math.min(boss.maxHp, boss.hp + cfg.phase2Regen * dt);
+      }
+      if (boss.summonCd <= 0 && cfg.phase2SummonCooldown) {
+        boss.summonCd = cfg.phase2SummonCooldown;
+        if (window.Enemies && window.Game) {
+          for (let i = 0; i < (cfg.phase2SummonCount || 2); i++) {
+            if (Game.enemies.countActive() >= CONFIG.POOLS.ENEMIES - 3) break;
+            const ang = Math.random() * Math.PI * 2;
+            const sx = boss.x + Math.cos(ang) * 50;
+            const sy = boss.y + Math.sin(ang) * 50;
+            Enemies.spawnByType(Game.enemies, cfg.phase2SummonChild || 'mold', sx, sy);
+          }
+          if (window.Particles) {
+            Particles.ring(boss.x, boss.y, 50, 0.3, 'rgba(100, 180, 60, 0.7)', 2);
+          }
+        }
+      }
+    }
+  },
+
+  _entPoisonSpores(boss, player) {
+    if (!window.Game || !Game.projectiles) return;
+    const atk = boss.cfg.attacks.poisonSpore;
+    const dx = player.x - boss.x, dy = player.y - boss.y;
+    const baseAngle = Math.atan2(dy, dx);
+    for (let i = 0; i < atk.count; i++) {
+      const p = Game.projectiles.spawn();
+      if (!p) break;
+      const a = baseAngle + (i - 1) * 0.25; // slight spread
+      p.kind = 'boss_poison_spore';
+      p.owner = 'enemy';
+      p.x = boss.x; p.y = boss.y;
+      p.vx = Math.cos(a) * atk.speed;
+      p.vy = Math.sin(a) * atk.speed;
+      p.life = 2.5;
+      p.damage = atk.damage;
+      p.radius = 6;
+      p.angle = a;
+      p.explodeRadius = 0;
+      p.source = 'boss_ancient_ent';
+      p.poisonDps = atk.poisonDps;
+      p.poisonDuration = atk.poisonDuration;
+    }
+  },
+
+
+  /* ============================================================
+     Шаг 13: ТЁМНЫЙ РЫЦАРЬ (Замок)
+     Быстрый, агрессивный. Удар мечом, тёмная волна, призыв теней.
+     ============================================================ */
+  _updateDarkKnight(boss, player, dt) {
+    const cfg = boss.cfg;
+    const dx = player.x - boss.x, dy = player.y - boss.y;
+    const dist = Math.hypot(dx, dy) || 1;
+
+    // Агрессивная погоня
+    this._moveTowards(boss, player.x, player.y, dt, 1);
+
+    // Кулдауны
+    boss.slashCd = Math.max(0, boss.slashCd - dt);
+    boss.darkExplosionCd = Math.max(0, boss.darkExplosionCd - dt);
+    boss.summonCd = Math.max(0, boss.summonCd - dt);
+
+    const atk = cfg.attacks;
+    const cdMul = (boss.phase >= 2 && cfg.phase2CdMul) ? cfg.phase2CdMul : 1.0;
+
+    // Удар мечом (конус)
+    if (boss.slashCd <= 0 && dist <= atk.slash.range) {
+      boss.slashCd = atk.slash.cooldown * cdMul;
+      boss.slashAnim = 0.2;
+      const angleToPlayer = Math.atan2(dy, dx);
+      const facingAngle = Math.atan2(boss.facing.y, boss.facing.x);
+      let angleDiff = angleToPlayer - facingAngle;
+      while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+      while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+      const halfArc = (atk.slash.arc / 2) * Math.PI / 180;
+      if (Math.abs(angleDiff) <= halfArc) {
+        if (Player.takeDamage) Player.takeDamage(player, atk.slash.damage, boss);
+        else player.hp -= atk.slash.damage;
+      }
+      if (window.Particles) {
+        Particles.burst(boss.x + boss.facing.x * 30, boss.y + boss.facing.y * 30, 5, {
+          color: '#cc0000', speedMin: 60, speedMax: 120,
+          lifeMin: 0.15, lifeMax: 0.3, sizeMin: 2, sizeMax: 4,
+        });
+      }
+    }
+
+    // Тёмная волна AoE с отбрасыванием
+    if (boss.darkExplosionCd <= 0 && dist <= atk.darkWave.radius + 30) {
+      boss.darkExplosionCd = atk.darkWave.cooldown * cdMul;
+      boss.darkExplosionAnim = 0.35;
+      if (dist <= atk.darkWave.radius) {
+        if (Player.takeDamage) Player.takeDamage(player, atk.darkWave.damage, boss);
+        else player.hp -= atk.darkWave.damage;
+        // Отбрасывание
+        if (atk.darkWave.knockback) {
+          const nx = dx / dist, ny = dy / dist;
+          player.x += nx * atk.darkWave.knockback;
+          player.y += ny * atk.darkWave.knockback;
+        }
+      }
+      if (window.Particles) {
+        Particles.ring(boss.x, boss.y, atk.darkWave.radius, 0.4, 'rgba(180, 0, 0, 0.85)', 4);
+      }
+    }
+
+    // Призыв теней
+    if (boss.summonCd <= 0) {
+      boss.summonCd = atk.summon.cooldown * cdMul;
+      if (window.Enemies && window.Game) {
+        for (let i = 0; i < atk.summon.count; i++) {
+          if (Game.enemies.countActive() >= CONFIG.POOLS.ENEMIES - 3) break;
+          const ang = (Math.PI * 2 / atk.summon.count) * i;
+          const sx = boss.x + Math.cos(ang) * 50;
+          const sy = boss.y + Math.sin(ang) * 50;
+          Enemies.spawnByType(Game.enemies, atk.summon.childId, sx, sy);
+        }
+        if (window.Particles) {
+          Particles.ring(boss.x, boss.y, 50, 0.3, 'rgba(100, 0, 0, 0.7)', 2);
+        }
+      }
+    }
+  },
+
+
+  /* ============================================================
+     Шаг 13: СТРАЖ КАРТЫ — логика спавна стража по биому.
+     ============================================================ */
+
+  /** Заспавнить стража текущего биома. */
+  spawnGuardian(player) {
+    if (!window.GameMap || !GameMap.currentBiome) return;
+    const biome = GameMap.currentBiome;
+    const guardianId = biome.guardianBoss;
+    if (!guardianId || !BOSS_TYPES[guardianId]) return;
+    // Не спавним, если уже есть активный босс
+    if (this.isAlive()) return;
+    this.spawn(guardianId, player);
   },
 };
 
