@@ -453,6 +453,13 @@ const Bosses = {
       else Loot.dropXP(Game.xpDrops, x, y, val);
     }
 
+    // Шаг 15: золото с босса
+    if (Game.goldDrops && Loot.dropBossGold) {
+      Loot.dropBossGold(Game.goldDrops, boss.x, boss.y);
+    }
+    // Шаг 15: счётчик убийств боссов
+    Game.bossKills = (Game.bossKills || 0) + 1;
+
     // Золотой сундук (особый — выбор из 3 карт)
     Game.bossChest = {
       x: boss.x,

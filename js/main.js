@@ -77,16 +77,26 @@ const Game = {
     this.projectiles = new ObjectPool(createProjectile, CONFIG.POOLS.PROJECTILES);
     this.xpDrops     = new ObjectPool(createXP,         CONFIG.POOLS.XP);
     this.particles   = new ObjectPool(createParticle,   CONFIG.POOLS.PARTICLES);
+    // Шаг 15: пул золота
+    this.goldDrops   = new ObjectPool(createGold,       GOLD_CONFIG.POOL_SIZE);
 
     GameMap.precompute();
     Input.init();
     GameAudio.init();
 
+    // Шаг 15: загрузить мета-прогресс
+    if (window.MetaProgress) MetaProgress.load();
+
     // UI bindings
     document.getElementById('startBtn').addEventListener('click',   () => this.startNewGame());
-    document.getElementById('restartBtn').addEventListener('click', () => this.startNewGame());
+    document.getElementById('restartBtn').addEventListener('click', () => this._handleRestartBtn());
     document.getElementById('resumeBtn').addEventListener('click',  () => this.togglePause());
     document.getElementById('pauseBtn').addEventListener('click',   () => this.togglePause());
+
+    // Шаг 15: показать лагерь вместо старого меню
+    this.state = 'camp';
+    UI.hideAll();
+    UI.showCamp();
 
     this.lastTs = performance.now();
     requestAnimationFrame((t) => this.loop(t));
@@ -111,7 +121,12 @@ const Game = {
     this.projectiles.clearAll();
     this.xpDrops.clearAll();
     this.particles.clearAll();
+    this.goldDrops.clearAll();
     if (window.GameMap && GameMap.clearGroundEffects) GameMap.clearGroundEffects();
+
+    // Шаг 15: счётчики золота и боссов за забег
+    this.runGold = 0;
+    this.bossKills = 0;
 
     // Шаг 13: бесконечный режим — инициализация
     this.mapNumber = 1;
@@ -156,6 +171,9 @@ const Game = {
       if (sp) { startX = sp.x; startY = sp.y; }
     }
     this.player = Player.create(startX, startY);
+
+    // Шаг 15: перестроить UI-слоты под динамическое количество
+    UI.rebuildSlots(this.player.weaponSlots.length, this.player.abilitySlots.length);
 
     UI.hideAll();
     this.state = 'playing';
@@ -307,11 +325,52 @@ const Game = {
   triggerGameOver() {
     this.state = 'gameover';
     Input.releaseJoystick();
-    UI.showGameOver({
-      time: Utils.formatTime(this.runTime),
-      kills: this.kills,
-      level: this.player.level,
-    });
+
+    // Шаг 15: сохранить мета-прогресс
+    if (window.MetaProgress && MetaProgress.data) {
+      const goldCollected = this.runGold || 0;
+      const goldBonus = (this.player ? this.player.level : 1) * 10;
+      const goldTotal = MetaProgress.calcEndOfRunGold(goldCollected, this.player ? this.player.level : 1);
+
+      MetaProgress.addGold(goldTotal);
+      MetaProgress.updateStats(this.kills, this.runTime);
+      const repGained = 10 + (this.bossKills || 0) * 5 + Math.floor(this.kills / 100);
+      MetaProgress.addRunReputation(this.bossKills || 0, this.kills);
+
+      // Показать экран результатов
+      UI.showRunResults({
+        time: Utils.formatTime(this.runTime),
+        kills: this.kills,
+        level: this.player ? this.player.level : 1,
+        goldCollected: goldCollected,
+        goldBonus: goldBonus,
+        goldTotal: goldTotal,
+        repGained: repGained,
+      }, () => {
+        // Вернуться в лагерь
+        this.state = 'camp';
+        UI.showCamp();
+      });
+    } else {
+      // Фоллбэк: старое поведение
+      UI.showGameOver({
+        time: Utils.formatTime(this.runTime),
+        kills: this.kills,
+        level: this.player.level,
+      });
+    }
+  },
+
+  /** Шаг 15: обработчик кнопки рестарта (из старого Game Over). */
+  _handleRestartBtn() {
+    // Переход в лагерь вместо прямого рестарта
+    if (window.MetaProgress) {
+      this.state = 'camp';
+      UI.hideAll();
+      UI.showCamp();
+    } else {
+      this.startNewGame();
+    }
   },
 
   /* ----- игровой цикл ----- */
@@ -404,6 +463,8 @@ const Game = {
 
     // Лут и частицы
     Loot.update(this.xpDrops, this.player, dt);
+    // Шаг 15: обновление золота
+    if (this.goldDrops) Loot.updateGold(this.goldDrops, this.player, dt);
     this.updateChest(dt);
     this.updateBossChest(dt);
     this.updateParticles(dt);
@@ -553,6 +614,7 @@ const Game = {
     this.projectiles.clearAll();
     this.xpDrops.clearAll();
     this.particles.clearAll();
+    if (this.goldDrops) this.goldDrops.clearAll();
     if (window.GameMap && GameMap.clearGroundEffects) GameMap.clearGroundEffects();
 
     // Убираем активного босса
@@ -953,6 +1015,11 @@ const Game = {
       }
       Loot.dropXP(this.xpDrops, e.x, e.y, value);
     }
+
+    // Шаг 15: выпадение золота
+    if (this.goldDrops) {
+      Loot.tryDropGold(this.goldDrops, e);
+    }
   },
 
   spawnTrailParticle(player, move) {
@@ -991,6 +1058,8 @@ const Game = {
 
     GameMap.render(ctx, cam, this.viewW, this.viewH);
     Loot.render(ctx, this.xpDrops, cam, this.viewW, this.viewH);
+    // Шаг 15: рендер золота
+    if (this.goldDrops) Loot.renderGold(ctx, this.goldDrops, cam, this.viewW, this.viewH);
     // Шаг 4: лужи и следы под врагами/героем
     if (GameMap.renderGroundEffects) GameMap.renderGroundEffects(ctx, cam, this.viewW, this.viewH);
     // Шаг 3: сундук рисуется в мире

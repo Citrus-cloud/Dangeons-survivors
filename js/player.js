@@ -7,6 +7,14 @@
 const Player = {
   /** Создать нового героя. */
   create(startX, startY) {
+    // Шаг 15: динамические слоты из мета-прогресса
+    const weaponSlotCount = (window.MetaProgress && MetaProgress.data)
+      ? MetaProgress.getWeaponSlots()
+      : CONFIG.PLAYER.SLOTS_WEAPONS;
+    const abilitySlotCount = (window.MetaProgress && MetaProgress.data)
+      ? MetaProgress.getAbilitySlots()
+      : CONFIG.PLAYER.SLOTS_ABILITIES;
+
     const p = {
       x: (startX != null) ? startX : CONFIG.MAP.W / 2,
       y: (startY != null) ? startY : CONFIG.MAP.H / 2,
@@ -43,6 +51,8 @@ const Player = {
       doubleXpChance: 0,     // 0..1 — шанс удвоения XP
       dotDamageMul: 1,       // множитель DoT-урона
 
+      // Шаг 15: бонус XP от харизмы (умножает подбираемый XP)
+      xpBonusMul: 1,
 
       // Встроенный Magic Missile (не занимает слот)
       missileCd: 0,
@@ -57,9 +67,9 @@ const Player = {
       xp: 0,
       xpNext: CONFIG.XP.BASE,
 
-      // Слоты
-      weaponSlots:  new Array(CONFIG.PLAYER.SLOTS_WEAPONS).fill(null),
-      abilitySlots: new Array(CONFIG.PLAYER.SLOTS_ABILITIES).fill(null),
+      // Слоты (Шаг 15: динамический размер)
+      weaponSlots:  new Array(weaponSlotCount).fill(null),
+      abilitySlots: new Array(abilitySlotCount).fill(null),
 
       // Визуал
       trailTimer: 0,
@@ -68,8 +78,36 @@ const Player = {
       poison: null,        // { dps, remaining }
       webSlow: 0,          // оставшееся время замедления паутиной
     };
+
+    // Шаг 15: применить бонусы талантов из мета-прогресса
+    if (window.MetaProgress && MetaProgress.data) {
+      MetaProgress.applyTalents(p);
+    }
+
+    // Шаг 15: бонус гильдии — легендарный титул (+10% ко всем статам)
+    if (window.MetaProgress && MetaProgress.hasGuildBonus('legendBonus')) {
+      p.damageMul *= 1.10;
+      p.speedMul *= 1.10;
+      p.maxHp = Math.floor(p.maxHp * 1.10);
+      p.hp = p.maxHp;
+      p.magicDamageMul *= 1.10;
+    }
+
+    // Шаг 15: бонус гильдии — +20% XP на 2 мин при старте
+    if (window.MetaProgress && MetaProgress.hasGuildBonus('startXpBoost')) {
+      p._startXpBoostTimer = 120; // 2 минуты
+      p.xpBonusMul = (p.xpBonusMul || 1) * 1.20;
+    }
+
     // Старт: меч в первом слоте оружия
     Player.addWeapon(p, WEAPON_FACTORIES.sword());
+
+    // Шаг 15: бонус гильдии — меч начинает с +1 ур.
+    if (window.MetaProgress && MetaProgress.hasGuildBonus('startBonus')) {
+      const sword = p.weaponSlots[0];
+      if (sword && sword.upgrade) sword.upgrade();
+    }
+
     return p;
   },
 
@@ -232,6 +270,15 @@ const Player = {
     // Регенерация
     if (player.hpRegen > 0 && player.hp > 0) {
       player.hp = Math.min(player.maxHp, player.hp + player.hpRegen * dt);
+    }
+
+    // Шаг 15: снятие стартового XP-буста после 2 минут
+    if (player._startXpBoostTimer && player._startXpBoostTimer > 0) {
+      player._startXpBoostTimer -= dt;
+      if (player._startXpBoostTimer <= 0) {
+        player.xpBonusMul = (player.xpBonusMul || 1) / 1.20;
+        player._startXpBoostTimer = 0;
+      }
     }
 
     // Шаг 8: тик щита маны (кулдаун)
