@@ -833,12 +833,14 @@ const Enemies = {
 
 
   /* ============================================================
-     Render
+     Render — пиксельные спрайты (sprites.js)
      ============================================================ */
   render(ctx, pool, cam, viewW, viewH) {
     const minX = cam.x, minY = cam.y;
     const maxX = cam.x + viewW, maxY = cam.y + viewH;
     const items = pool.items;
+    const hasSprites = !!(window.getEnemySprite);
+
     for (let i = 0; i < items.length; i++) {
       const e = items[i];
       if (!e.active || !e.cfg) continue;
@@ -854,128 +856,132 @@ const Enemies = {
 
       // Пульсация атаки: до +20% размера в течение 0.1 сек
       const punch = e.attackPunch > 0 ? 1 + 0.20 * (e.attackPunch / 0.10) : 1;
-      const drawW = w * punch, drawH = h * punch;
 
-      // Прозрачность (мерцание — теневой убийца)
+      // Прозрачность (мерцание — теневой убийца, призраки)
       let prevAlpha = ctx.globalAlpha;
       if (cfg.behavior === 'shadow') {
-        // Видим: 1.0; в фазе invisible — 0.20
         ctx.globalAlpha = e.invisible ? 0.20 : 1.0;
+      } else if (cfg.behavior === 'ghost' || cfg.id === 'ghost') {
+        ctx.globalAlpha = 0.7;
       }
 
-      // Цвет тела (мерцание при попадании)
-      const baseColor = cfg.color || '#888';
-      const fillColor = e.flash > 0 ? '#ffffff' : baseColor;
-      const strokeColor = cfg.stroke || '#ffffff';
+      // Размер спрайта на экране
+      const spriteSize = (window.getSpriteDisplaySize ? getSpriteDisplaySize(e.type) : Math.max(w, h)) * punch;
 
-      // Особый случай: мимик в idle — рисуем "сундук"
-      if (cfg.behavior === 'mimic' && !e.activated) {
-        ctx.shadowColor = 'rgba(255, 215, 80, 0.7)';
-        ctx.shadowBlur = 10;
-        ctx.fillStyle = '#d8a826';
-        ctx.fillRect(renderX - drawW / 2, renderY - drawH / 2, drawW, drawH);
-        ctx.shadowBlur = 0;
-        ctx.strokeStyle = '#8a6a14';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(renderX - drawW / 2 + 1, renderY - drawH / 2 + 1, drawW - 2, drawH - 2);
-        ctx.fillStyle = '#8a6a14';
-        ctx.fillRect(renderX - drawW / 2, renderY - 2, drawW, 3);
-        ctx.fillStyle = '#fffce0';
-        ctx.font = 'bold 16px ui-monospace, monospace';
+      // Получаем спрайт
+      const sprite = hasSprites ? getEnemySprite(e.type) : null;
+
+      if (sprite) {
+        // Отключаем сглаживание для чётких пикселей
+        ctx.imageSmoothingEnabled = false;
+
+        // Мимик в idle — рисуем спрайт сундука с подсветкой
+        if (cfg.behavior === 'mimic' && !e.activated) {
+          ctx.shadowColor = 'rgba(255, 215, 80, 0.7)';
+          ctx.shadowBlur = 10;
+          ctx.drawImage(sprite, renderX - spriteSize / 2, renderY - spriteSize / 2, spriteSize, spriteSize);
+          ctx.shadowBlur = 0;
+          ctx.globalAlpha = prevAlpha;
+          continue;
+        }
+
+        // Аура капитана (до спрайта)
+        if (cfg.behavior === 'captain') {
+          ctx.fillStyle = 'rgba(255, 215, 0, 0.18)';
+          ctx.beginPath();
+          ctx.arc(renderX, renderY, cfg.auraRadius || 100, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Мерцание при попадании — белый оверлей
+        if (e.flash > 0) {
+          ctx.drawImage(sprite, renderX - spriteSize / 2, renderY - spriteSize / 2, spriteSize, spriteSize);
+          // Белая вспышка: рисуем белый прямоугольник с пониженной непрозрачностью
+          const prevA = ctx.globalAlpha;
+          ctx.globalAlpha = 0.7;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(renderX - spriteSize / 2, renderY - spriteSize / 2, spriteSize, spriteSize);
+          ctx.globalAlpha = prevA;
+        } else {
+          // Обычная отрисовка спрайта
+          ctx.drawImage(sprite, renderX - spriteSize / 2, renderY - spriteSize / 2, spriteSize, spriteSize);
+        }
+
+        // Золотая обводка для элитных (captainBuffed)
+        if (e.captainBuffed) {
+          ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(renderX - spriteSize / 2 - 1, renderY - spriteSize / 2 - 1, spriteSize + 2, spriteSize + 2);
+        }
+
+        ctx.imageSmoothingEnabled = true;
+      } else {
+        // Fallback: старая отрисовка геометрических фигур (если спрайта нет)
+        const drawW = w * punch, drawH = h * punch;
+        const fillColor = e.flash > 0 ? '#ffffff' : (cfg.color || '#888');
+        ctx.fillStyle = fillColor;
+        ctx.strokeStyle = cfg.stroke || '#ffffff';
+        ctx.lineWidth = 1;
+
+        if (cfg.behavior === 'mimic' && !e.activated) {
+          ctx.fillStyle = '#d8a826';
+          ctx.fillRect(renderX - drawW / 2, renderY - drawH / 2, drawW, drawH);
+          ctx.globalAlpha = prevAlpha;
+          continue;
+        }
+
+        switch (cfg.shape) {
+          case 'rect':
+            ctx.fillRect(renderX - drawW / 2, renderY - drawH / 2, drawW, drawH);
+            ctx.strokeRect(renderX - drawW / 2 + 0.5, renderY - drawH / 2 + 0.5, drawW - 1, drawH - 1);
+            break;
+          case 'oval':
+            ctx.beginPath();
+            ctx.ellipse(renderX, renderY, drawW / 2, drawH / 2, 0, 0, Math.PI * 2);
+            ctx.fill(); ctx.stroke();
+            break;
+          case 'circle':
+            ctx.beginPath();
+            ctx.arc(renderX, renderY, drawW / 2, 0, Math.PI * 2);
+            ctx.fill(); ctx.stroke();
+            break;
+          case 'diamond':
+            ctx.beginPath();
+            ctx.moveTo(renderX, renderY - drawH / 2);
+            ctx.lineTo(renderX + drawW / 2, renderY);
+            ctx.lineTo(renderX, renderY + drawH / 2);
+            ctx.lineTo(renderX - drawW / 2, renderY);
+            ctx.closePath();
+            ctx.fill(); ctx.stroke();
+            break;
+          case 'triangle':
+            ctx.beginPath();
+            ctx.moveTo(renderX, renderY - drawH / 2);
+            ctx.lineTo(renderX + drawW / 2, renderY + drawH / 2);
+            ctx.lineTo(renderX - drawW / 2, renderY + drawH / 2);
+            ctx.closePath();
+            ctx.fill(); ctx.stroke();
+            break;
+          default:
+            ctx.fillRect(renderX - drawW / 2, renderY - drawH / 2, drawW, drawH);
+        }
+
+        // Буква (fallback)
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold ' + Math.min(16, Math.floor(Math.min(w, h) * 0.6)) + 'px ui-monospace, monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('?', renderX, renderY + 1);
-        ctx.globalAlpha = prevAlpha;
-        // HP-бар у мимика в idle не показываем
-        continue;
+        ctx.fillText(cfg.letter || '?', renderX, renderY + 1);
       }
 
-      // Капитан — корона над головой
-      if (cfg.behavior === 'captain') {
-        ctx.fillStyle = 'rgba(255, 215, 0, 0.18)';
-        ctx.beginPath();
-        ctx.arc(renderX, renderY, cfg.auraRadius || 100, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Основная фигура
-      ctx.fillStyle = fillColor;
-      ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = 1;
-
-      switch (cfg.shape) {
-        case 'rect': {
-          ctx.fillRect(renderX - drawW / 2, renderY - drawH / 2, drawW, drawH);
-          ctx.strokeRect(renderX - drawW / 2 + 0.5, renderY - drawH / 2 + 0.5, drawW - 1, drawH - 1);
-          break;
-        }
-        case 'oval': {
-          ctx.beginPath();
-          ctx.ellipse(renderX, renderY, drawW / 2, drawH / 2, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-          break;
-        }
-        case 'circle': {
-          ctx.beginPath();
-          ctx.arc(renderX, renderY, drawW / 2, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-          break;
-        }
-        case 'diamond': {
-          ctx.beginPath();
-          ctx.moveTo(renderX, renderY - drawH / 2);
-          ctx.lineTo(renderX + drawW / 2, renderY);
-          ctx.lineTo(renderX, renderY + drawH / 2);
-          ctx.lineTo(renderX - drawW / 2, renderY);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-          break;
-        }
-        case 'triangle': {
-          ctx.beginPath();
-          ctx.moveTo(renderX, renderY - drawH / 2);
-          ctx.lineTo(renderX + drawW / 2, renderY + drawH / 2);
-          ctx.lineTo(renderX - drawW / 2, renderY + drawH / 2);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-          break;
-        }
-        default:
-          ctx.fillRect(renderX - drawW / 2, renderY - drawH / 2, drawW, drawH);
-      }
-
-      // Корона над капитаном (золотой треугольник)
-      if (cfg.behavior === 'captain') {
-        const cy = renderY - drawH / 2 - 6;
-        ctx.fillStyle = '#ffd700';
-        ctx.beginPath();
-        ctx.moveTo(renderX - 8, cy + 4);
-        ctx.lineTo(renderX - 4, cy - 3);
-        ctx.lineTo(renderX,     cy + 1);
-        ctx.lineTo(renderX + 4, cy - 3);
-        ctx.lineTo(renderX + 8, cy + 4);
-        ctx.closePath();
-        ctx.fill();
-      }
-
-      // Буква
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold ' + Math.min(16, Math.floor(Math.min(w, h) * 0.6)) + 'px ui-monospace, monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(cfg.letter || '?', renderX, renderY + 1);
-
-      // HP-бар
+      // HP-бар (всегда показываем при повреждении)
       if (e.hp < e.maxHp) {
-        const barW = w, barH = 3;
+        const barW = spriteSize || w, barH = 3;
+        const barY = renderY - (spriteSize || h) / 2 - 6;
         ctx.fillStyle = 'rgba(0,0,0,0.6)';
-        ctx.fillRect(renderX - barW / 2, renderY - h / 2 - 6, barW, barH);
+        ctx.fillRect(renderX - barW / 2, barY, barW, barH);
         ctx.fillStyle = '#e74c3c';
-        ctx.fillRect(renderX - barW / 2, renderY - h / 2 - 6, barW * (e.hp / e.maxHp), barH);
+        ctx.fillRect(renderX - barW / 2, barY, barW * (e.hp / e.maxHp), barH);
       }
 
       ctx.globalAlpha = prevAlpha;
