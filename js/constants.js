@@ -929,8 +929,230 @@ BOSS_TYPES.boss_dark_knight = {
   phase2CdMul: 0.80,
 };
 
+/* ============================================================
+   Шаг 14: Новые мини-боссы (6 штук) — расширение пула до 13.
+   ============================================================ */
+
+BOSS_TYPES.boss_ghoul_king = {
+  id: 'boss_ghoul_king',
+  name: 'Король упырей',
+  hp: 350,
+  speed: 130,
+  damage: 20,
+  xpReward: 280,
+  w: 44, h: 44,
+  color: '#4a0e0e',
+  stroke: '#ff4444',
+  shape: 'rect',
+  letter: 'U',
+  hitInterval: 0.7,
+  // Атаки
+  attacks: {
+    claws: { cooldown: 1.2, damage: 20, arc: 100, range: 45, lifesteal: 0.50 },
+    summonGhouls: { cooldown: 6.0, count: 4, childId: 'zombie' },
+    deathWail: { damage: 0, count: 6, childId: 'skeleton' }, // при смерти призывает 6 скелетов
+  },
+  // Фаза 2: при 50% HP — +30% скорость атаки
+  phase2HpPct: 0.50,
+  phase2CdMul: 0.70,
+  // Биомы
+  allowedBiomes: ['crypt', 'castle'],
+  rewardMul: 1.0,
+};
+
+BOSS_TYPES.boss_ice_serpent = {
+  id: 'boss_ice_serpent',
+  name: 'Ледяной змей',
+  hp: 400,
+  speed: 70,
+  damage: 18,
+  xpReward: 320,
+  w: 60, h: 36,
+  color: '#88ccff',
+  stroke: '#ffffff',
+  shape: 'oval',
+  letter: 'Z',
+  hitInterval: 0.8,
+  // Атаки
+  attacks: {
+    iceBreath: { cooldown: 3.0, damage: 22, range: 120, arc: 90, slowPct: 0.60, slowDuration: 2.0 },
+    tailSweep: { cooldown: 5.0, damage: 18, radius: 80, knockback: 50 },
+    iceStorm: { damage: 10, radius: 100, dps: true }, // включается при фазе 2 (постоянный AoE)
+  },
+  // Фаза 2: при 50% HP — ледяной шторм
+  phase2HpPct: 0.50,
+  phase2IceStorm: true,
+  allowedBiomes: ['ice_caves'],
+  rewardMul: 1.1,
+};
+
+BOSS_TYPES.boss_magma_giant = {
+  id: 'boss_magma_giant',
+  name: 'Магма-гигант',
+  hp: 500,
+  speed: 40,
+  damage: 30,
+  xpReward: 400,
+  w: 56, h: 56,
+  color: '#cc3300',
+  stroke: '#ff9900',
+  shape: 'rect',
+  letter: 'M',
+  hitInterval: 1.0,
+  // Атаки
+  attacks: {
+    lavaWave: { cooldown: 7.0, damage: 25, length: 200, width: 40, burnDps: 8, burnDuration: 3.0 },
+    stomp: { cooldown: 3.0, damage: 20, radius: 70 },
+    deathEruption: { count: 8, damage: 18, speed: 250, radius: 6 }, // при смерти: 8 огненных шаров
+  },
+  trailEvery: 0.6,
+  trail: { kind: 'fire', radius: 28, life: 3.5, dps: 8 },
+  // Фаза 2: при 40% HP — +50% скорость, stomp cooldown сокращён
+  phase2HpPct: 0.40,
+  phase2SpeedMul: 1.50,
+  phase2CdMul: 0.70,
+  allowedBiomes: ['fire_mines'],
+  rewardMul: 1.2,
+};
+
+BOSS_TYPES.boss_spider_matriarch = {
+  id: 'boss_spider_matriarch',
+  name: 'Королева пауков',
+  hp: 320,
+  speed: 100,
+  damage: 15,
+  xpReward: 260,
+  w: 50, h: 38,
+  color: '#1a1a2a',
+  stroke: '#cc66ff',
+  shape: 'oval',
+  letter: 'P',
+  hitInterval: 0.7,
+  // Атаки
+  attacks: {
+    webZones: { cooldown: 4.0, count: 3, radius: 50, slowPct: 0.50, life: 5.0 },
+    teleport: { cooldown: 6.0, range: 150 },
+    deathSpawn: { count: 10, childId: 'spiderling' }, // при смерти — 10 паучат
+  },
+  // Фаза 2: при 50% HP — телепорт чаще, больше паутин
+  phase2HpPct: 0.50,
+  phase2CdMul: 0.60,
+  allowedBiomes: ['forest_ruins', 'crypt'],
+  rewardMul: 1.0,
+};
+
+BOSS_TYPES.boss_knight_commander = {
+  id: 'boss_knight_commander',
+  name: 'Рыцарь-командор',
+  hp: 450,
+  speed: 65,
+  damage: 35,
+  xpReward: 380,
+  w: 52, h: 52,
+  color: '#b0b0b0',
+  stroke: '#ffd700',
+  shape: 'rect',
+  letter: 'K',
+  hitInterval: 0.9,
+  // Атаки
+  attacks: {
+    greatsword: { cooldown: 1.8, damage: 35, arc: 150, range: 60 },
+    commandAttack: { cooldown: 6.0, radius: 150, speedBuff: 0.30, buffDuration: 3.0 },
+    // При 30% HP — ярость
+  },
+  // Фаза 2: при 30% HP — ярость (+40% скорости, -20% кулдаунов)
+  phase2HpPct: 0.30,
+  phase2SpeedMul: 1.40,
+  phase2CdMul: 0.80,
+  allowedBiomes: ['castle'],
+  rewardMul: 1.2,
+};
+
+BOSS_TYPES.boss_shadow_dragon = {
+  id: 'boss_shadow_dragon',
+  name: 'Теневой дракон',
+  hp: 600,
+  speed: 90,
+  damage: 28,
+  xpReward: 500,
+  w: 58, h: 44,
+  color: '#1a0033',
+  stroke: '#9933ff',
+  shape: 'diamond',
+  letter: 'Д',
+  hitInterval: 0.8,
+  // Атаки
+  attacks: {
+    darkBreath: { cooldown: 3.5, damage: 28, range: 130, arc: 80, debuffDmgReduction: 0.20, debuffDuration: 3.0 },
+    summonShadows: { cooldown: 10.0, count: 3, childId: 'shadow' }, // при 50% HP
+    deathExplosion: { damage: 35, radius: 120 }, // при смерти
+  },
+  // Фаза 2: при 50% HP — призыв 3 теней + тёмный шторм
+  phase2HpPct: 0.50,
+  phase2SummonOnce: true,
+  phase2CdMul: 0.75,
+  // Доступен во всех биомах (редкий), но предпочитает замок
+  allowedBiomes: ['castle', 'crypt', 'ice_caves', 'fire_mines', 'forest_ruins'],
+  rewardMul: 1.5,
+};
+
+/* ============================================================
+   Шаг 14: Добавить allowedBiomes к существующим боссам.
+   ============================================================ */
+BOSS_TYPES.boss_skeleton_knight.allowedBiomes = ['crypt', 'castle'];
+BOSS_TYPES.boss_skeleton_knight.rewardMul = 1.0;
+BOSS_TYPES.boss_lich.allowedBiomes = ['crypt', 'castle'];
+BOSS_TYPES.boss_lich.rewardMul = 1.1;
+BOSS_TYPES.boss_spider_queen.allowedBiomes = ['crypt', 'forest_ruins'];
+BOSS_TYPES.boss_spider_queen.rewardMul = 1.0;
+BOSS_TYPES.boss_fire_lord.allowedBiomes = ['fire_mines'];
+BOSS_TYPES.boss_fire_lord.rewardMul = 1.2;
+BOSS_TYPES.boss_ice_lord.allowedBiomes = ['ice_caves'];
+BOSS_TYPES.boss_ice_lord.rewardMul = 1.1;
+BOSS_TYPES.boss_ancient_ent.allowedBiomes = ['forest_ruins'];
+BOSS_TYPES.boss_ancient_ent.rewardMul = 1.1;
+BOSS_TYPES.boss_dark_knight.allowedBiomes = ['castle'];
+BOSS_TYPES.boss_dark_knight.rewardMul = 1.2;
+
+/* ============================================================
+   Шаг 14: BOSS_GUARDIANS_BY_BIOME — пул стражей для каждого биома.
+   При генерации карты выбирается случайный страж из пула.
+   ============================================================ */
+const BOSS_GUARDIANS_BY_BIOME = {
+  crypt:        ['boss_skeleton_knight', 'boss_ghoul_king', 'boss_spider_matriarch'],
+  ice_caves:    ['boss_ice_lord', 'boss_ice_serpent'],
+  fire_mines:   ['boss_fire_lord', 'boss_magma_giant'],
+  forest_ruins: ['boss_ancient_ent', 'boss_spider_matriarch'],
+  castle:       ['boss_knight_commander', 'boss_shadow_dragon', 'boss_lich'],
+};
+
+/* ============================================================
+   Шаг 14: Обновляем BOSS_CONFIG — ротация вместо фиксированного порядка.
+   ============================================================ */
+// Полный пул всех боссов для глобальной ротации
+BOSS_CONFIG.ALL_BOSS_IDS = [
+  'boss_skeleton_knight', 'boss_lich', 'boss_spider_queen', 'boss_fire_lord',
+  'boss_ice_lord', 'boss_ancient_ent', 'boss_dark_knight',
+  'boss_ghoul_king', 'boss_ice_serpent', 'boss_magma_giant',
+  'boss_spider_matriarch', 'boss_knight_commander', 'boss_shadow_dragon',
+];
+
+// Множитель сложности боссов по временным слотам (5:00, 10:00, 15:00, 20:00)
+BOSS_CONFIG.SLOT_DIFFICULTY = [1.0, 1.3, 1.6, 2.0];
+
+// Награды за боссов
+BOSS_CONFIG.REWARDS = {
+  GLOBAL_XP_BASE: 300,        // базовый XP за глобального босса
+  GLOBAL_XP_MAX: 500,         // макс XP за глобального босса
+  GUARDIAN_XP_BASE: 150,      // базовый XP за стража
+  GUARDIAN_XP_MAX: 300,       // макс XP за стража
+  EXCLUSIVE_DROP_CHANCE: 0.20, // шанс дропа эксклюзива
+  REWARD_SCALE_PER_MAP: 0.20, // +20% за каждую карту после первой
+};
+
 window.BOSS_CONFIG = BOSS_CONFIG;
 window.BOSS_TYPES = BOSS_TYPES;
+window.BOSS_GUARDIANS_BY_BIOME = BOSS_GUARDIANS_BY_BIOME;
 
 
 /* ============================================================
@@ -1154,7 +1376,7 @@ const BIOMES = [
       'captain', 'cultist', 'shadow', 'lich_minor',
       'rotgolem', 'dragonet', 'death_knight', 'bone_colossus', 'archlich',
     ],
-    guardianBoss: 'boss_skeleton_knight',
+    guardianBoss: 'boss_skeleton_knight', // Шаг 14: fallback, реальный выбор через BOSS_GUARDIANS_BY_BIOME
     mosaicColor: 'rgba(120, 90, 60, 0.35)',
   },
   {
@@ -1177,7 +1399,7 @@ const BIOMES = [
       'stone_golem', 'chimera', 'illithid',
       'hydra_small', 'bone_colossus', 'observer',
     ],
-    guardianBoss: 'boss_ice_lord',
+    guardianBoss: 'boss_ice_lord', // Шаг 14: fallback
     mosaicColor: 'rgba(100, 140, 200, 0.3)',
   },
   {
@@ -1200,7 +1422,7 @@ const BIOMES = [
       'dragonid', 'demon_berserker', 'rust_monster',
       'young_dragon', 'rotgolem', 'dragonet',
     ],
-    guardianBoss: 'boss_fire_lord',
+    guardianBoss: 'boss_fire_lord', // Шаг 14: fallback
     mosaicColor: 'rgba(200, 80, 40, 0.3)',
   },
   {
@@ -1223,7 +1445,7 @@ const BIOMES = [
       'chimera', 'drow', 'rust_monster',
       'hydra_small', 'young_dragon', 'observer',
     ],
-    guardianBoss: 'boss_ancient_ent',
+    guardianBoss: 'boss_ancient_ent', // Шаг 14: fallback
     mosaicColor: 'rgba(60, 140, 60, 0.3)',
   },
   {
@@ -1246,7 +1468,7 @@ const BIOMES = [
       'captain', 'shadow', 'illithid', 'stone_golem', 'demon_berserker', 'lich_minor',
       'death_knight', 'archlich', 'bone_colossus', 'eldritch_horror',
     ],
-    guardianBoss: 'boss_dark_knight',
+    guardianBoss: 'boss_dark_knight', // Шаг 14: fallback
     mosaicColor: 'rgba(140, 100, 180, 0.3)',
   },
 ];

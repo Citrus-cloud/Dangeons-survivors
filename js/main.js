@@ -558,6 +558,7 @@ const Game = {
     // Убираем активного босса
     if (window.Bosses) {
       Bosses.current = null;
+      Bosses.guardian = null;
     }
 
     // Убираем сундуки
@@ -1021,6 +1022,8 @@ const Game = {
       }
       Bosses.renderHPBar(ctx, this.viewW, this.viewH);
       Bosses.renderDefeatedMsg(ctx, this.viewW, this.viewH);
+      // Шаг 14: анонс имени босса
+      Bosses.renderBossAnnounce(ctx, this.viewW, this.viewH);
       if (Bosses.screenShake > 0) {
         ctx.restore();
       }
@@ -1098,35 +1101,43 @@ const Game = {
      Шаг 6: Босс — таймер, апдейт, проверка снарядов, хоминг, сундук.
      ============================================================ */
 
-  /** Таймер и спавн босса. */
+  /** Таймер и спавн босса (Шаг 14: ротация). */
   updateBoss(dt) {
     if (!window.Bosses) return;
     Bosses.update(this.player, dt);
 
-    // Проверка таймера спавна
-    if (!Bosses.isAlive() && !Bosses.current && Bosses.bossIndex < BOSS_CONFIG.SPAWN_TIMES.length) {
+    // Проверка таймера спавна глобального босса (из ротации)
+    if (!Bosses.isGlobalAlive() && !Bosses.current && Bosses.bossIndex < BOSS_CONFIG.SPAWN_TIMES.length) {
       if (this.runTime >= Bosses.nextSpawnTime) {
-        const bossId = BOSS_CONFIG.SPAWN_ORDER[Bosses.bossIndex];
-        Bosses.spawn(bossId, this.player);
+        Bosses.spawnGlobalBoss(Bosses.bossIndex, this.player);
+      }
+    }
+
+    // Шаг 14: дебафф от теневого дракона (снижение урона на время)
+    if (this.player && this.player._darkDebuffTimer > 0) {
+      this.player._darkDebuffTimer -= dt;
+      if (this.player._darkDebuffTimer <= 0) {
+        this.player._darkDebuff = 0;
       }
     }
   },
 
-  /** Проверка попадания снарядов игрока в босса. */
+  /** Проверка попадания снарядов игрока в босса (Шаг 14: оба босса). */
   checkProjectilesVsBoss() {
     if (!window.Bosses || !Bosses.isAlive()) return;
-    const boss = Bosses.current;
-    const bossR = Math.max(boss.cfg.w, boss.cfg.h) * 0.45;
     const items = this.projectiles.items;
     for (let i = 0; i < items.length; i++) {
       const p = items[i];
       if (!p.active || p.owner !== 'player') continue;
-      const dx = boss.x - p.x, dy = boss.y - p.y;
+      // Проверяем обоих боссов
+      const target = Bosses.getClosestBoss(p.x, p.y);
+      if (!target) continue;
+      const bossR = Math.max(target.cfg.w, target.cfg.h) * 0.45;
+      const dx = target.x - p.x, dy = target.y - p.y;
       const hitR = bossR + p.radius;
       if (dx * dx + dy * dy <= hitR * hitR) {
-        Bosses.damage(p.damage);
+        Bosses.damage(p.damage, target);
         p.active = false;
-        // Частицы попадания
         if (window.Particles) {
           Particles.burst(p.x, p.y, 3, {
             color: '#ffffff', speedMin: 30, speedMax: 80,
@@ -1137,54 +1148,60 @@ const Game = {
     }
   },
 
-  /** Проверка мили-оружий на попадание в босса (отдельная проверка). */
+  /** Проверка мили-оружий на попадание в босса (Шаг 14: оба босса). */
   checkMeleeVsBoss() {
     if (!window.Bosses || !Bosses.isAlive()) return;
-    const boss = Bosses.current;
     const p = this.player;
-    for (const w of p.weaponSlots) {
-      if (!w) continue;
-      const r = w.radius || 60;
-      const dx = boss.x - p.x, dy = boss.y - p.y;
-      const d2 = dx * dx + dy * dy;
+    // Проверяем попадание в каждого живого босса
+    const targets = [];
+    if (Bosses.current && Bosses.current.hp > 0) targets.push(Bosses.current);
+    if (Bosses.guardian && Bosses.guardian.hp > 0) targets.push(Bosses.guardian);
 
-      // Swing-based (Sword, Axe, VampireBlade)
-      if (w.swing && w.swing.active && w.swing.t <= 0.05) {
-        if (d2 > r * r) continue;
-        const a = Math.atan2(dy, dx);
-        let diff = a - w.swing.angle;
-        while (diff > Math.PI) diff -= Math.PI * 2;
-        while (diff < -Math.PI) diff += Math.PI * 2;
-        const halfArc = (w.arc || Math.PI) * 0.5;
-        if (Math.abs(diff) <= halfArc) {
-          Bosses.damage((w.damageAt ? w.damageAt() : 20) * p.damageMul);
+    for (const boss of targets) {
+      for (const w of p.weaponSlots) {
+        if (!w) continue;
+        const r = w.radius || 60;
+        const dx = boss.x - p.x, dy = boss.y - p.y;
+        const d2 = dx * dx + dy * dy;
+
+        // Swing-based (Sword, Axe, VampireBlade)
+        if (w.swing && w.swing.active && w.swing.t <= 0.05) {
+          if (d2 > r * r) continue;
+          const a = Math.atan2(dy, dx);
+          let diff = a - w.swing.angle;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          const halfArc = (w.arc || Math.PI) * 0.5;
+          if (Math.abs(diff) <= halfArc) {
+            Bosses.damage((w.damageAt ? w.damageAt() : 20) * p.damageMul, boss);
+          }
+          continue;
         }
-        continue;
-      }
-      // Thrust-based (Spear)
-      if (w.thrust && w.thrust.active && w.thrust.t <= 0.05) {
-        const cos = Math.cos(w.thrust.angle), sin = Math.sin(w.thrust.angle);
-        const along = dx * cos + dy * sin;
-        const across = -dx * sin + dy * cos;
-        if (along >= 0 && along <= (w.range || 100) && Math.abs(across) <= 30) {
-          Bosses.damage((w.damageAt ? w.damageAt() : 18) * p.damageMul);
+        // Thrust-based (Spear)
+        if (w.thrust && w.thrust.active && w.thrust.t <= 0.05) {
+          const cos = Math.cos(w.thrust.angle), sin = Math.sin(w.thrust.angle);
+          const along = dx * cos + dy * sin;
+          const across = -dx * sin + dy * cos;
+          if (along >= 0 && along <= (w.range || 100) && Math.abs(across) <= 30) {
+            Bosses.damage((w.damageAt ? w.damageAt() : 18) * p.damageMul, boss);
+          }
+          continue;
         }
-        continue;
-      }
-      // Slam-based (Hammer)
-      if (w.slam && w.slam.active && w.slam.t <= 0.05) {
-        if (d2 <= r * r) {
-          Bosses.damage((w.damageAt ? w.damageAt() : 20) * p.damageMul);
+        // Slam-based (Hammer)
+        if (w.slam && w.slam.active && w.slam.t <= 0.05) {
+          if (d2 <= r * r) {
+            Bosses.damage((w.damageAt ? w.damageAt() : 20) * p.damageMul, boss);
+          }
+          continue;
         }
-        continue;
-      }
-      // Whip
-      if (w.whipAnim && w.whipAnim.active && w.whipAnim.t <= 0.05) {
-        const bossR = Math.max(boss.cfg.w, boss.cfg.h) * 0.45;
-        if (d2 <= (w.range + bossR) * (w.range + bossR)) {
-          Bosses.damage((w.damageAt ? w.damageAt() : 14) * p.damageMul);
+        // Whip
+        if (w.whipAnim && w.whipAnim.active && w.whipAnim.t <= 0.05) {
+          const bossR = Math.max(boss.cfg.w, boss.cfg.h) * 0.45;
+          if (d2 <= (w.range + bossR) * (w.range + bossR)) {
+            Bosses.damage((w.damageAt ? w.damageAt() : 14) * p.damageMul, boss);
+          }
+          continue;
         }
-        continue;
       }
     }
   },
