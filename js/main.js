@@ -399,6 +399,17 @@ const Game = {
       if (this.player.webSlow && this.player.webSlow > 0) {
         totalSlow = Math.max(totalSlow, 0.50);
       }
+      // Шаг 17: замедление от ледяной руны
+      if (this.player._iceSlow && this.player._iceSlowTimer > 0) {
+        totalSlow = Math.max(totalSlow, this.player._iceSlow);
+        this.player._iceSlowTimer -= dt;
+        if (this.player._iceSlowTimer <= 0) this.player._iceSlow = 0;
+      }
+      // Шаг 17: оглушение (полная остановка)
+      if (this.player._stunTimer && this.player._stunTimer > 0) {
+        totalSlow = 1.0;
+        this.player._stunTimer -= dt;
+      }
       if (totalSlow > 0) {
         const move = Input.getMove();
         const ml = Math.hypot(move.x, move.y);
@@ -827,6 +838,10 @@ const Game = {
   openSecretChest() {
     if (!this.secretChest) return;
     if (window.Particles) Particles.chestOpen(this.secretChest.x, this.secretChest.y);
+    // Шаг 17: помечаем как секретный (практически не мимик)
+    this._lastChestX = this.secretChest.x;
+    this._lastChestY = this.secretChest.y;
+    this._lastChestIsSecret = true;
     this.secretChest = null;
 
     this.state = 'chest';
@@ -840,6 +855,11 @@ const Game = {
   /** Подбор сундука: переход в state=chest, эффект открытия, бросок d20. */
   openChest() {
     if (!this.chest) return;
+    // Шаг 17: сохраняем позицию сундука для возможного мимика
+    this._lastChestX = this.chest.x;
+    this._lastChestY = this.chest.y;
+    this._lastChestIsSecret = false;
+
     // Визуальный эффект открытия в точке сундука
     if (window.Particles) Particles.chestOpen(this.chest.x, this.chest.y);
     // Сундук исчезает (логически — открыт)
@@ -862,6 +882,20 @@ const Game = {
   resolveChest(roll) {
     const player = this.player;
     if (!player) { this.state = 'playing'; UI.hideAll(); return; }
+
+    // Шаг 17: проверка на мимика (бросок 1-5 для обычных сундуков)
+    if (window.MimicChest && MimicChest.shouldBeMimic(roll, this._lastChestIsSecret)) {
+      const reward = {
+        title: 'СУНДУК-ЛОВУШКА!',
+        desc: 'Сундук оказался мимиком! Приготовьтесь к бою!',
+      };
+      UI.showChestReward(roll, reward, () => {
+        // Спавним мимиков после закрытия окна
+        MimicChest.spawnMimics(player, this._lastChestX || player.x, this._lastChestY || player.y);
+        this._afterChestClose();
+      });
+      return;
+    }
 
     // 1..10 — символическая награда: +20 XP
     if (roll <= 10) {
@@ -1227,6 +1261,11 @@ const Game = {
 
     // Шаг 5: миникарта
     if (GameMap.renderMinimap) GameMap.renderMinimap(ctx, this.player, this.viewW, this.viewH);
+
+    // Шаг 17: подсказки загадок (экранные координаты)
+    if (window.UI && UI.renderPuzzleHints) {
+      UI.renderPuzzleHints(ctx, this.player, this.viewW, this.viewH);
+    }
 
     // Шаг 13: анимация перехода (затемнение экрана)
     if (this.transitioning) {
