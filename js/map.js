@@ -992,15 +992,21 @@ const GameMap = {
     const secretFloorColor = biome ? biome.secretFloorColor : '#3a3245';
     const secretGridColor = biome ? biome.secretGridColor : '#4a3f60';
     const mosaicColor = biome ? biome.mosaicColor : 'rgba(120, 90, 60, 0.35)';
+    const biomeId = biome ? biome.id : 'crypt';
 
-    // 1) Заполняем стены (тёмный фон)
+    // 1) Заполняем стены (тёмный фон) с текстурой
     ctx.fillStyle = wallColor;
     ctx.fillRect(0, 0, this.mapW, this.mapH);
 
-    // 2) Коридоры (тёмный пол, без сетки)
+    // Текстура стен (кирпичная кладка/обводка по биому)
+    this._renderWallTexture(ctx, dungeon, biomeId);
+
+    // 2) Коридоры (тёмный пол)
     ctx.fillStyle = corridorColor;
     for (const c of dungeon.corridors) {
       ctx.fillRect(c.x, c.y, c.w, c.h);
+      // Текстура пола коридора
+      this._renderCorridorFloorTexture(ctx, c, biomeId);
     }
 
     // 2b) Площадка под секретной дверью
@@ -1010,11 +1016,15 @@ const GameMap = {
       ctx.fillRect(d.x, d.y, d.w, d.h);
     }
 
-    // 3) Комнаты (более светлый пол + сетка плитки)
+    // 3) Комнаты (более светлый пол + сетка плитки + текстуры)
     for (const r of dungeon.rooms) {
       // фон
       ctx.fillStyle = r.isSecret ? secretFloorColor : floorColor;
       ctx.fillRect(r.x, r.y, r.w, r.h);
+
+      // Биом-специфичная текстура пола
+      this._renderRoomFloorTexture(ctx, r, biomeId);
+
       // сетка плитки 40x40
       ctx.strokeStyle = r.isSecret ? secretGridColor : floorGridColor;
       ctx.lineWidth = 1;
@@ -1055,6 +1065,259 @@ const GameMap = {
     }
 
     this._floorCache = off;
+  },
+
+  /** Текстура стен по биому (рисуется за пределами комнат). */
+  _renderWallTexture(ctx, dungeon, biomeId) {
+    ctx.globalAlpha = 0.15;
+    const cellSize = dungeon.cellSize;
+    const gridW = dungeon.gridW, gridH = dungeon.gridH;
+    const rng = this.rng || Math.random;
+
+    for (let j = 0; j < gridH; j += 2) {
+      for (let i = 0; i < gridW; i += 2) {
+        if (dungeon.grid[j * gridW + i] !== 0) continue; // только стены
+        const wx = i * cellSize, wy = j * cellSize;
+
+        switch (biomeId) {
+          case 'crypt': {
+            // Каменная кладка — горизонтальные линии швов
+            ctx.strokeStyle = '#2a2a2a';
+            ctx.lineWidth = 1;
+            if ((j % 4) === 0) {
+              ctx.beginPath();
+              ctx.moveTo(wx, wy + cellSize);
+              ctx.lineTo(wx + cellSize * 2, wy + cellSize);
+              ctx.stroke();
+            }
+            if ((i % 3) === 0) {
+              ctx.beginPath();
+              ctx.moveTo(wx + cellSize, wy);
+              ctx.lineTo(wx + cellSize, wy + cellSize * 2);
+              ctx.stroke();
+            }
+            break;
+          }
+          case 'ice': {
+            // Замёрзший камень — голубые прожилки
+            ctx.strokeStyle = '#3a5a7a';
+            ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.moveTo(wx + rng() * cellSize * 2, wy);
+            ctx.lineTo(wx + rng() * cellSize * 2, wy + cellSize * 2);
+            ctx.stroke();
+            break;
+          }
+          case 'fire': {
+            // Обсидиан с рудными жилами
+            ctx.strokeStyle = '#5a2a0a';
+            ctx.lineWidth = 1;
+            if (rng() < 0.3) {
+              ctx.beginPath();
+              ctx.arc(wx + rng() * cellSize * 2, wy + rng() * cellSize * 2, 3, 0, Math.PI * 2);
+              ctx.stroke();
+            }
+            break;
+          }
+          case 'forest': {
+            // Лианы и корни
+            ctx.strokeStyle = '#2a4a2a';
+            ctx.lineWidth = 1.2;
+            if (rng() < 0.25) {
+              ctx.beginPath();
+              ctx.moveTo(wx, wy + rng() * cellSize * 2);
+              ctx.quadraticCurveTo(wx + cellSize, wy + rng() * cellSize * 2, wx + cellSize * 2, wy + rng() * cellSize * 2);
+              ctx.stroke();
+            }
+            break;
+          }
+          case 'castle': {
+            // Каменная кладка с гербами
+            ctx.strokeStyle = '#3a3a3a';
+            ctx.lineWidth = 1;
+            if ((j % 4) === 0) {
+              ctx.beginPath();
+              ctx.moveTo(wx, wy + cellSize);
+              ctx.lineTo(wx + cellSize * 2, wy + cellSize);
+              ctx.stroke();
+            }
+            break;
+          }
+        }
+      }
+    }
+    ctx.globalAlpha = 1.0;
+  },
+
+  /** Текстура пола коридора по биому. */
+  _renderCorridorFloorTexture(ctx, corridor, biomeId) {
+    ctx.globalAlpha = 0.08;
+    const rng = this.rng || Math.random;
+    switch (biomeId) {
+      case 'crypt': {
+        // Трещины
+        ctx.strokeStyle = '#1a1a1a';
+        ctx.lineWidth = 0.8;
+        for (let i = 0; i < 3; i++) {
+          const x1 = corridor.x + rng() * corridor.w;
+          const y1 = corridor.y + rng() * corridor.h;
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x1 + rng() * 30 - 15, y1 + rng() * 30 - 15);
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'ice': {
+        // Ледяные прожилки
+        ctx.strokeStyle = '#6090b0';
+        ctx.lineWidth = 0.6;
+        for (let i = 0; i < 2; i++) {
+          const x1 = corridor.x + rng() * corridor.w;
+          const y1 = corridor.y + rng() * corridor.h;
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x1 + rng() * 40 - 20, y1 + rng() * 40 - 20);
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'fire': {
+        // Потрескавшаяся лава
+        ctx.strokeStyle = '#8a3a0a';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 2; i++) {
+          const x1 = corridor.x + rng() * corridor.w;
+          const y1 = corridor.y + rng() * corridor.h;
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x1 + rng() * 20, y1 + rng() * 20);
+          ctx.lineTo(x1 + rng() * 20, y1 + rng() * 20);
+          ctx.stroke();
+        }
+        break;
+      }
+    }
+    ctx.globalAlpha = 1.0;
+  },
+
+  /** Текстура пола комнаты по биому. */
+  _renderRoomFloorTexture(ctx, room, biomeId) {
+    const rng = this.rng || Math.random;
+    ctx.globalAlpha = 0.12;
+
+    switch (biomeId) {
+      case 'crypt': {
+        // Трещины на плитке
+        ctx.strokeStyle = '#2a2a2a';
+        ctx.lineWidth = 0.7;
+        const crackCount = Math.floor(room.w * room.h / 5000);
+        for (let i = 0; i < crackCount; i++) {
+          const cx = room.x + rng() * room.w;
+          const cy = room.y + rng() * room.h;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          let px = cx, py = cy;
+          for (let s = 0; s < 3; s++) {
+            px += rng() * 16 - 8;
+            py += rng() * 16 - 8;
+            ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'ice': {
+        // Голубоватые прожилки льда
+        ctx.strokeStyle = '#5080a0';
+        ctx.lineWidth = 0.8;
+        const iceCount = Math.floor(room.w * room.h / 4000);
+        for (let i = 0; i < iceCount; i++) {
+          const cx = room.x + rng() * room.w;
+          const cy = room.y + rng() * room.h;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + rng() * 30 - 15, cy + rng() * 30 - 15);
+          ctx.stroke();
+        }
+        // Блёстки на полу
+        ctx.fillStyle = '#aaddff';
+        for (let i = 0; i < 5; i++) {
+          ctx.beginPath();
+          ctx.arc(room.x + rng() * room.w, room.y + rng() * room.h, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        break;
+      }
+      case 'fire': {
+        // Потрескавшийся камень с оранжевыми жилами
+        ctx.strokeStyle = '#6a2a0a';
+        ctx.lineWidth = 1;
+        const fireCount = Math.floor(room.w * room.h / 6000);
+        for (let i = 0; i < fireCount; i++) {
+          const cx = room.x + rng() * room.w;
+          const cy = room.y + rng() * room.h;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + rng() * 24 - 12, cy + rng() * 24 - 12);
+          ctx.lineTo(cx + rng() * 24 - 12, cy + rng() * 24 - 12);
+          ctx.stroke();
+        }
+        // Светящиеся точки (лава)
+        ctx.fillStyle = '#ff6633';
+        ctx.globalAlpha = 0.08;
+        for (let i = 0; i < 4; i++) {
+          ctx.beginPath();
+          ctx.arc(room.x + rng() * room.w, room.y + rng() * room.h, 2 + rng() * 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        break;
+      }
+      case 'forest': {
+        // Замшелые пятна и корни
+        ctx.fillStyle = '#3a5a3a';
+        ctx.globalAlpha = 0.10;
+        const mossCount = Math.floor(room.w * room.h / 4000);
+        for (let i = 0; i < mossCount; i++) {
+          ctx.beginPath();
+          ctx.arc(room.x + rng() * room.w, room.y + rng() * room.h, 4 + rng() * 8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // Корни (тёмные изогнутые линии)
+        ctx.strokeStyle = '#2a3a1a';
+        ctx.lineWidth = 1.2;
+        ctx.globalAlpha = 0.12;
+        for (let i = 0; i < 3; i++) {
+          const sx = room.x + rng() * room.w;
+          const sy = room.y + rng() * room.h;
+          ctx.beginPath();
+          ctx.moveTo(sx, sy);
+          ctx.quadraticCurveTo(sx + rng() * 40, sy + rng() * 40, sx + rng() * 60 - 30, sy + rng() * 60 - 30);
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'castle': {
+        // Паркет/мозаика — ромбовидная сетка
+        ctx.strokeStyle = '#4a3a2a';
+        ctx.lineWidth = 0.6;
+        const tileSize = 30;
+        for (let xx = room.x; xx < room.x + room.w; xx += tileSize) {
+          for (let yy = room.y; yy < room.y + room.h; yy += tileSize) {
+            // Ромб
+            ctx.beginPath();
+            ctx.moveTo(xx + tileSize / 2, yy);
+            ctx.lineTo(xx + tileSize, yy + tileSize / 2);
+            ctx.lineTo(xx + tileSize / 2, yy + tileSize);
+            ctx.lineTo(xx, yy + tileSize / 2);
+            ctx.closePath();
+            ctx.stroke();
+          }
+        }
+        break;
+      }
+    }
+    ctx.globalAlpha = 1.0;
   },
 
 
@@ -2814,8 +3077,31 @@ GameMap._findRandomSafePosition = function() {
   if (!GameMap.dungeon || !GameMap.dungeon.rooms) return null;
   const rooms = GameMap.dungeon.rooms.filter(r => !r.isSecret);
   if (rooms.length === 0) return null;
-  const room = rooms[Math.floor(Math.random() * rooms.length)];
-  return { x: room.x + 40 + Math.random() * (room.w - 80), y: room.y + 40 + Math.random() * (room.h - 80) };
+  // Bug fix #6.1: Проверяем проходимость точки телепортации (до 10 попыток)
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const room = rooms[Math.floor(Math.random() * rooms.length)];
+    const x = room.x + 40 + Math.random() * (room.w - 80);
+    const y = room.y + 40 + Math.random() * (room.h - 80);
+    // Проверяем, что точка проходима
+    if (GameMap.dungeon.grid) {
+      const cell = GameMap.dungeon.cellSize;
+      const gx = Math.floor(x / cell);
+      const gy = Math.floor(y / cell);
+      if (gx >= 0 && gx < GameMap.dungeon.gridW && gy >= 0 && gy < GameMap.dungeon.gridH) {
+        if (GameMap.dungeon.grid[gy * GameMap.dungeon.gridW + gx] === 1) {
+          // Дополнительно проверяем что нет колонн/объектов рядом
+          if (!GameMap.rectIsWalkable || GameMap.rectIsWalkable(x, y, 12)) {
+            return { x, y };
+          }
+        }
+      }
+    } else {
+      return { x, y };
+    }
+  }
+  // Фоллбэк: центр случайной комнаты (гарантированно свободен)
+  const fallbackRoom = rooms[Math.floor(Math.random() * rooms.length)];
+  return { x: fallbackRoom.cx || fallbackRoom.x + fallbackRoom.w / 2, y: fallbackRoom.cy || fallbackRoom.y + fallbackRoom.h / 2 };
 };
 
 /** Отрисовать объекты Шага 17 (вызывается из GameMap.render). */

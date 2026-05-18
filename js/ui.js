@@ -105,6 +105,12 @@ const UI = {
     if (this._dialogueOverlay) this._dialogueOverlay.classList.remove('active');
     if (this._victoryOverlay) this._victoryOverlay.classList.remove('active');
     if (this._settingsOverlay) this._settingsOverlay.classList.remove('active');
+    // Расширенные оверлеи
+    const extIds = ['classOverlay', 'bestiaryOverlay', 'codexOverlay', 'runStatsOverlay'];
+    for (const id of extIds) {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('active');
+    }
   },
 
   showPause() { this.hideAll(); this.pauseOverlay.classList.add('active'); },
@@ -164,10 +170,16 @@ const UI = {
     this.xpFill.style.width = (xpPct * 100) + '%';
     this.xpLabel.textContent = `Lv ${p.level}  XP: ${Math.floor(p.xp)}/${Math.floor(p.xpNext)}`;
 
-    // Magic Missile cd (встроенная способность)
-    const missTotal = CONFIG.MISSILE.COOLDOWN * p.missileCdMul;
-    const missReady = 1 - (p.missileCd / Math.max(0.0001, missTotal));
-    this.cdMissileFill.style.height = (Utils.clamp(missReady, 0, 1) * 100) + '%';
+    // Magic Missile cd (встроенная способность) — только если не отключена
+    if (p._noBuiltInMissile) {
+      this.cdMissileFill.style.height = '0%';
+      this.cdMissileFill.parentElement.style.display = 'none';
+    } else {
+      this.cdMissileFill.parentElement.style.display = '';
+      const missTotal = CONFIG.MISSILE.COOLDOWN * p.missileCdMul;
+      const missReady = 1 - (p.missileCd / Math.max(0.0001, missTotal));
+      this.cdMissileFill.style.height = (Utils.clamp(missReady, 0, 1) * 100) + '%';
+    }
 
     // Слоты
     for (let i = 0; i < this.weaponSlotEls.length; i++) {
@@ -532,8 +544,11 @@ const UI = {
         <div class="camp-buttons">
           <button id="campStartBtn" class="btn camp-btn camp-btn-main">⚔ В ПОДЗЕМЕЛЬЕ</button>
           <button id="campCampaignBtn" class="btn camp-btn camp-btn-campaign">📜 СЮЖЕТ</button>
+          <button id="campHeroBtn" class="btn camp-btn">🛡 Выбор героя</button>
           <button id="campTalentsBtn" class="btn camp-btn">🌟 Таланты</button>
           <button id="campGuildBtn" class="btn camp-btn">🛡 Гильдия</button>
+          <button id="campBestiaryBtn" class="btn camp-btn">📕 Бестиарий</button>
+          <button id="campCodexBtn" class="btn camp-btn">📖 Книга</button>
           <button id="campSettingsBtn" class="btn camp-btn">⚙ Настройки</button>
         </div>
         <div class="camp-stats">
@@ -566,6 +581,19 @@ const UI = {
     ov.querySelector('#campSettingsBtn').addEventListener('click', () => {
       this.hideCamp();
       this.showSettings();
+    });
+    // Новые кнопки: Выбор героя, Бестиарий, Книга
+    ov.querySelector('#campHeroBtn').addEventListener('click', () => {
+      this.hideCamp();
+      if (window.UIExtended) UIExtended.showClassSelect(() => this.showCamp());
+    });
+    ov.querySelector('#campBestiaryBtn').addEventListener('click', () => {
+      this.hideCamp();
+      if (window.UIExtended) UIExtended.showBestiary(() => this.showCamp());
+    });
+    ov.querySelector('#campCodexBtn').addEventListener('click', () => {
+      this.hideCamp();
+      if (window.UIExtended) UIExtended.showCodex(() => this.showCamp());
     });
   },
 

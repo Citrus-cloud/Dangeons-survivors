@@ -31,7 +31,14 @@ const Input = {
     window.addEventListener('keydown', (e) => {
       this.keys[e.code] = true;
       if (e.code === 'KeyP' || e.code === 'Escape') {
-        if (window.Game && Game.togglePause) Game.togglePause();
+        if (window.Game) {
+          if (Game.state === 'playing') {
+            Game.togglePause();
+          } else if (Game.state === 'paused' && e.code === 'Escape') {
+            // Escape в паузе — выход в лагерь
+            Game.exitToMenu();
+          }
+        }
       }
     });
     window.addEventListener('keyup', (e) => { this.keys[e.code] = false; });
