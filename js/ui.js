@@ -98,6 +98,10 @@ const UI = {
     this.levelOverlay.classList.remove('active');
     this.gameOverOverlay.classList.remove('active');
     if (this.chestOverlay) this.chestOverlay.classList.remove('active');
+    if (this._campOverlay) this._campOverlay.classList.remove('active');
+    if (this._talentOverlay) this._talentOverlay.classList.remove('active');
+    if (this._guildOverlay) this._guildOverlay.classList.remove('active');
+    if (this._resultsOverlay) this._resultsOverlay.classList.remove('active');
   },
 
   showPause() { this.hideAll(); this.pauseOverlay.classList.add('active'); },
@@ -173,6 +177,9 @@ const UI = {
     // Счётчики
     this.killCount.textContent = `Убийств: ${game.kills}`;
     this.runTimer.textContent  = Utils.formatTime(game.runTime);
+
+    // Шаг 15: золото в HUD
+    this._updateGoldHUD(game);
     if (game.state === 'playing' || game.state === 'paused' || game.state === 'levelup') {
       const next = Math.max(0, Math.ceil(game.waveTimer));
       this.waveInfo.textContent = `Волна ${game.waveIndex + 1} через ${next}с`;
@@ -471,6 +478,348 @@ const UI = {
     if (roll >= 19) return 'crit';
     if (roll >= 11) return 'good';
     return 'low';
+  },
+
+  /* ============================================================
+     Шаг 15: Золото в HUD (отображение во время забега)
+     ============================================================ */
+
+  /** Обновить золото в HUD (вызывается из tick). */
+  _updateGoldHUD(game) {
+    if (!this._goldHudEl) {
+      // Создать элемент при первом вызове
+      const el = document.createElement('div');
+      el.id = 'goldHud';
+      el.className = 'gold-hud';
+      el.innerHTML = '<span class="gold-icon">🪙</span><span class="gold-value">0</span>';
+      const topLeft = document.querySelector('.hud-top-left');
+      if (topLeft) topLeft.appendChild(el);
+      this._goldHudEl = el;
+      this._goldValueEl = el.querySelector('.gold-value');
+    }
+    const gold = game.runGold || 0;
+    this._goldValueEl.textContent = gold;
+  },
+
+  /* ============================================================
+     Шаг 15: Лагерь / Таверна (Camp screen)
+     ============================================================ */
+
+  showCamp() {
+    this.hideAll();
+    if (!this._campOverlay) this._buildCampOverlay();
+    this._updateCampData();
+    this._campOverlay.classList.add('active');
+  },
+
+  _buildCampOverlay() {
+    const ov = document.createElement('div');
+    ov.id = 'campOverlay';
+    ov.className = 'overlay camp-overlay';
+    ov.innerHTML = `
+      <div class="camp-bg">
+        <div class="camp-header">
+          <h1 class="camp-title">DUNGEON SURVIVORS: D20</h1>
+          <div class="camp-resources">
+            <div class="camp-gold"><span class="gold-icon">🪙</span> <span id="campGoldVal">0</span></div>
+            <div class="camp-rep"><span class="rep-icon">⚜</span> <span id="campRepVal">0</span> <span id="campGuildLvl">(Ур. 0)</span></div>
+          </div>
+        </div>
+        <div class="camp-buttons">
+          <button id="campStartBtn" class="btn camp-btn camp-btn-main">⚔ В ПОДЗЕМЕЛЬЕ</button>
+          <button id="campTalentsBtn" class="btn camp-btn">📖 Дерево талантов</button>
+          <button id="campGuildBtn" class="btn camp-btn">⚜ Гильдия</button>
+          <button id="campArsenalBtn" class="btn camp-btn camp-btn-disabled">🗡 Арсенал</button>
+        </div>
+        <div class="camp-stats">
+          <div>Забегов: <span id="campTotalRuns">0</span></div>
+          <div>Убийств: <span id="campTotalKills">0</span></div>
+          <div>Лучшее время: <span id="campBestTime">00:00</span></div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(ov);
+    this._campOverlay = ov;
+
+    // Bindings
+    ov.querySelector('#campStartBtn').addEventListener('click', () => {
+      this.hideCamp();
+      if (window.Game) Game.startNewGame();
+    });
+    ov.querySelector('#campTalentsBtn').addEventListener('click', () => {
+      this.hideCamp();
+      this.showTalents();
+    });
+    ov.querySelector('#campGuildBtn').addEventListener('click', () => {
+      this.hideCamp();
+      this.showGuild();
+    });
+    ov.querySelector('#campArsenalBtn').addEventListener('click', () => {
+      // Заглушка
+    });
+  },
+
+  _updateCampData() {
+    if (!window.MetaProgress || !MetaProgress.data) return;
+    const d = MetaProgress.data;
+    const ov = this._campOverlay;
+    ov.querySelector('#campGoldVal').textContent = d.gold;
+    ov.querySelector('#campRepVal').textContent = d.reputation;
+    ov.querySelector('#campGuildLvl').textContent = `(Ур. ${MetaProgress.getGuildLevel()})`;
+    ov.querySelector('#campTotalRuns').textContent = d.totalRuns;
+    ov.querySelector('#campTotalKills').textContent = d.totalKills;
+    ov.querySelector('#campBestTime').textContent = Utils.formatTime(d.bestTime);
+  },
+
+  hideCamp() {
+    if (this._campOverlay) this._campOverlay.classList.remove('active');
+  },
+
+  /* ============================================================
+     Шаг 15: Дерево талантов (Talent Tree screen)
+     ============================================================ */
+
+  showTalents() {
+    if (!this._talentOverlay) this._buildTalentOverlay();
+    this._updateTalentData();
+    this._talentOverlay.classList.add('active');
+  },
+
+  _buildTalentOverlay() {
+    const ov = document.createElement('div');
+    ov.id = 'talentOverlay';
+    ov.className = 'overlay talent-overlay';
+    ov.innerHTML = `
+      <div class="talent-panel">
+        <h1 class="talent-title">ДЕРЕВО ТАЛАНТОВ</h1>
+        <div class="talent-gold"><span class="gold-icon">🪙</span> <span id="talentGoldVal">0</span></div>
+        <div id="talentBranches" class="talent-branches"></div>
+        <div class="talent-footer">
+          <button id="talentResetBtn" class="btn btn-secondary">Сбросить (возврат 80%)</button>
+          <button id="talentBackBtn" class="btn">Назад</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(ov);
+    this._talentOverlay = ov;
+
+    ov.querySelector('#talentBackBtn').addEventListener('click', () => {
+      this._talentOverlay.classList.remove('active');
+      this.showCamp();
+    });
+    ov.querySelector('#talentResetBtn').addEventListener('click', () => {
+      if (!window.MetaProgress) return;
+      const refund = MetaProgress.resetTalents();
+      this._updateTalentData();
+    });
+  },
+
+  _updateTalentData() {
+    if (!window.MetaProgress || !MetaProgress.data) return;
+    const ov = this._talentOverlay;
+    ov.querySelector('#talentGoldVal').textContent = MetaProgress.data.gold;
+
+    const container = ov.querySelector('#talentBranches');
+    container.innerHTML = '';
+
+    for (const id of Object.keys(TALENT_CONFIG)) {
+      const cfg = TALENT_CONFIG[id];
+      const lvl = MetaProgress.data.talents[id] || 0;
+      const cost = MetaProgress.getTalentCost(id);
+      const canBuy = MetaProgress.data.gold >= cost && lvl < cfg.maxLevel;
+      const maxed = lvl >= cfg.maxLevel;
+
+      let starsHtml = '';
+      for (let i = 0; i < cfg.maxLevel; i++) {
+        starsHtml += `<span class="talent-star ${i < lvl ? 'filled' : ''}">${i < lvl ? '★' : '☆'}</span>`;
+      }
+
+      const row = document.createElement('div');
+      row.className = 'talent-row';
+      row.innerHTML = `
+        <div class="talent-icon" style="color:${cfg.color}">${cfg.icon}</div>
+        <div class="talent-info">
+          <div class="talent-name">${cfg.name} <small>${cfg.subtitle}</small></div>
+          <div class="talent-desc">${cfg.desc}</div>
+          <div class="talent-stars">${starsHtml}</div>
+        </div>
+        <button class="btn talent-buy-btn ${canBuy ? '' : 'btn-disabled'}" data-talent="${id}">
+          ${maxed ? 'МАКС' : '🪙 ' + cost}
+        </button>
+      `;
+      container.appendChild(row);
+
+      if (!maxed) {
+        row.querySelector('.talent-buy-btn').addEventListener('click', () => {
+          if (MetaProgress.upgradeTalent(id)) {
+            this._updateTalentData();
+          }
+        });
+      }
+    }
+  },
+
+  /* ============================================================
+     Шаг 15: Гильдия (Guild screen)
+     ============================================================ */
+
+  showGuild() {
+    if (!this._guildOverlay) this._buildGuildOverlay();
+    this._updateGuildData();
+    this._guildOverlay.classList.add('active');
+  },
+
+  _buildGuildOverlay() {
+    const ov = document.createElement('div');
+    ov.id = 'guildOverlay';
+    ov.className = 'overlay guild-overlay';
+    ov.innerHTML = `
+      <div class="guild-panel">
+        <h1 class="guild-title">⚜ ГИЛЬДИЯ ИСКАТЕЛЕЙ ⚜</h1>
+        <div class="guild-rep-bar-container">
+          <div class="guild-rep-info"><span id="guildRepCur">0</span> / <span id="guildRepNext">100</span></div>
+          <div class="guild-rep-bar"><div class="guild-rep-fill" id="guildRepFill"></div></div>
+          <div id="guildLevelLabel" class="guild-level-label">Уровень 0</div>
+        </div>
+        <div id="guildRewards" class="guild-rewards"></div>
+        <div class="guild-footer">
+          <button id="guildBackBtn" class="btn">Назад</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(ov);
+    this._guildOverlay = ov;
+
+    ov.querySelector('#guildBackBtn').addEventListener('click', () => {
+      this._guildOverlay.classList.remove('active');
+      this.showCamp();
+    });
+  },
+
+  _updateGuildData() {
+    if (!window.MetaProgress || !MetaProgress.data) return;
+    const ov = this._guildOverlay;
+    const rep = MetaProgress.data.reputation;
+    const lvl = MetaProgress.getGuildLevel();
+    const nextRep = MetaProgress.getNextLevelRep();
+
+    ov.querySelector('#guildRepCur').textContent = rep;
+    ov.querySelector('#guildRepNext').textContent = nextRep || 'МАКС';
+    ov.querySelector('#guildLevelLabel').textContent = `Уровень ${lvl}`;
+
+    // Прогресс-бар
+    let pct = 0;
+    if (nextRep) {
+      const prevRep = lvl > 0 ? GUILD_CONFIG.levels[lvl - 1].rep : 0;
+      pct = Math.min(100, ((rep - prevRep) / (nextRep - prevRep)) * 100);
+    } else {
+      pct = 100;
+    }
+    ov.querySelector('#guildRepFill').style.width = pct + '%';
+
+    // Список наград
+    const container = ov.querySelector('#guildRewards');
+    container.innerHTML = '';
+    for (let i = 0; i < GUILD_CONFIG.levels.length; i++) {
+      const r = GUILD_CONFIG.levels[i];
+      const unlocked = i < lvl;
+      const row = document.createElement('div');
+      row.className = 'guild-reward-row ' + (unlocked ? 'unlocked' : 'locked');
+      row.innerHTML = `
+        <span class="guild-reward-lvl">Ур. ${i + 1}</span>
+        <span class="guild-reward-rep">${r.rep} реп.</span>
+        <span class="guild-reward-desc">${r.reward}</span>
+        <span class="guild-reward-check">${unlocked ? '✓' : '🔒'}</span>
+      `;
+      container.appendChild(row);
+    }
+  },
+
+  /* ============================================================
+     Шаг 15: Экран результатов забега (Run Results)
+     ============================================================ */
+
+  showRunResults(stats, onContinue) {
+    this.hideAll();
+    if (!this._resultsOverlay) this._buildResultsOverlay();
+    const ov = this._resultsOverlay;
+
+    ov.querySelector('#resTime').textContent = stats.time;
+    ov.querySelector('#resKills').textContent = stats.kills;
+    ov.querySelector('#resLevel').textContent = stats.level;
+    ov.querySelector('#resGoldCollected').textContent = stats.goldCollected;
+    ov.querySelector('#resGoldBonus').textContent = stats.goldBonus;
+    ov.querySelector('#resGoldTotal').textContent = stats.goldTotal;
+    ov.querySelector('#resRepGained').textContent = '+' + stats.repGained;
+
+    // Замена обработчика
+    const btn = ov.querySelector('#resToCampBtn');
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    newBtn.addEventListener('click', () => {
+      this._resultsOverlay.classList.remove('active');
+      onContinue && onContinue();
+    });
+
+    ov.classList.add('active');
+  },
+
+  _buildResultsOverlay() {
+    const ov = document.createElement('div');
+    ov.id = 'resultsOverlay';
+    ov.className = 'overlay results-overlay';
+    ov.innerHTML = `
+      <div class="results-panel">
+        <h1 class="results-title">ЗАБЕГ ОКОНЧЕН</h1>
+        <div class="results-stats">
+          <div class="res-row"><span>Время:</span><span id="resTime">00:00</span></div>
+          <div class="res-row"><span>Убийств:</span><span id="resKills">0</span></div>
+          <div class="res-row"><span>Уровень:</span><span id="resLevel">1</span></div>
+          <div class="res-divider"></div>
+          <div class="res-row gold-row"><span>🪙 Собрано:</span><span id="resGoldCollected">0</span></div>
+          <div class="res-row gold-row"><span>🪙 Бонус за ур.:</span><span id="resGoldBonus">0</span></div>
+          <div class="res-row gold-row total"><span>🪙 ИТОГО:</span><span id="resGoldTotal">0</span></div>
+          <div class="res-row rep-row"><span>⚜ Репутация:</span><span id="resRepGained">+0</span></div>
+        </div>
+        <button id="resToCampBtn" class="btn camp-btn-main">Вернуться в лагерь</button>
+      </div>
+    `;
+    document.body.appendChild(ov);
+    this._resultsOverlay = ov;
+  },
+
+  /* ============================================================
+     Шаг 15: перестроить слоты (вызывается при старте забега
+     с учётом динамического количества слотов)
+     ============================================================ */
+
+  rebuildSlots(weaponCount, abilityCount) {
+    const left  = document.getElementById('weaponSlots');
+    const right = document.getElementById('abilitySlots');
+    left.innerHTML = '';
+    right.innerHTML = '';
+    this.weaponSlotEls.length = 0;
+    this.abilitySlotEls.length = 0;
+    for (let i = 0; i < weaponCount; i++) {
+      const el = document.createElement('div');
+      el.className = 'slot';
+      el.innerHTML =
+        '<div class="slot-cd"></div>' +
+        '<div class="slot-icon"></div>' +
+        '<div class="slot-level"></div>';
+      left.appendChild(el);
+      this.weaponSlotEls.push(el);
+    }
+    for (let i = 0; i < abilityCount; i++) {
+      const el = document.createElement('div');
+      el.className = 'slot';
+      el.innerHTML =
+        '<div class="slot-cd"></div>' +
+        '<div class="slot-icon"></div>' +
+        '<div class="slot-level"></div>';
+      right.appendChild(el);
+      this.abilitySlotEls.push(el);
+    }
   },
 };
 

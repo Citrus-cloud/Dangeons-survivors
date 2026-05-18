@@ -1,12 +1,30 @@
 'use strict';
 /* ============================================================
-   loot.js — кристаллы опыта (XP), магнит, подбор. Заготовка
-   под золото/прочую добычу.
+   loot.js — кристаллы опыта (XP), золото, магнит, подбор.
+   Шаг 15: добавлено золото (монетки) как мета-валюта.
    ============================================================ */
 
 function createXP() {
   return { active: false, x: 0, y: 0, value: 0, pulse: 0, red: false };
 }
+
+function createGold() {
+  return { active: false, x: 0, y: 0, value: 0, pulse: 0 };
+}
+
+/* ---------- Золото: конфигурация ---------- */
+const GOLD_CONFIG = {
+  DROP_CHANCE: 0.40,         // 40% с обычного врага
+  DROP_MIN: 1,
+  DROP_MAX: 3,
+  ELITE_DROP_MIN: 5,
+  ELITE_DROP_MAX: 10,
+  BOSS_DROP_MIN: 50,
+  BOSS_DROP_MAX: 150,
+  RADIUS: 4,                 // визуальный радиус монетки
+  POOL_SIZE: 50,
+  MAGNET_SPEED: 360,         // скорость притяжения к игроку
+};
 
 const Loot = {
   /**
@@ -70,7 +88,9 @@ const Loot = {
         x.y += (dy / d) * speed * dt;
       }
       if (d2 <= collectR2) {
-        player.xp += x.value;
+        // Шаг 15: бонус XP от харизмы
+        const xpMul = player.xpBonusMul || 1;
+        player.xp += Math.floor(x.value * xpMul);
         x.active = false;
       }
     }
@@ -123,6 +143,109 @@ const Loot = {
       // Эквивалент мгновенного подбора: засчитываем опыт и снимаем с поля.
       player.xp += x.value;
       x.active = false;
+    }
+  },
+
+  /* ============================================================
+     Шаг 15: Золото (монетки)
+     ============================================================ */
+
+  /** Бросить золото в точке (x, y). */
+  dropGold(pool, x, y, value) {
+    const g = pool.spawn();
+    if (!g) return null;
+    // Немного разброс позиции
+    g.x = x + Utils.rand(-12, 12);
+    g.y = y + Utils.rand(-12, 12);
+    g.value = value;
+    g.pulse = Math.random() * 3; // рандомная начальная фаза для разнообразия
+    return g;
+  },
+
+  /** Шанс выронить золото при убийстве врага. */
+  tryDropGold(pool, enemy) {
+    const cfg = enemy.cfg;
+    const isElite = cfg && (cfg.tier >= 4 || cfg.id === 'captain');
+    let chance = GOLD_CONFIG.DROP_CHANCE;
+    let minG = GOLD_CONFIG.DROP_MIN;
+    let maxG = GOLD_CONFIG.DROP_MAX;
+
+    if (isElite) {
+      chance = 1.0; // гарантированно
+      minG = GOLD_CONFIG.ELITE_DROP_MIN;
+      maxG = GOLD_CONFIG.ELITE_DROP_MAX;
+    }
+
+    if (Math.random() < chance) {
+      const value = Utils.randInt(minG, maxG);
+      return this.dropGold(pool, enemy.x, enemy.y, value);
+    }
+    return null;
+  },
+
+  /** Бросить золото от босса. */
+  dropBossGold(pool, x, y) {
+    const value = Utils.randInt(GOLD_CONFIG.BOSS_DROP_MIN, GOLD_CONFIG.BOSS_DROP_MAX);
+    // Выбрасываем несколькими монетками для визуального эффекта
+    const count = Math.min(8, Math.ceil(value / 20));
+    const perCoin = Math.floor(value / count);
+    for (let i = 0; i < count; i++) {
+      this.dropGold(pool, x + Utils.rand(-30, 30), y + Utils.rand(-30, 30), perCoin);
+    }
+  },
+
+  /** Обновление золота: магнит, подбор. */
+  updateGold(pool, player, dt) {
+    const pickupR = CONFIG.PLAYER.PICKUP_RADIUS * player.pickupMul;
+    const pickupR2 = pickupR * pickupR;
+    const collectR = (player.size * 0.5 + 6);
+    const collectR2 = collectR * collectR;
+    const items = pool.items;
+    for (let i = 0; i < items.length; i++) {
+      const g = items[i];
+      if (!g.active) continue;
+      g.pulse += dt;
+      const dx = player.x - g.x, dy = player.y - g.y;
+      const d2 = dx * dx + dy * dy;
+      if (d2 <= pickupR2) {
+        const d = Math.sqrt(d2) || 1;
+        g.x += (dx / d) * GOLD_CONFIG.MAGNET_SPEED * dt;
+        g.y += (dy / d) * GOLD_CONFIG.MAGNET_SPEED * dt;
+      }
+      if (d2 <= collectR2) {
+        // Подобрано — добавить к счётчику забега
+        if (window.Game) {
+          Game.runGold = (Game.runGold || 0) + g.value;
+        }
+        g.active = false;
+      }
+    }
+  },
+
+  /** Отрисовка золота. ctx уже сдвинут на -cam. */
+  renderGold(ctx, pool, cam, viewW, viewH) {
+    const minX = cam.x, minY = cam.y;
+    const maxX = cam.x + viewW, maxY = cam.y + viewH;
+    const items = pool.items;
+    for (let i = 0; i < items.length; i++) {
+      const g = items[i];
+      if (!g.active) continue;
+      if (g.x < minX - 10 || g.x > maxX + 10 || g.y < minY - 10 || g.y > maxY + 10) continue;
+      const pulse = 1 + Math.sin(g.pulse * 5) * 0.15;
+      const r = GOLD_CONFIG.RADIUS * pulse;
+      // Золотая монетка
+      ctx.fillStyle = '#ffd700';
+      ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.arc(g.x, g.y, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      // Блик
+      ctx.fillStyle = 'rgba(255, 255, 240, 0.6)';
+      ctx.beginPath();
+      ctx.arc(g.x - 1, g.y - 1, r * 0.4, 0, Math.PI * 2);
+      ctx.fill();
     }
   },
 };
@@ -274,5 +397,7 @@ const Chest = {
 };
 
 window.createXP = createXP;
+window.createGold = createGold;
+window.GOLD_CONFIG = GOLD_CONFIG;
 window.Loot = Loot;
 window.Chest = Chest;
