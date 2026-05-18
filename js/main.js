@@ -416,7 +416,16 @@ const Game = {
     this.updateWaves(dt);
     this.updateBoss(dt);
     // Шаг 13: бесконечный режим — таймер карты, портал, страж
-    this.updateInfiniteMode(dt);
+    if (!window.Campaign || !Campaign.active) {
+      this.updateInfiniteMode(dt);
+    }
+    // Шаг 16: обновление кампании
+    if (window.Campaign && Campaign.active) {
+      Campaign.update(dt);
+      if (window.GameMap && GameMap.updateCampaignObjects) {
+        GameMap.updateCampaignObjects(dt, this.player);
+      }
+    }
     Enemies.update(this.enemies, this.player, dt);
 
     // Оружия в слотах
@@ -480,6 +489,10 @@ const Game = {
     // Смерть
     if (this.player.hp <= 0) {
       this.player.hp = 0;
+      // Шаг 16: обработка смерти в кампании
+      if (window.Campaign && Campaign.active) {
+        Campaign.onPlayerDeath();
+      }
       this.triggerGameOver();
     }
   },
@@ -661,6 +674,107 @@ const Game = {
         lifeMin: 0.4, lifeMax: 0.8, sizeMin: 3, sizeMax: 5,
       });
       Particles.ring(player.x, player.y, 60, 0.5, 'rgba(155, 89, 182, 0.8)', 3);
+    }
+  },
+
+  /* ============================================================
+     Шаг 16: Кампания — загрузка карты кампании.
+     ============================================================ */
+
+  /** Запуск карты кампании (вызывается из Campaign._loadCurrentMap). */
+  _startCampaignMap(mapCfg) {
+    // Очистка
+    this.enemies.clearAll();
+    this.projectiles.clearAll();
+    this.xpDrops.clearAll();
+    this.particles.clearAll();
+    if (this.goldDrops) this.goldDrops.clearAll();
+    if (window.GameMap && GameMap.clearGroundEffects) GameMap.clearGroundEffects();
+
+    // Шаг 15: счётчики
+    this.runGold = this.runGold || 0;
+    this.bossKills = this.bossKills || 0;
+
+    // Сброс боссов
+    if (window.Bosses) {
+      Bosses.current = null;
+      Bosses.guardian = null;
+    }
+
+    // Сундуки
+    this.chest = null;
+    this.secretChest = null;
+    this.bossChest = null;
+
+    // Бесконечный режим отключён для кампании
+    this.portalSpawned = false;
+    this.guardianSpawned = false;
+    this.transitioning = false;
+    this.mapNumber = mapCfg.id;
+
+    // Генерация карты
+    if (window.GameMap && GameMap.generateDungeon) {
+      GameMap.generateDungeon(mapCfg.biome, mapCfg.id);
+    }
+
+    // Размещение специальных объектов кампании
+    if (window.GameMap && GameMap.placeCampaignObjects) {
+      GameMap.placeCampaignObjects(mapCfg);
+    }
+
+    // Создаём игрока (если первая карта) или перемещаем
+    if (!this.player) {
+      let startX = (window.GameMap ? GameMap.mapW : CONFIG.MAP.W) / 2;
+      let startY = (window.GameMap ? GameMap.mapH : CONFIG.MAP.H) / 2;
+      if (window.GameMap && GameMap.dungeon && GameMap.dungeon.startRoom) {
+        const sp = GameMap.randomPointInRoom(GameMap.dungeon.startRoom, 18);
+        if (sp) { startX = sp.x; startY = sp.y; }
+      }
+      this.player = Player.create(startX, startY);
+      UI.rebuildSlots(this.player.weaponSlots.length, this.player.abilitySlots.length);
+    } else {
+      // Перемещаем игрока в стартовую комнату новой карты
+      let startX = (window.GameMap ? GameMap.mapW : CONFIG.MAP.W) / 2;
+      let startY = (window.GameMap ? GameMap.mapH : CONFIG.MAP.H) / 2;
+      if (window.GameMap && GameMap.dungeon && GameMap.dungeon.startRoom) {
+        const sp = GameMap.randomPointInRoom(GameMap.dungeon.startRoom, 18);
+        if (sp) { startX = sp.x; startY = sp.y; }
+      }
+      this.player.x = startX;
+      this.player.y = startY;
+    }
+
+    // Применить благословение мага (если есть, карта 5)
+    if (window.Campaign && Campaign.mageBlessing && this.player) {
+      // Уже применено через Campaign, но убедимся
+    }
+
+    // Волны
+    if (!this.waveIndex) this.waveIndex = 0;
+    this.waveTimer = CONFIG.WAVE.INITIAL_DELAY;
+    this.chestTimer = CONFIG.CHEST.FIRST_DELAY;
+
+    // Инициализация боссов для кампании (без глобальной ротации)
+    if (window.Bosses) {
+      if (!Bosses.globalRotation || Bosses.globalRotation.length === 0) {
+        Bosses.init();
+      }
+    }
+
+    // Мимик
+    this.mimicState = (window.Enemies && Enemies.initMimicState)
+      ? Enemies.initMimicState()
+      : { count: 0, nextCheckTime: 180 };
+
+    // Переключить состояние
+    UI.hideAll();
+    this.state = 'playing';
+    this.kills = this.kills || 0;
+    this.runTime = this.runTime || 0;
+
+    // Показать название карты
+    if (window.UI && UI.showCampaignMapName) {
+      UI.showCampaignMapName(mapCfg.name);
     }
   },
 
@@ -1020,6 +1134,11 @@ const Game = {
     if (this.goldDrops) {
       Loot.tryDropGold(this.goldDrops, e);
     }
+
+    // Шаг 16: кампания — проверка выпадения ключа
+    if (window.Campaign && Campaign.active && e._hasKey) {
+      Campaign.onKeyPickedUp();
+    }
   },
 
   spawnTrailParticle(player, move) {
@@ -1071,6 +1190,10 @@ const Game = {
     if (window.Bosses) Bosses.render(ctx, cam, this.viewW, this.viewH);
     // Шаг 6: рендер золотого сундука босса
     if (this.bossChest && window.Bosses) Bosses.renderBossChest(ctx, this.bossChest, cam, this.viewW, this.viewH);
+    // Шаг 16: рендер объектов кампании
+    if (window.Campaign && Campaign.active && window.GameMap && GameMap.renderCampaignObjects) {
+      GameMap.renderCampaignObjects(ctx, cam, this.viewW, this.viewH);
+    }
     Player.render(ctx, this.player);
 
     // Оверлей оружий поверх героя (например, взмах меча)
@@ -1174,6 +1297,9 @@ const Game = {
   updateBoss(dt) {
     if (!window.Bosses) return;
     Bosses.update(this.player, dt);
+
+    // Шаг 16: в кампании не спавним глобальных боссов по таймеру
+    if (window.Campaign && Campaign.active) return;
 
     // Проверка таймера спавна глобального босса (из ротации)
     if (!Bosses.isGlobalAlive() && !Bosses.current && Bosses.bossIndex < BOSS_CONFIG.SPAWN_TIMES.length) {

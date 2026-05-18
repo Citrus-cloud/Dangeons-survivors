@@ -2255,4 +2255,302 @@ const GROUND_OUTLINE_COLOR = {
 };
 
 window.createGroundEffect = createGroundEffect;
+
+/* ============================================================
+   Шаг 16: Campaign special objects — алтари, клетка, ключ, огненное сердце.
+   ============================================================ */
+GameMap.campaignObjects = [];
+
+/** Разместить специальные объекты кампании на текущей карте. */
+GameMap.placeCampaignObjects = function(mapCfg) {
+  this.campaignObjects = [];
+  if (!this.dungeon || !mapCfg) return;
+
+  const rooms = this.dungeon.rooms.filter(r => !r.isStart && !r.isSecret);
+
+  if (mapCfg.specialObjects.includes('altars')) {
+    // Карта 1: 2 рунных алтаря в разных комнатах
+    const altarRooms = rooms.slice(0, Math.min(2, rooms.length));
+    for (let i = 0; i < 2 && i < altarRooms.length; i++) {
+      const room = altarRooms[i];
+      this.campaignObjects.push({
+        type: 'altar',
+        x: room.cx,
+        y: room.cy,
+        size: 28,
+        activated: false,
+        pulse: Math.random() * Math.PI * 2,
+        levers: [
+          { x: room.cx - 40, y: room.cy + 40, state: 0, correct: Math.random() < 0.5 ? 1 : 0 },
+          { x: room.cx + 40, y: room.cy + 40, state: 0, correct: 0 },
+        ],
+        interactRadius: 36,
+      });
+      // Гарантируем разную комбинацию
+      const alt = this.campaignObjects[this.campaignObjects.length - 1];
+      if (alt.levers[0].correct === alt.levers[1].correct) {
+        alt.levers[1].correct = alt.levers[0].correct === 0 ? 1 : 0;
+      }
+    }
+  }
+
+  if (mapCfg.specialObjects.includes('cage')) {
+    // Карта 4: клетка с магом
+    const cageRoom = rooms.length > 1 ? rooms[Math.floor(rooms.length / 2)] : rooms[0];
+    if (cageRoom) {
+      this.campaignObjects.push({
+        type: 'cage',
+        x: cageRoom.cx,
+        y: cageRoom.cy,
+        size: 36,
+        opened: false,
+        interactRadius: 40,
+      });
+    }
+  }
+
+  if (mapCfg.specialObjects.includes('key_enemy')) {
+    // Хранитель ключа появляется через 2-3 минуты (обрабатывается в campaign update)
+    this.campaignObjects.push({
+      type: 'key_marker',
+      spawned: false,
+      spawnTime: 120 + Math.random() * 60, // 2-3 минуты
+    });
+  }
+};
+
+/** Обновить кампейн-объекты. */
+GameMap.updateCampaignObjects = function(dt, player) {
+  if (!player || !window.Campaign || !Campaign.active) return;
+
+  for (const obj of this.campaignObjects) {
+    if (obj.type === 'altar' && !obj.activated) {
+      obj.pulse += dt * 3;
+      // Проверка взаимодействия с рычагами алтаря
+      for (const lev of obj.levers) {
+        if (lev._cooldown > 0) { lev._cooldown -= dt; continue; }
+        const dx = player.x - lev.x, dy = player.y - lev.y;
+        if (dx * dx + dy * dy < 30 * 30) {
+          // Авто-взаимодействие при приближении
+          if (!lev._triggered) {
+            lev._triggered = true;
+            lev.state = lev.state === 0 ? 1 : 0;
+            lev._cooldown = 1.5;
+            if (window.Particles) {
+              Particles.burst(lev.x, lev.y, 4, {
+                color: '#ffd700', speedMin: 40, speedMax: 100,
+                lifeMin: 0.2, lifeMax: 0.4, sizeMin: 2, sizeMax: 3,
+              });
+            }
+          }
+        } else {
+          lev._triggered = false;
+        }
+      }
+      // Проверяем, все ли рычаги в правильном положении
+      const allCorrect = obj.levers.every(l => l.state === l.correct);
+      if (allCorrect) {
+        obj.activated = true;
+        Campaign.onAltarActivated();
+        if (window.Particles) {
+          Particles.burst(obj.x, obj.y, 12, {
+            color: '#9b59b6', speedMin: 60, speedMax: 180,
+            lifeMin: 0.5, lifeMax: 1.0, sizeMin: 3, sizeMax: 6,
+          });
+          Particles.text(obj.x, obj.y - 30, 'АЛТАРЬ АКТИВИРОВАН!', 1.5, '#9b59b6', 14);
+        }
+      }
+    }
+
+    if (obj.type === 'cage' && !obj.opened) {
+      // Проверка: подошёл с ключом?
+      if (Campaign.hasKey) {
+        const dx = player.x - obj.x, dy = player.y - obj.y;
+        if (dx * dx + dy * dy < obj.interactRadius * obj.interactRadius) {
+          obj.opened = true;
+          Campaign.onCageOpened();
+          if (window.Particles) {
+            Particles.burst(obj.x, obj.y, 10, {
+              color: '#2ecc71', speedMin: 60, speedMax: 150,
+              lifeMin: 0.4, lifeMax: 0.8, sizeMin: 3, sizeMax: 5,
+            });
+          }
+        }
+      }
+    }
+
+    if (obj.type === 'key_marker' && !obj.spawned) {
+      // Ключ появляется через определённое время (враг спавнится)
+      obj.spawnTime -= dt;
+      if (obj.spawnTime <= 0) {
+        obj.spawned = true;
+        // Спавним "элитного" врага с ключом
+        if (window.Game && window.Enemies && Game.enemies) {
+          const pt = this.randomEnemySpawnPoint(player, 300, 500);
+          if (pt) {
+            Enemies.spawnByType(Game.enemies, 'captain', pt.x, pt.y);
+            // Помечаем последнего заспавненного как носителя ключа
+            const items = Game.enemies.items;
+            for (let i = items.length - 1; i >= 0; i--) {
+              if (items[i].active && items[i].type === 'captain') {
+                items[i]._hasKey = true;
+                items[i]._keyIcon = true;
+                break;
+              }
+            }
+          }
+          if (window.Particles && player) {
+            Particles.text(player.x, player.y - 40, 'ХРАНИТЕЛЬ КЛЮЧА ПОЯВИЛСЯ!', 2.0, '#ffd700', 14);
+          }
+        }
+      }
+    }
+  }
+
+  // Проверка подбора огненного сердца и ключа (из Campaign.specialObjects)
+  if (Campaign.specialObjects) {
+    for (const obj of Campaign.specialObjects) {
+      if (obj.type === 'fire_heart' && !obj.pickedUp) {
+        obj.pulse += dt * 4;
+        const dx = player.x - obj.x, dy = player.y - obj.y;
+        if (dx * dx + dy * dy < 40 * 40) {
+          obj.pickedUp = true;
+          Campaign.onFireHeartPickedUp();
+        }
+      }
+    }
+  }
+};
+
+/** Рендер кампейн-объектов. ctx уже в мировых координатах. */
+GameMap.renderCampaignObjects = function(ctx, cam, viewW, viewH) {
+  const t = this.time;
+
+  for (const obj of this.campaignObjects) {
+    // Проверка видимости
+    const sx = obj.x - cam.x, sy = obj.y - cam.y;
+    if (obj.x && (sx < -80 || sx > viewW + 80 || sy < -80 || sy > viewH + 80)) continue;
+
+    if (obj.type === 'altar') {
+      // Рунный алтарь
+      const pulse = 1 + Math.sin(obj.pulse) * 0.1;
+      const s = obj.size * pulse;
+      if (obj.activated) {
+        ctx.fillStyle = '#9b59b6';
+        ctx.shadowColor = '#9b59b6';
+        ctx.shadowBlur = 15;
+      } else {
+        ctx.fillStyle = '#4a4a6a';
+        ctx.shadowColor = '#6a4aaa';
+        ctx.shadowBlur = 8;
+      }
+      // Алтарь — ромб
+      ctx.beginPath();
+      ctx.moveTo(obj.x, obj.y - s / 2);
+      ctx.lineTo(obj.x + s / 2, obj.y);
+      ctx.lineTo(obj.x, obj.y + s / 2);
+      ctx.lineTo(obj.x - s / 2, obj.y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      // Буква
+      ctx.fillStyle = obj.activated ? '#ffd700' : '#aaaacc';
+      ctx.font = 'bold 14px ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(obj.activated ? '✓' : '⬡', obj.x, obj.y);
+
+      // Рычаги
+      for (const lev of obj.levers) {
+        const lw = 16, lh = 16;
+        ctx.fillStyle = lev.state === 1 ? '#2ecc71' : '#e74c3c';
+        ctx.fillRect(lev.x - lw / 2, lev.y - lh / 2, lw, lh);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(lev.x - lw / 2, lev.y - lh / 2, lw, lh);
+        // Рукоять
+        ctx.fillStyle = '#888';
+        const handleY = lev.state === 1 ? lev.y - lh / 2 - 6 : lev.y + lh / 2;
+        ctx.fillRect(lev.x - 2, handleY, 4, 6);
+      }
+    }
+
+    if (obj.type === 'cage') {
+      const s = obj.size;
+      if (obj.opened) {
+        // Открытая клетка
+        ctx.strokeStyle = '#555';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(obj.x - s / 2, obj.y - s / 2, s, s);
+        // Маг вышел
+        ctx.fillStyle = '#9b59b6';
+        ctx.font = 'bold 18px ui-monospace, monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('M', obj.x, obj.y);
+      } else {
+        // Закрытая клетка — решётка
+        ctx.fillStyle = '#2a2a2a';
+        ctx.fillRect(obj.x - s / 2, obj.y - s / 2, s, s);
+        ctx.strokeStyle = '#888888';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(obj.x - s / 2, obj.y - s / 2, s, s);
+        // Решётки
+        for (let i = 1; i < 4; i++) {
+          const bx = obj.x - s / 2 + (s / 4) * i;
+          ctx.beginPath();
+          ctx.moveTo(bx, obj.y - s / 2);
+          ctx.lineTo(bx, obj.y + s / 2);
+          ctx.stroke();
+        }
+        // NPC внутри
+        ctx.fillStyle = '#9b59b6';
+        ctx.font = 'bold 16px ui-monospace, monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('M', obj.x, obj.y);
+        // Замок
+        if (!Campaign.hasKey) {
+          ctx.fillStyle = '#ffd700';
+          ctx.font = '10px ui-monospace, monospace';
+          ctx.fillText('🔒', obj.x, obj.y + s / 2 + 8);
+        } else {
+          ctx.fillStyle = '#2ecc71';
+          ctx.font = '10px ui-monospace, monospace';
+          ctx.fillText('🔑', obj.x, obj.y + s / 2 + 8);
+        }
+      }
+    }
+  }
+
+  // Рендер огненного сердца и других campaign special objects
+  if (window.Campaign && Campaign.specialObjects) {
+    for (const obj of Campaign.specialObjects) {
+      if (obj.type === 'fire_heart' && !obj.pickedUp) {
+        const sx2 = obj.x - cam.x, sy2 = obj.y - cam.y;
+        if (sx2 < -50 || sx2 > viewW + 50 || sy2 < -50 || sy2 > viewH + 50) continue;
+        const pulse = 1 + Math.sin((obj.pulse || 0)) * 0.15;
+        const s = obj.size * pulse;
+        ctx.shadowColor = '#ff6600';
+        ctx.shadowBlur = 12;
+        ctx.fillStyle = '#ff8800';
+        ctx.beginPath();
+        ctx.moveTo(obj.x, obj.y - s);
+        ctx.lineTo(obj.x + s * 0.7, obj.y);
+        ctx.lineTo(obj.x, obj.y + s * 0.5);
+        ctx.lineTo(obj.x - s * 0.7, obj.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#ffd700';
+        ctx.font = 'bold 12px ui-monospace, monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('♦', obj.x, obj.y);
+      }
+    }
+  }
+};
+
 window.GameMap = GameMap;
+

@@ -102,6 +102,8 @@ const UI = {
     if (this._talentOverlay) this._talentOverlay.classList.remove('active');
     if (this._guildOverlay) this._guildOverlay.classList.remove('active');
     if (this._resultsOverlay) this._resultsOverlay.classList.remove('active');
+    if (this._dialogueOverlay) this._dialogueOverlay.classList.remove('active');
+    if (this._victoryOverlay) this._victoryOverlay.classList.remove('active');
   },
 
   showPause() { this.hideAll(); this.pauseOverlay.classList.add('active'); },
@@ -180,6 +182,8 @@ const UI = {
 
     // Шаг 15: золото в HUD
     this._updateGoldHUD(game);
+    // Шаг 16: цель кампании в HUD
+    this._updateCampaignObjectiveHUD(game);
     if (game.state === 'playing' || game.state === 'paused' || game.state === 'levelup') {
       const next = Math.max(0, Math.ceil(game.waveTimer));
       this.waveInfo.textContent = `Волна ${game.waveIndex + 1} через ${next}с`;
@@ -527,6 +531,7 @@ const UI = {
         </div>
         <div class="camp-buttons">
           <button id="campStartBtn" class="btn camp-btn camp-btn-main">⚔ В ПОДЗЕМЕЛЬЕ</button>
+          <button id="campCampaignBtn" class="btn camp-btn camp-btn-campaign">📜 СЮЖЕТ</button>
           <button id="campTalentsBtn" class="btn camp-btn">📖 Дерево талантов</button>
           <button id="campGuildBtn" class="btn camp-btn">⚜ Гильдия</button>
           <button id="campArsenalBtn" class="btn camp-btn camp-btn-disabled">🗡 Арсенал</button>
@@ -545,6 +550,10 @@ const UI = {
     ov.querySelector('#campStartBtn').addEventListener('click', () => {
       this.hideCamp();
       if (window.Game) Game.startNewGame();
+    });
+    ov.querySelector('#campCampaignBtn').addEventListener('click', () => {
+      this.hideCamp();
+      if (window.Campaign) Campaign.start();
     });
     ov.querySelector('#campTalentsBtn').addEventListener('click', () => {
       this.hideCamp();
@@ -569,6 +578,19 @@ const UI = {
     ov.querySelector('#campTotalRuns').textContent = d.totalRuns;
     ov.querySelector('#campTotalKills').textContent = d.totalKills;
     ov.querySelector('#campBestTime').textContent = Utils.formatTime(d.bestTime);
+
+    // Шаг 16: обновить кнопку кампании
+    const campBtn = ov.querySelector('#campCampaignBtn');
+    if (campBtn && window.Campaign) {
+      const progress = Campaign.loadProgress();
+      if (progress.completed) {
+        campBtn.textContent = '📜 НОВАЯ ИГРА+';
+      } else if (progress.currentMap > 1) {
+        campBtn.textContent = `📜 СЮЖЕТ (карта ${progress.currentMap}/5)`;
+      } else {
+        campBtn.textContent = '📜 СЮЖЕТ';
+      }
+    }
   },
 
   hideCamp() {
@@ -820,6 +842,136 @@ const UI = {
       right.appendChild(el);
       this.abilitySlotEls.push(el);
     }
+  },
+
+  /* ============================================================
+     Шаг 16: Кампания — диалоги, цель в HUD, экран победы
+     ============================================================ */
+
+  /** Показать диалоговое окно кампании. */
+  showCampaignDialogue(text, onClose) {
+    this.hideAll();
+    if (!this._dialogueOverlay) this._buildDialogueOverlay();
+    const ov = this._dialogueOverlay;
+    ov.querySelector('#dialogueText').textContent = text;
+    ov.classList.add('active');
+
+    const btn = ov.querySelector('#dialogueNextBtn');
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    newBtn.addEventListener('click', () => {
+      ov.classList.remove('active');
+      onClose && onClose();
+    });
+
+    // Авто-закрытие через 8 секунд
+    clearTimeout(this._dialogueAutoClose);
+    this._dialogueAutoClose = setTimeout(() => {
+      if (ov.classList.contains('active')) {
+        ov.classList.remove('active');
+        onClose && onClose();
+      }
+    }, 8000);
+  },
+
+  _buildDialogueOverlay() {
+    const ov = document.createElement('div');
+    ov.id = 'dialogueOverlay';
+    ov.className = 'overlay dialogue-overlay';
+    ov.innerHTML = `
+      <div class="dialogue-panel">
+        <div class="dialogue-border"></div>
+        <p id="dialogueText" class="dialogue-text"></p>
+        <button id="dialogueNextBtn" class="btn dialogue-btn">Далее ➤</button>
+      </div>
+    `;
+    document.body.appendChild(ov);
+    this._dialogueOverlay = ov;
+  },
+
+  /** Показать экран победы кампании. */
+  showCampaignVictory(text, onClose) {
+    this.hideAll();
+    if (!this._victoryOverlay) this._buildVictoryOverlay();
+    const ov = this._victoryOverlay;
+    ov.querySelector('#victoryText').textContent = text;
+    ov.classList.add('active');
+
+    const btn = ov.querySelector('#victoryBtn');
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    newBtn.addEventListener('click', () => {
+      ov.classList.remove('active');
+      onClose && onClose();
+    });
+  },
+
+  _buildVictoryOverlay() {
+    const ov = document.createElement('div');
+    ov.id = 'victoryOverlay';
+    ov.className = 'overlay victory-overlay';
+    ov.innerHTML = `
+      <div class="victory-panel">
+        <h1 class="victory-title">🐉 ПОБЕДА! 🐉</h1>
+        <h2 class="victory-sub">Древний дракон повержен!</h2>
+        <p id="victoryText" class="victory-text"></p>
+        <div class="victory-rewards">
+          <div>🪙 +1000 золота</div>
+          <div>⚜ +200 репутации</div>
+          <div>🏆 Достижение: Победитель дракона</div>
+        </div>
+        <button id="victoryBtn" class="btn camp-btn-main">В лагерь</button>
+      </div>
+    `;
+    document.body.appendChild(ov);
+    this._victoryOverlay = ov;
+  },
+
+  /** Отрисовка цели кампании в HUD (вызывается из tick). */
+  _updateCampaignObjectiveHUD(game) {
+    if (!window.Campaign || !Campaign.active || !Campaign.objective) {
+      if (this._objectiveEl) this._objectiveEl.style.display = 'none';
+      return;
+    }
+
+    if (!this._objectiveEl) {
+      const el = document.createElement('div');
+      el.id = 'campaignObjective';
+      el.className = 'campaign-objective';
+      const topRight = document.querySelector('.hud-top-right');
+      if (topRight) topRight.appendChild(el);
+      this._objectiveEl = el;
+    }
+
+    this._objectiveEl.style.display = 'block';
+    const obj = Campaign.objective;
+    let text = '';
+
+    if (obj.completed) {
+      text = '✓ Цель выполнена!';
+      this._objectiveEl.className = 'campaign-objective completed';
+    } else {
+      this._objectiveEl.className = 'campaign-objective';
+      text = Campaign.getObjectiveText();
+    }
+
+    this._objectiveEl.textContent = text;
+  },
+
+  /** Показать название карты кампании (при загрузке). */
+  showCampaignMapName(name) {
+    if (!this._mapNameEl) {
+      const el = document.createElement('div');
+      el.id = 'campaignMapName';
+      el.className = 'campaign-map-name';
+      document.body.appendChild(el);
+      this._mapNameEl = el;
+    }
+    this._mapNameEl.textContent = name;
+    this._mapNameEl.classList.add('visible');
+    setTimeout(() => {
+      this._mapNameEl.classList.remove('visible');
+    }, 3000);
   },
 };
 
