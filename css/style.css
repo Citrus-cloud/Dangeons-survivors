@@ -1047,3 +1047,167 @@ html, body {
   .camp-title { font-size: 15px; }
   .camp-btn { font-size: 13px; padding: 10px; }
 }
+
+
+
+/* ============================================================
+   CLASS SELECT UI
+   ============================================================ */
+.class-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 12px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+.class-card {
+  background: var(--bg-panel);
+  border: 2px solid var(--border-dim);
+  border-radius: 10px;
+  padding: 14px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.2s;
+}
+.class-card:active { transform: scale(0.96); }
+.class-card-active {
+  border-color: var(--accent-gold-bright) !important;
+  box-shadow: 0 0 12px rgba(201, 168, 76, 0.5);
+}
+.class-card-icon {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  margin: 0 auto 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5em;
+  color: #fff;
+}
+.class-card-name { font-weight: bold; font-size: 1em; margin-bottom: 4px; }
+.class-card-desc { font-size: 0.8em; color: var(--text-muted); margin-bottom: 4px; }
+.class-card-passive { font-size: 0.75em; color: var(--accent-gold); }
+
+/* ============================================================
+   BESTIARY UI
+   ============================================================ */
+.bestiary-stats {
+  text-align: center;
+  color: var(--accent-gold);
+  font-size: 0.9em;
+  margin-bottom: 10px;
+}
+.bestiary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+  padding: 8px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.bestiary-cell {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: 8px;
+  padding: 8px;
+  text-align: center;
+  min-height: 80px;
+}
+.bestiary-cell.unlocked { border-color: var(--accent-gold); }
+.bestiary-cell.locked { opacity: 0.5; }
+.bestiary-cell-icon {
+  width: 36px; height: 36px;
+  border-radius: 6px;
+  margin: 0 auto 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1em; font-weight: bold; color: #fff;
+  border: 2px solid;
+}
+.bestiary-cell-icon.locked-icon {
+  background: #1a1a1a;
+  border-color: #444;
+  color: #666;
+}
+.bestiary-cell-name { font-size: 0.75em; font-weight: bold; margin-bottom: 2px; }
+.bestiary-cell-desc { font-size: 0.65em; color: var(--text-muted); line-height: 1.2; }
+
+/* ============================================================
+   CODEX (BOOK) UI
+   ============================================================ */
+.codex-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.codex-tab {
+  padding: 6px 14px;
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  background: var(--bg-panel);
+  color: var(--text-muted);
+  font-size: 0.85em;
+  cursor: pointer;
+}
+.codex-tab.active {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  background: rgba(201, 168, 76, 0.1);
+}
+.codex-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  padding: 8px;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+.codex-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+}
+.codex-card.unlocked { border-color: var(--accent-gold); }
+.codex-card.locked { opacity: 0.45; }
+.codex-card-icon {
+  font-size: 1.8em;
+  margin-bottom: 4px;
+}
+.codex-card-icon.locked-icon {
+  color: #444;
+  font-size: 1.5em;
+}
+.codex-card-name { font-size: 0.8em; font-weight: bold; margin-bottom: 2px; }
+.codex-card-desc { font-size: 0.7em; color: var(--text-muted); line-height: 1.2; }
+
+/* ============================================================
+   RUN STATS UI
+   ============================================================ */
+.run-stats-content { padding: 10px; }
+.run-stats-grid { max-width: 350px; margin: 0 auto; }
+.run-stats-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.15);
+  font-size: 0.9em;
+}
+.run-stats-label { color: var(--text-muted); }
+.run-stats-value { color: var(--accent-gold); font-weight: bold; }
+
+/* ============================================================
+   PAUSE EXIT BUTTON
+   ============================================================ */
+#pauseExitBtn {
+  display: block;
+  margin: 12px auto 0;
+}
+.btn-secondary {
+  background: var(--bg-panel) !important;
+  border: 1px solid var(--border-dim) !important;
+  color: var(--text-muted) !important;
+}
+.btn-secondary:active {
+  background: var(--bg-button) !important;
+}

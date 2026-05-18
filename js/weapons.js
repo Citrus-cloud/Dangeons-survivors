@@ -1470,6 +1470,55 @@ const EVOLVED_WEAPON_FACTORIES = {
 
 
 /* ============================================================
+   21) MagicMissileWeapon — Магический снаряд (стартовое оружие Волшебника).
+   ============================================================ */
+class MagicMissileWeapon extends Weapon {
+  constructor() {
+    super({ id: 'magic_missile_weapon', name: 'Маг. снаряд', type: 'magic',
+      baseCooldown: 2.5, baseDamage: 25, icon: '✦',
+      desc: 'Стреляет магическими снарядами во врагов.' });
+    this.speed = 380;
+    this.life = 3.0;
+    this.range = 600;
+  }
+  doAttack(player, enemies, projectiles) {
+    const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range);
+    let dir;
+    if (target) {
+      dir = Utils.norm(target.x - player.x, target.y - player.y);
+    } else {
+      const move = Input.getMove();
+      if (Math.hypot(move.x, move.y) > 0.05) dir = Utils.norm(move.x, move.y);
+      else dir = { x: player.facing.x, y: player.facing.y };
+    }
+    const count = 1 + this.getBonusProjectiles(player) + Math.floor((this.level - 1) / 2);
+    const spread = 0.25;
+    const baseAngle = Math.atan2(dir.y, dir.x);
+    let any = false;
+    for (let i = 0; i < count; i++) {
+      const off = (i - (count - 1) / 2) * spread;
+      const a = baseAngle + off;
+      const pr = projectiles.spawn();
+      if (!pr) break;
+      pr.kind = 'missile';
+      pr.owner = 'player';
+      pr.x = player.x; pr.y = player.y;
+      pr.vx = Math.cos(a) * this.speed;
+      pr.vy = Math.sin(a) * this.speed;
+      pr.life = this.life;
+      pr.damage = this.damageAt() * this.totalDamageMul(player);
+      pr.radius = 6;
+      pr.angle = a;
+      pr.source = this.id;
+      pr.pierce = false;
+      pr.slowEnemy = 0;
+      any = true;
+    }
+    return any;
+  }
+}
+
+/* ============================================================
    Реестр доступных оружий (для левелапа)
    ============================================================ */
 const WEAPON_FACTORIES = {
@@ -1493,6 +1542,7 @@ const WEAPON_FACTORIES = {
   holy_aura:        () => new HolyAuraWeapon(),
   spike_ring:       () => new SpikeRingWeapon(),
   earthquake:       () => new EarthquakeWeapon(),
+  magic_missile_weapon: () => new MagicMissileWeapon(),
 };
 
 const WEAPON_INFO = [

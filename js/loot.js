@@ -5,7 +5,7 @@
    ============================================================ */
 
 function createXP() {
-  return { active: false, x: 0, y: 0, value: 0, pulse: 0, red: false, blue: false };
+  return { active: false, x: 0, y: 0, value: 0, pulse: 0, red: false, blue: false, yellow: false };
 }
 
 function createGold() {
@@ -44,20 +44,30 @@ const Loot = {
 
     const waveIndex = (window.Game && Game.waveIndex) || 0;
 
+    // Жёлтый кристалл (10% шанс начиная с 21-й волны, 1000x опыт)
+    if (waveIndex >= 21 && Math.random() < 0.10) {
+      xp.red = false;
+      xp.blue = false;
+      xp.yellow = true;
+      finalValue = value * 1000;
+    }
     // Feature #8: синий кристалл (30% шанс начиная с 11-й волны, 100x опыт)
-    if (waveIndex >= 11 && Math.random() < 0.30) {
+    else if (waveIndex >= 11 && Math.random() < 0.30) {
       xp.red = false;
       xp.blue = true;
+      xp.yellow = false;
       finalValue = value * 100; // 100x от оригинального значения
     }
     // Шаг 6: красный кристалл (15% шанс начиная с 3-й волны)
     else if (waveIndex >= 3 && Math.random() < 0.15) {
       xp.red = true;
       xp.blue = false;
+      xp.yellow = false;
       finalValue = value * 20;  // 20x от оригинального значения
     } else {
       xp.red = false;
       xp.blue = false;
+      xp.yellow = false;
     }
 
     xp.value = finalValue;
@@ -118,7 +128,32 @@ const Loot = {
       if (!x.active) continue;
       if (x.x < minX - 20 || x.x > maxX + 20 || x.y < minY - 20 || x.y > maxY + 20) continue;
       const pulse = 1 + Math.sin(x.pulse * 6) * 0.18;
-      if (x.blue) {
+      if (x.yellow) {
+        // Жёлтый кристалл — крупный (12px), яркий с пульсацией и свечением
+        const yellowPulse = 1 + Math.sin(x.pulse * 10) * 0.30;
+        ctx.fillStyle = '#ffd700';
+        ctx.shadowColor = 'rgba(255, 215, 0, 0.95)';
+        ctx.shadowBlur = 22;
+        ctx.beginPath();
+        ctx.arc(x.x, x.y, 12 * yellowPulse, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        // Внутренний блик
+        ctx.fillStyle = 'rgba(255, 255, 200, 0.8)';
+        ctx.beginPath();
+        ctx.arc(x.x - 2, x.y - 2, 5 * yellowPulse, 0, Math.PI * 2);
+        ctx.fill();
+        // Лучи свечения
+        ctx.strokeStyle = 'rgba(255, 215, 0, 0.4)';
+        ctx.lineWidth = 1.5;
+        for (let r = 0; r < 4; r++) {
+          const angle = x.pulse * 2 + r * Math.PI / 2;
+          ctx.beginPath();
+          ctx.moveTo(x.x + Math.cos(angle) * 14 * yellowPulse, x.y + Math.sin(angle) * 14 * yellowPulse);
+          ctx.lineTo(x.x + Math.cos(angle) * 20 * yellowPulse, x.y + Math.sin(angle) * 20 * yellowPulse);
+          ctx.stroke();
+        }
+      } else if (x.blue) {
         // Feature #8: синий кристалл — крупнее (10px), ярко-синий с пульсацией
         const bluePulse = 1 + Math.sin(x.pulse * 8) * 0.25;
         ctx.fillStyle = '#3399ff';

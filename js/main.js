@@ -87,6 +87,16 @@ const Game = {
     // Шаг 15: загрузить мета-прогресс
     if (window.MetaProgress) MetaProgress.load();
 
+    // Загрузить бестиарий и кодекс
+    if (window.Bestiary) Bestiary.load();
+    if (window.Codex) Codex.load();
+
+    // Добавить кнопку «Выход» в паузу и обработчик кнопки «Назад»
+    if (window.UIExtended) {
+      UIExtended.addPauseExitButton();
+      UIExtended.initBackButton();
+    }
+
     // UI bindings
     document.getElementById('startBtn').addEventListener('click',   () => this.startNewGame());
     document.getElementById('restartBtn').addEventListener('click', () => this._handleRestartBtn());
@@ -250,6 +260,8 @@ const Game = {
           apply(player) {
             const w = WEAPON_FACTORIES[info.id]();
             Player.addWeapon(player, w);
+            // Разблокировка в кодексе
+            if (window.Codex) Codex.unlockWeapon(info.id);
           },
         });
       }
@@ -284,6 +296,8 @@ const Game = {
           apply(player) {
             const a = ABILITY_FACTORIES[info.id]();
             Player.addAbility(player, a);
+            // Разблокировка в кодексе
+            if (window.Codex) Codex.unlockAbility(info.id);
           },
         });
       }
@@ -365,22 +379,47 @@ const Game = {
       const repGained = 10 + (this.bossKills || 0) * 5 + Math.floor(this.kills / 100);
       MetaProgress.addRunReputation(this.bossKills || 0, this.kills);
 
-      // Показать экран результатов
-      UI.showRunResults({
+      // Собираем полную статистику забега
+      const runStats = {
         time: Utils.formatTime(this.runTime),
         kills: this.kills,
         level: this.player ? this.player.level : 1,
+        wave: this.waveIndex,
+        mapsCleared: (this.mapNumber || 1) - 1,
         goldCollected: goldCollected,
         goldBonus: goldBonus,
         goldTotal: goldTotal,
         repGained: repGained,
-      }, () => {
-        // Вернуться в лагерь
-        this.state = 'camp';
-        UI.showCamp();
-        // Шаг 18: музыка лагеря
-        if (window.GameAudio) GameAudio.playMusic('camp');
-      });
+        bossKills: this.bossKills || 0,
+        chestsOpened: this._chestsOpened || 0,
+        bestRoll: this._bestD20Roll || 0,
+        damageDealt: this._totalDamageDealt || '—',
+        damageTaken: this._totalDamageTaken || '—',
+      };
+
+      // Показать окно статистики через UIExtended
+      if (window.UIExtended) {
+        UIExtended.showRunStats(runStats, () => {
+          this.state = 'camp';
+          UI.showCamp();
+          if (window.GameAudio) GameAudio.playMusic('camp');
+        });
+      } else {
+        // Фоллбэк: старое поведение
+        UI.showRunResults({
+          time: Utils.formatTime(this.runTime),
+          kills: this.kills,
+          level: this.player ? this.player.level : 1,
+          goldCollected: goldCollected,
+          goldBonus: goldBonus,
+          goldTotal: goldTotal,
+          repGained: repGained,
+        }, () => {
+          this.state = 'camp';
+          UI.showCamp();
+          if (window.GameAudio) GameAudio.playMusic('camp');
+        });
+      }
     } else {
       // Фоллбэк: старое поведение
       UI.showGameOver({
@@ -402,6 +441,65 @@ const Game = {
       if (window.GameAudio) GameAudio.playMusic('camp');
     } else {
       this.startNewGame();
+    }
+  },
+
+  /** Выход из забега в лагерь (из меню паузы или кнопки «назад»). */
+  exitToMenu() {
+    if (this.state !== 'paused' && this.state !== 'playing') return;
+    Input.releaseJoystick();
+
+    // Останавливаем музыку
+    if (window.GameAudio) GameAudio.stopMusic();
+
+    // Очищаем объекты
+    this.enemies.clearAll();
+    this.projectiles.clearAll();
+    if (this.goldDrops) this.goldDrops.clearAll();
+
+    // Сохраняем мета-прогресс
+    const goldCollected = this.runGold || 0;
+    const goldTotal = (window.MetaProgress && MetaProgress.calcEndOfRunGold)
+      ? MetaProgress.calcEndOfRunGold(goldCollected, this.player ? this.player.level : 1)
+      : goldCollected;
+
+    if (window.MetaProgress && MetaProgress.data) {
+      MetaProgress.addGold(goldTotal);
+      MetaProgress.updateStats(this.kills, this.runTime);
+      MetaProgress.addRunReputation(this.bossKills || 0, this.kills);
+    }
+
+    // Собираем статистику забега
+    const runStats = {
+      time: Utils.formatTime(this.runTime),
+      kills: this.kills,
+      level: this.player ? this.player.level : 1,
+      wave: this.waveIndex,
+      mapsCleared: (this.mapNumber || 1) - 1,
+      goldCollected: goldCollected,
+      goldBonus: (this.player ? this.player.level : 1) * 10,
+      goldTotal: goldTotal,
+      bossKills: this.bossKills || 0,
+      chestsOpened: this._chestsOpened || 0,
+      bestRoll: this._bestD20Roll || 0,
+      damageDealt: this._totalDamageDealt || '—',
+      damageTaken: this._totalDamageTaken || '—',
+    };
+
+    this.state = 'gameover';
+    UI.hideAll();
+
+    // Показать окно статистики
+    if (window.UIExtended) {
+      UIExtended.showRunStats(runStats, () => {
+        this.state = 'camp';
+        UI.showCamp();
+        if (window.GameAudio) GameAudio.playMusic('camp');
+      });
+    } else {
+      this.state = 'camp';
+      UI.showCamp();
+      if (window.GameAudio) GameAudio.playMusic('camp');
     }
   },
 
@@ -563,6 +661,8 @@ const Game = {
 
   updateBuiltInMissile(/* dt */) {
     const p = this.player;
+    // Классовая система: только Волшебник имеет встроенный Magic Missile
+    if (p._noBuiltInMissile) return;
     if (p.missileCd > 0) return;
 
     // Направление: по движению / по ближайшему врагу / по facing
@@ -964,43 +1064,58 @@ const Game = {
     let finalRoll = 1 + Math.floor(Math.random() * 20);
     const minRoll = 1 + (this.player.d20MinBonus || 0);
     if (finalRoll < minRoll) finalRoll = Math.min(minRoll, 20);
+    // Трекинг статистики
+    this._chestsOpened = (this._chestsOpened || 0) + 1;
+    if (!this._bestD20Roll || finalRoll > this._bestD20Roll) this._bestD20Roll = finalRoll;
     // Шаг 18: звук броска d20
     if (window.GameAudio) GameAudio.playSfx('d20');
     UI.showD20Roll(finalRoll, () => this.resolveChest(finalRoll));
   },
 
-  /** Применить результат броска. */
+  /** Применить результат броска (НОВАЯ ТАБЛИЦА d20). */
   resolveChest(roll) {
     const player = this.player;
     if (!player) { this.state = 'playing'; UI.hideAll(); return; }
 
-    // Шаг 17: проверка на мимика (бросок 1-5 для обычных сундуков)
-    if (window.MimicChest && MimicChest.shouldBeMimic(roll, this._lastChestIsSecret)) {
+    // === 1–5: МИМИК ===
+    if (roll <= 5) {
       const reward = {
-        title: 'СУНДУК-ЛОВУШКА!',
-        desc: 'Сундук оказался мимиком! Приготовьтесь к бою!',
+        title: 'МИМИК!',
+        desc: 'Сундук превращается в мимика! Убейте его за опыт!',
       };
       UI.showChestReward(roll, reward, () => {
-        // Спавним мимиков после закрытия окна
-        MimicChest.spawnMimics(player, this._lastChestX || player.x, this._lastChestY || player.y);
+        // Спавним усиленного мимика (+30% HP и урона)
+        if (window.Enemies && window.Game && Game.enemies) {
+          const mx = this._lastChestX || player.x;
+          const my = this._lastChestY || player.y;
+          const mimic = Enemies.spawnByType ? Enemies.spawnByType(Game.enemies, 'mimic', mx, my) : null;
+          if (mimic) {
+            mimic.hp = Math.round(mimic.hp * 1.30);
+            mimic.maxHp = mimic.hp;
+            mimic._mimicDmgMul = 1.30;
+            // При убийстве мимика дропнет 500-1000 XP
+            mimic._mimicXpReward = Utils.randInt(500, 1000);
+          }
+        }
         this._afterChestClose();
       });
       return;
     }
 
-    // 1..10 — символическая награда: +20 XP
+    // === 6–10: ОПЫТ (сразу 1000–4000 XP) ===
     if (roll <= 10) {
+      const xpAmount = Utils.randInt(1000, 4000);
       const reward = {
-        title: roll <= 3 ? 'Сундук пуст…' : 'Скромная находка',
-        desc: '+20 очков опыта.',
+        title: 'Прилив опыта!',
+        desc: `+${xpAmount} XP`,
       };
-      player.xp += 20;
+      player.xp += xpAmount;
       UI.showChestReward(roll, reward, () => this._afterChestClose());
       return;
     }
 
-    // 11..18 — выбор одного улучшения (как левелап без +1 ур.)
-    if (roll <= 18) {
+    // === 11–15: КАРТОЧКА (выбор 1 из 3) ===
+    if (roll <= 15) {
       const choices = this.buildLevelUpChoices(3);
       UI.showChestPick(roll, choices, (chosen) => {
         if (chosen) chosen.apply(player);
@@ -1009,23 +1124,82 @@ const Game = {
       return;
     }
 
-    // 19..20 — редкая награда: проверяем супер-эволюции, эволюции, эксклюзивы
-    // Приоритет 1: Супер-эволюции
+    // === 16–19: РЕДКАЯ КАРТОЧКА + ШАНС ЭВОЛЮЦИИ ===
+    if (roll <= 19) {
+      // Проверяем готовые эволюции
+      const ready = (window.Evolutions && Evolutions.findReady) ? Evolutions.findReady(player) : [];
+      if (ready.length > 0) {
+        // Предлагаем выбор: эволюция ИЛИ карточка
+        const choices = this.buildLevelUpChoices(3);
+        // Показываем эволюцию
+        if (ready.length === 1) {
+          UI.showEvolutionDialog(roll, ready[0], (accepted) => {
+            if (accepted) {
+              Evolutions.apply(player, ready[0].recipe);
+              if (window.Codex) Codex.unlockEvolution(ready[0].recipe.resultId);
+              this._afterChestClose();
+            } else {
+              // Отказался от эволюции — даём карточку
+              UI.showChestPick(roll, choices, (chosen) => {
+                if (chosen) chosen.apply(player);
+                this._afterChestClose();
+              });
+            }
+          });
+        } else {
+          UI.showEvolutionChoice(roll, ready, (chosenPair) => {
+            if (chosenPair) {
+              Evolutions.apply(player, chosenPair.recipe);
+              if (window.Codex) Codex.unlockEvolution(chosenPair.recipe.resultId);
+              this._afterChestClose();
+            } else {
+              UI.showChestPick(roll, choices, (chosen) => {
+                if (chosen) chosen.apply(player);
+                this._afterChestClose();
+              });
+            }
+          });
+        }
+      } else {
+        // Нет готовых эволюций — редкая карточка
+        const choices = this.buildLevelUpChoices(3);
+        UI.showChestPick(roll, choices, (chosen) => {
+          if (chosen) chosen.apply(player);
+          this._afterChestClose();
+        });
+      }
+      return;
+    }
+
+    // === 20: ЭКСКЛЮЗИВ / СУПЕР-ЭВОЛЮЦИЯ / ФОЛЛБЭК ===
+    // Приоритет 1: эксклюзивное оружие (если есть свободный слот)
+    if (Player.hasFreeWeaponSlot(player)) {
+      const excl = this._tryGetExclusiveWeapon(player);
+      if (excl) {
+        excl.apply(player);
+        UI.showChestReward(roll, excl, () => this._afterChestClose());
+        return;
+      }
+    }
+    // Приоритет 2: супер-эволюция
     const superReady = (window.Evolutions && Evolutions.findSuperReady) ? Evolutions.findSuperReady(player) : [];
     if (superReady.length > 0) {
       UI.showSuperEvolutionDialog(roll, superReady, (chosen) => {
         if (chosen) {
           Evolutions.applySuper(player, chosen.recipe);
-          this._afterChestClose();
-        } else {
-          this._resolveChestEvolutionsOrFallback(roll, player);
+          if (window.Codex) Codex.unlockEvolution(chosen.recipe.resultId);
         }
+        this._afterChestClose();
       });
       return;
     }
-
-    // Приоритет 2: Обычные эволюции
-    this._resolveChestEvolutionsOrFallback(roll, player);
+    // Фоллбэк: редкая карточка + 3000 опыта
+    player.xp += 3000;
+    const choices = this.buildLevelUpChoices(3);
+    UI.showChestPick(roll, choices, (chosen) => {
+      if (chosen) chosen.apply(player);
+      this._afterChestClose();
+    });
   },
 
   /** Проверить обычные эволюции или дать фоллбэк (эксклюзив/большая награда). */
@@ -1224,6 +1398,22 @@ const Game = {
     // Учёт по типам (заготовка для UI)
     const tid = (e.cfg && e.cfg.id) || e.type || 'unknown';
     this.killsByType[tid] = (this.killsByType[tid] || 0) + 1;
+
+    // Бестиарий: разблокировать убитого врага
+    if (window.Bestiary && tid !== 'unknown') {
+      Bestiary.unlock(tid);
+    }
+
+    // Мимик из сундука: награда XP при убийстве
+    if (e._mimicXpReward && e._mimicXpReward > 0) {
+      const xpReward = e._mimicXpReward;
+      if (this.xpDrops) {
+        Loot.dropXPRaw(this.xpDrops, e.x, e.y, xpReward);
+      }
+      if (window.Particles) {
+        Particles.text(e.x, e.y - 30, `+${xpReward} XP`, 1.5, '#ffd700', 14);
+      }
+    }
 
     // Шаг 8: взрывная смерть
     if (this.player && this.player.explosiveDeathChance > 0 &&

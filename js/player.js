@@ -102,13 +102,41 @@ const Player = {
       p.xpBonusMul = (p.xpBonusMul || 1) * 1.20;
     }
 
-    // Старт: меч в первом слоте оружия
-    Player.addWeapon(p, WEAPON_FACTORIES.sword());
+    // Выбор класса: стартовое оружие зависит от класса
+    const selectedClass = (window.Classes) ? Classes.getSelected() : 'warrior';
+    const startWeaponId = (window.Classes) ? Classes.getStartWeapon(selectedClass) : 'sword';
 
-    // Шаг 15: бонус гильдии — меч начинает с +1 ур.
+    // Магический снаряд (встроенный) — только у Волшебника
+    if (selectedClass !== 'mage') {
+      p._noBuiltInMissile = true; // Флаг: отключить встроенный Magic Missile
+    }
+
+    // Добавить стартовое оружие в первый слот
+    if (startWeaponId === 'magic_missile_weapon') {
+      // Волшебник получает Magic Missile как обычное оружие (в слоте)
+      if (window.WEAPON_FACTORIES && WEAPON_FACTORIES.magic_missile_weapon) {
+        Player.addWeapon(p, WEAPON_FACTORIES.magic_missile_weapon());
+      } else if (window.WEAPON_FACTORIES && WEAPON_FACTORIES.spellbook) {
+        Player.addWeapon(p, WEAPON_FACTORIES.spellbook());
+      }
+    } else if (window.WEAPON_FACTORIES && WEAPON_FACTORIES[startWeaponId]) {
+      Player.addWeapon(p, WEAPON_FACTORIES[startWeaponId]());
+    } else {
+      Player.addWeapon(p, WEAPON_FACTORIES.sword());
+    }
+
+    // Разблокировать стартовое оружие в кодексе
+    if (window.Codex) Codex.unlockWeapon(startWeaponId);
+
+    // Применить пассивный бонус класса
+    if (window.Classes) {
+      Classes.applyClassPassive(p, selectedClass);
+    }
+
+    // Шаг 15: бонус гильдии — стартовое оружие начинает с +1 ур.
     if (window.MetaProgress && MetaProgress.hasGuildBonus('startBonus')) {
-      const sword = p.weaponSlots[0];
-      if (sword && sword.upgrade) sword.upgrade();
+      const startW = p.weaponSlots[0];
+      if (startW && startW.upgrade) startW.upgrade();
     }
 
     return p;
@@ -372,7 +400,10 @@ const Player = {
       ctx.restore();
     }
 
-    ctx.fillStyle = '#2980d9';
+    // Цвет и буква зависят от класса
+    const classColor = player._classColor || '#2980d9';
+    const classLetter = player._classLetter || 'K';
+    ctx.fillStyle = classColor;
     // Шаг 19: мерцание при i-frames (неуязвимость после удара)
     if (player._iFrameTimer && player._iFrameTimer > 0) {
       ctx.globalAlpha = 0.4 + Math.sin(player._iFrameTimer * 30) * 0.3;
@@ -386,7 +417,7 @@ const Player = {
     ctx.font = 'bold 18px ui-monospace, monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('K', player.x, player.y + 1);
+    ctx.fillText(classLetter, player.x, player.y + 1);
 
     // Радиус подбора (тонкий ободок)
     const pickupR = CONFIG.PLAYER.PICKUP_RADIUS * player.pickupMul;
