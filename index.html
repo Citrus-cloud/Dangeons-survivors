@@ -2,11 +2,36 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#1a1210" />
+  <meta name="description" content="Dungeon Survivors: D20 — Bullet Heaven в D&D-сеттинге" />
   <title>Dungeon Survivors — D20</title>
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" id="favicon" type="image/png" href="" />
+  <link rel="apple-touch-icon" id="touchIcon" href="" />
+  <link rel="manifest" href="manifest.json" />
 </head>
 <body>
+  <!-- Title Screen -->
+  <div id="titleScreen">
+    <div class="title-bg-pattern"></div>
+    <div class="title-runes" id="titleRunes"></div>
+    <div class="title-logo">
+      <div class="title-main">Dungeon Survivors</div>
+      <div class="title-sub">D20</div>
+    </div>
+    <div class="title-tap">Нажмите, чтобы начать</div>
+  </div>
+
+  <!-- Loading Screen -->
+  <div id="loadingScreen">
+    <div class="loading-die" id="loadingDie">20</div>
+    <div class="loading-text">Загрузка...</div>
+  </div>
+
   <!-- Canvas -->
   <canvas id="game"></canvas>
 
@@ -20,27 +45,25 @@
       </div>
     </div>
     <div class="hud-top-right">
-      <button id="pauseBtn" title="Пауза">||</button>
+      <button id="pauseBtn" title="Пауза">⏸</button>
       <div id="killCount">Убийств: 0</div>
       <div id="runTimer">00:00</div>
       <div id="waveInfo">Волна 1 через 20с</div>
     </div>
   </div>
 
-  <!-- Слоты: оружие слева, пассивки справа (вертикально, по 6) -->
+  <!-- Слоты: оружие слева, пассивки справа -->
   <div id="weaponSlots"  class="slot-col left"></div>
   <div id="abilitySlots" class="slot-col right"></div>
 
-  <!-- Динамический джойстик (появляется в точке касания) -->
+  <!-- Динамический джойстик -->
   <div id="joystick"><div class="stick"></div></div>
 
-  <!-- Меню -->
-  <div id="menuOverlay" class="overlay active">
+  <!-- Меню (legacy, hidden by default) -->
+  <div id="menuOverlay" class="overlay">
     <h1>DUNGEON SURVIVORS</h1>
-    <h2>D20 — Шаг 3</h2>
-    <p>Касание в любой точке экрана — динамический джойстик.</p>
-    <p>На ПК: WASD/стрелки. Атаки автоматические.</p>
-    <p>Сундуки появляются раз в 3 минуты — бросок d20 решает награду.</p>
+    <h2>D20</h2>
+    <p>Касание — динамический джойстик. ПК: WASD/стрелки.</p>
     <button id="startBtn" class="btn">НАЧАТЬ</button>
   </div>
 
@@ -63,10 +86,10 @@
     <p>Время: <span id="goTime">00:00</span></p>
     <p>Убийств: <span id="goKills">0</span></p>
     <p>Уровень: <span id="goLevel">1</span></p>
-    <button id="restartBtn" class="btn">Начать заново</button>
+    <button id="restartBtn" class="btn">В лагерь</button>
   </div>
 
-  <!-- Скрипты в правильном порядке (без бандлера) -->
+  <!-- Скрипты -->
   <script src="js/constants.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/map.js"></script>
