@@ -115,8 +115,8 @@ const Game = {
     const h = window.innerHeight;
     this.viewW = w;
     this.viewH = h;
-    // Feature #4: камера показывает на 50% больше карты (zoom-out)
-    this.cameraScale = 0.667; // 1 / 1.5 — показываем 150% области
+    // Камера показывает в 2 раза больше карты (zoom-out x2)
+    this.cameraScale = 0.5; // 1 / 2.0 — показываем 200% области
     this.cameraViewW = w / this.cameraScale;
     this.cameraViewH = h / this.cameraScale;
     this.canvas.width = Math.floor(w * this.dpr);
@@ -1167,6 +1167,17 @@ const Game = {
   damageEnemy(e, dmg) {
     if (e.invulnerable) return;
 
+    // Талант «Мгновенная казнь»: шанс мгновенно убить обычного врага (не босса)
+    if (this.player && this.player._instantKillChance > 0 &&
+        !e.isBoss && !e.isElite && Math.random() < this.player._instantKillChance) {
+      e.hp = 0;
+      if (window.Particles && Particles.text) {
+        Particles.text(e.x, e.y - 20, 'КАЗНЬ!', 0.8, '#ff0000', 13);
+      }
+      this.killEnemy(e);
+      return;
+    }
+
     // Шаг 8: критический удар
     let finalDmg = dmg;
     if (this.player && this.player.critChance > 0 && Math.random() < this.player.critChance) {
@@ -1362,8 +1373,7 @@ const Game = {
     if (this.chest) Chest.renderIndicator(ctx, this.chest, cam, camViewW, camViewH);
     if (this.secretChest) Chest.renderIndicator(ctx, this.secretChest, cam, camViewW, camViewH);
 
-    // Шаг 5: миникарта
-    if (GameMap.renderMinimap) GameMap.renderMinimap(ctx, this.player, this.viewW, this.viewH);
+    // Миникарта удалена
 
     // Шаг 17: подсказки загадок (экранные координаты)
     if (window.UI && UI.renderPuzzleHints) {

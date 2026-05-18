@@ -1701,84 +1701,8 @@ const GameMap = {
 
 
   /* ============================================================
-     Minimap
+     Миникарта полностью удалена.
      ============================================================ */
-
-  /** Отрисовать миникарту в правом нижнем углу. ctx БЕЗ сдвига. */
-  renderMinimap(ctx, player, viewW, viewH) {
-    if (!this.dungeon) return;
-    const size = 120;
-    const margin = 12;
-    const x0 = viewW - size - margin;
-    const y0 = viewH - size - margin;
-    const sx = size / this.mapW;
-    const sy = size / this.mapH;
-    // Фон
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
-    ctx.fillRect(x0, y0, size, size);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x0 + 0.5, y0 + 0.5, size - 1, size - 1);
-    // Коридоры
-    ctx.fillStyle = 'rgba(80, 80, 80, 0.9)';
-    for (const c of this.dungeon.corridors) {
-      ctx.fillRect(x0 + c.x * sx, y0 + c.y * sy, c.w * sx, c.h * sy);
-    }
-    // Комнаты
-    for (const r of this.dungeon.rooms) {
-      if (r.isSecret) {
-        // Видна только если открыта
-        const door = this.dungeon.secretDoor;
-        if (!door || !door.open) continue;
-        ctx.fillStyle = 'rgba(255, 215, 80, 0.7)';
-      } else if (r.isPuzzle) {
-        ctx.fillStyle = 'rgba(160, 80, 220, 0.7)';
-      } else if (r.isStart) {
-        ctx.fillStyle = 'rgba(60, 200, 100, 0.65)';
-      } else {
-        ctx.fillStyle = 'rgba(160, 160, 160, 0.7)';
-      }
-      ctx.fillRect(x0 + r.x * sx, y0 + r.y * sy, r.w * sx, r.h * sy);
-    }
-    // Сундук (обычный)
-    if (window.Game && Game.chest) {
-      ctx.fillStyle = '#ffd84a';
-      ctx.fillRect(
-        x0 + Game.chest.x * sx - 2, y0 + Game.chest.y * sy - 2, 4, 4
-      );
-    }
-    if (window.Game && Game.secretChest) {
-      ctx.fillStyle = '#ffe48a';
-      ctx.fillRect(
-        x0 + Game.secretChest.x * sx - 2, y0 + Game.secretChest.y * sy - 2, 4, 4
-      );
-    }
-    // Игрок
-    if (player) {
-      ctx.fillStyle = '#2980d9';
-      ctx.fillRect(
-        x0 + player.x * sx - 2.5, y0 + player.y * sy - 2.5, 5, 5
-      );
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(
-        x0 + player.x * sx - 2.5, y0 + player.y * sy - 2.5, 5, 5
-      );
-    }
-
-    // Шаг 13: портал на миникарте
-    if (this.portal) {
-      const px = x0 + this.portal.x * sx;
-      const py = y0 + this.portal.y * sy;
-      ctx.fillStyle = PORTAL_CONFIG.COLOR_OUTER;
-      ctx.beginPath();
-      ctx.arc(px, py, 4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = PORTAL_CONFIG.COLOR_INNER;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    }
-  },
 
 
   /* ============================================================

@@ -1,89 +1,279 @@
 'use strict';
 /* ============================================================
-   metaprogress.js — Шаг 15: мета-прогрессия между забегами.
-   Золото, дерево талантов, гильдия, сохранение в localStorage.
+   metaprogress.js — Мета-прогрессия между забегами.
+   Золото, 25 талантов, гильдия, сохранение в localStorage.
+   Полностью переработанная система талантов (v2).
    ============================================================ */
 
 const META_KEY = 'd20_metaprogress';
 
-/* ---------- Конфигурация дерева талантов ---------- */
-/* Feature #6: расширено до 10 уровней на каждую характеристику.
-   Добавлены спецталанты: Возрождение (Телосложение), Увеличение снарядов (Ловкость). */
-const TALENT_CONFIG = {
-  strength: {
-    id: 'strength', name: 'Сила', subtitle: 'Могущество',
-    icon: '⚔', color: '#e74c3c',
-    desc: '+8% к физическому урону за уровень',
-    costs: [50, 150, 350, 700, 1200, 2000, 3200, 5000, 7500, 11000],
-    maxLevel: 10,
-    // Уровни 6-10: продолжение +8% урона + на 8 и 10 бонусные эффекты
-    levelDescriptions: {
-      6: '+8% физ. урона',
-      7: '+8% физ. урона',
-      8: '+8% физ. урона, +5% крит. удар',
-      9: '+8% физ. урона',
-      10: '+8% физ. урона, +10% крит. урон',
-    },
+/* ---------- Конфигурация 25 талантов ---------- */
+/* Каждый талант: id, name, description, maxLevel, costs[], effects[]
+   effects — массив описаний эффекта каждого уровня (для UI).
+   Суммарная стоимость всех талантов ~200 000 золота. */
+const TALENT_DEFS = [
+  // === 1. Возрождение (обязательный) ===
+  {
+    id: 'resurrect',
+    name: 'Возрождение',
+    icon: '💀',
+    description: 'Воскрешение после смерти.',
+    maxLevel: 2,
+    costs: [10000, 20000],
+    effects: [
+      '1 раз за забег воскрешение с 30% HP',
+      '2 раза за забег воскрешение с 100% HP',
+    ],
   },
-  dexterity: {
-    id: 'dexterity', name: 'Ловкость', subtitle: 'Проворство',
-    icon: '➤', color: '#2ecc71',
-    desc: '+5% скорости, -3% кулдаунов за уровень. Ур.8-9: +1/+2 снаряда ко всему оружию',
-    costs: [50, 150, 350, 700, 1200, 2000, 3200, 5000, 7500, 11000],
-    maxLevel: 10,
-    // Уровни 8, 9: увеличение снарядов (+1, +2)
-    levelDescriptions: {
-      6: '+5% скорости, -3% кулдаунов',
-      7: '+5% скорости, -3% кулдаунов',
-      8: '★ +1 СНАРЯД ко всему оружию',
-      9: '★ +2 СНАРЯДА ко всему оружию',
-      10: '+5% скорости, -3% кулдаунов, +10% уклонения',
-    },
+  // === 2. Увеличение снарядов (обязательный) ===
+  {
+    id: 'bonus_projectiles',
+    name: 'Увеличение снарядов',
+    icon: '✶',
+    description: 'Дополнительные снаряды ко всему оружию.',
+    maxLevel: 2,
+    costs: [8000, 16000],
+    effects: [
+      '+1 снаряд ко всем оружиям',
+      '+2 снаряда ко всем оружиям',
+    ],
   },
-  intelligence: {
-    id: 'intelligence', name: 'Интеллект', subtitle: 'Магия',
-    icon: '📖', color: '#9b59b6',
-    desc: '+8% маг. урона, +1% крита заклинаний за уровень',
-    costs: [50, 150, 350, 700, 1200, 2000, 3200, 5000, 7500, 11000],
-    maxLevel: 10,
-    levelDescriptions: {
-      6: '+8% маг. урона, +1% крита',
-      7: '+8% маг. урона, +1% крита',
-      8: '+8% маг. урона, +2% крита',
-      9: '+8% маг. урона, +2% крита, +10% длительность DoT',
-      10: '+8% маг. урона, +3% крита, магический отклик +5%',
-    },
+  // === 3. Закалка ===
+  {
+    id: 'max_hp',
+    name: 'Закалка',
+    icon: '❤',
+    description: 'Увеличение максимального здоровья.',
+    maxLevel: 3,
+    costs: [500, 1500, 4000],
+    effects: ['+20 макс. HP', '+40 макс. HP', '+70 макс. HP'],
   },
-  constitution: {
-    id: 'constitution', name: 'Телосложение', subtitle: 'Выносливость',
-    icon: '🛡', color: '#3498db',
-    desc: '+15 макс. HP, +1 HP/5с регенерации. Ур.8-9: ★ Возрождение',
-    costs: [50, 150, 350, 700, 1200, 2000, 3200, 10000, 50000, 11000],
-    maxLevel: 10,
-    // Уровни 8, 9: Возрождение (1 раз с 30% HP, 2 раза с 100% HP)
-    levelDescriptions: {
-      6: '+15 HP, +регенерация',
-      7: '+15 HP, +регенерация, +3% снижение урона',
-      8: '★ ВОЗРОЖДЕНИЕ (1 раз, 30% HP)',
-      9: '★ ВОЗРОЖДЕНИЕ (2 раза, 100% HP)',
-      10: '+15 HP, +регенерация, +5% снижение урона',
-    },
+  // === 4. Быстрые ноги ===
+  {
+    id: 'move_speed',
+    name: 'Быстрые ноги',
+    icon: '👟',
+    description: 'Увеличение скорости передвижения.',
+    maxLevel: 3,
+    costs: [600, 1800, 5000],
+    effects: ['+8% скорости', '+16% скорости', '+25% скорости'],
   },
-  charisma: {
-    id: 'charisma', name: 'Харизма', subtitle: 'Удача',
-    icon: '🪙', color: '#f1c40f',
-    desc: '+5% опыта и золота за уровень',
-    costs: [60, 180, 420, 840, 1440, 2400, 3800, 6000, 9000, 13000],
-    maxLevel: 10,
-    levelDescriptions: {
-      6: '+5% опыта и золота',
-      7: '+5% опыта и золота, +2% шанс двойного XP',
-      8: '+5% опыта и золота, +1 к мин. d20',
-      9: '+5% опыта и золота, +5% шанс двойного XP',
-      10: '+5% опыта и золота, +2 к мин. d20',
-    },
+  // === 5. Грубая сила ===
+  {
+    id: 'phys_damage',
+    name: 'Грубая сила',
+    icon: '⚔',
+    description: 'Увеличение физического урона.',
+    maxLevel: 3,
+    costs: [800, 2500, 6000],
+    effects: ['+10% физ. урона', '+20% физ. урона', '+35% физ. урона'],
   },
-};
+  // === 6. Магическая мощь ===
+  {
+    id: 'magic_damage',
+    name: 'Магическая мощь',
+    icon: '📖',
+    description: 'Увеличение магического урона.',
+    maxLevel: 3,
+    costs: [800, 2500, 6000],
+    effects: ['+10% маг. урона', '+20% маг. урона', '+35% маг. урона'],
+  },
+  // === 7. Скорострельность ===
+  {
+    id: 'cooldown_reduce',
+    name: 'Скорострельность',
+    icon: '⏱',
+    description: 'Снижение кулдаунов всех оружий.',
+    maxLevel: 3,
+    costs: [1000, 3000, 7000],
+    effects: ['-8% кулдаунов', '-15% кулдаунов', '-22% кулдаунов'],
+  },
+  // === 8. Критический удар ===
+  {
+    id: 'crit_chance',
+    name: 'Критический удар',
+    icon: '💥',
+    description: 'Шанс нанести двойной урон.',
+    maxLevel: 3,
+    costs: [1200, 3500, 8000],
+    effects: ['+5% шанс крита', '+10% шанс крита', '+16% шанс крита'],
+  },
+  // === 9. Вампиризм ===
+  {
+    id: 'lifesteal',
+    name: 'Вампиризм',
+    icon: '🩸',
+    description: 'Лечение от нанесённого урона.',
+    maxLevel: 3,
+    costs: [1500, 4000, 9000],
+    effects: ['+3% вампиризма', '+6% вампиризма', '+10% вампиризма'],
+  },
+  // === 10. Уворот ===
+  {
+    id: 'dodge',
+    name: 'Уворот',
+    icon: '💨',
+    description: 'Шанс полностью избежать удара.',
+    maxLevel: 3,
+    costs: [1500, 4500, 10000],
+    effects: ['+5% уворота', '+10% уворота', '+15% уворота'],
+  },
+  // === 11. Магнит опыта ===
+  {
+    id: 'xp_radius',
+    name: 'Магнит опыта',
+    icon: '◎',
+    description: 'Увеличение радиуса сбора опыта и золота.',
+    maxLevel: 3,
+    costs: [500, 1200, 3000],
+    effects: ['+25% радиус подбора', '+50% радиус подбора', '+80% радиус подбора'],
+  },
+  // === 12. Золотая лихорадка ===
+  {
+    id: 'gold_bonus',
+    name: 'Золотая лихорадка',
+    icon: '🪙',
+    description: 'Больше золота за забег.',
+    maxLevel: 3,
+    costs: [600, 1500, 4000],
+    effects: ['+10% золота', '+20% золота', '+35% золота'],
+  },
+  // === 13. Учёность ===
+  {
+    id: 'xp_bonus',
+    name: 'Учёность',
+    icon: '📚',
+    description: 'Больше опыта за убийства.',
+    maxLevel: 3,
+    costs: [600, 1500, 4000],
+    effects: ['+10% опыта', '+20% опыта', '+35% опыта'],
+  },
+  // === 14. Регенерация ===
+  {
+    id: 'hp_regen',
+    name: 'Регенерация',
+    icon: '💚',
+    description: 'Постоянное восстановление здоровья.',
+    maxLevel: 3,
+    costs: [800, 2000, 5000],
+    effects: ['+1 HP/сек', '+2 HP/сек', '+3.5 HP/сек'],
+  },
+  // === 15. Стойкость ===
+  {
+    id: 'damage_reduction',
+    name: 'Стойкость',
+    icon: '🛡',
+    description: 'Снижение получаемого урона.',
+    maxLevel: 3,
+    costs: [1000, 3000, 7000],
+    effects: ['+5% брони', '+10% брони', '+16% брони'],
+  },
+  // === 16. Ловкач ===
+  {
+    id: 'trap_resist',
+    name: 'Ловкач',
+    icon: '🪤',
+    description: 'Снижение урона от ловушек.',
+    maxLevel: 2,
+    costs: [1000, 3000],
+    effects: ['-30% урона от ловушек', '-55% урона от ловушек'],
+  },
+  // === 17. Неуязвимость ===
+  {
+    id: 'iframe_extend',
+    name: 'Неуязвимость',
+    icon: '✨',
+    description: 'Увеличение i-фреймов после удара.',
+    maxLevel: 2,
+    costs: [2000, 5000],
+    effects: ['+0.2 сек неуязвимости', '+0.5 сек неуязвимости'],
+  },
+  // === 18. Жажда крови ===
+  {
+    id: 'bleed_chance',
+    name: 'Жажда крови',
+    icon: '🗡',
+    description: 'Шанс наложить кровотечение.',
+    maxLevel: 2,
+    costs: [1500, 4500],
+    effects: ['+8% шанс кровотечения', '+16% шанс кровотечения'],
+  },
+  // === 19. Арсенал ===
+  {
+    id: 'extra_weapon_slot',
+    name: 'Арсенал',
+    icon: '🎒',
+    description: 'Дополнительный слот оружия.',
+    maxLevel: 1,
+    costs: [12000],
+    effects: ['+1 слот оружия'],
+  },
+  // === 20. Мастерство ===
+  {
+    id: 'extra_ability_slot',
+    name: 'Мастерство',
+    icon: '🔮',
+    description: 'Дополнительный слот пассивки.',
+    maxLevel: 1,
+    costs: [12000],
+    effects: ['+1 слот пассивки'],
+  },
+  // === 21. Сопротивление дебаффам ===
+  {
+    id: 'debuff_resist',
+    name: 'Сопротивление',
+    icon: '🧪',
+    description: 'Снижение длительности негативных эффектов.',
+    maxLevel: 2,
+    costs: [1500, 4000],
+    effects: ['-20% длительности дебаффов', '-40% длительности дебаффов'],
+  },
+  // === 22. Удачливый охотник ===
+  {
+    id: 'chest_luck',
+    name: 'Удачливый охотник',
+    icon: '🎰',
+    description: 'Лучшие результаты при открытии сундуков.',
+    maxLevel: 2,
+    costs: [2000, 6000],
+    effects: ['+1 к мин. броску d20', '+2 к мин. броску d20'],
+  },
+  // === 23. Взрывная смерть ===
+  {
+    id: 'explosive_kill',
+    name: 'Взрывная смерть',
+    icon: '💣',
+    description: 'Шанс взрыва при убийстве обычного врага.',
+    maxLevel: 2,
+    costs: [3000, 8000],
+    effects: ['8% шанс взрыва при убийстве', '15% шанс взрыва при убийстве'],
+  },
+  // === 24. Мгновенная казнь ===
+  {
+    id: 'instant_kill',
+    name: 'Мгновенная казнь',
+    icon: '☠',
+    description: 'Шанс мгновенно убить обычного врага.',
+    maxLevel: 2,
+    costs: [5000, 15000],
+    effects: ['3% шанс мгновенного убийства', '6% шанс мгновенного убийства'],
+  },
+  // === 25. Двойной опыт ===
+  {
+    id: 'double_xp',
+    name: 'Двойной опыт',
+    icon: '⚡',
+    description: 'Шанс получить удвоенный опыт.',
+    maxLevel: 2,
+    costs: [2000, 6000],
+    effects: ['+5% шанс двойного XP', '+12% шанс двойного XP'],
+  },
+];
+
+// Быстрый доступ по id
+const TALENT_MAP = {};
+for (const t of TALENT_DEFS) TALENT_MAP[t.id] = t;
+
 
 /* ---------- Конфигурация гильдии ---------- */
 const GUILD_CONFIG = {
@@ -105,17 +295,13 @@ const GUILD_CONFIG = {
 const MetaProgress = {
   data: null,
 
-  /** Создать пустой объект мета-прогресса. */
+  /** Создать пустой объект мета-прогресса (новая структура талантов). */
   _createDefault() {
+    const talents = {};
+    for (const t of TALENT_DEFS) talents[t.id] = 0;
     return {
       gold: 0,
-      talents: {
-        strength: 0,
-        dexterity: 0,
-        intelligence: 0,
-        constitution: 0,
-        charisma: 0,
-      },
+      talents: talents,
       reputation: 0,
       totalKills: 0,
       totalRuns: 0,
@@ -135,14 +321,31 @@ const MetaProgress = {
       const raw = localStorage.getItem(META_KEY);
       if (raw) {
         this.data = JSON.parse(raw);
-        // Обеспечить совместимость при обновлениях
+        // Миграция со старой структуры (5 веток) на новую (25 талантов)
+        if (this.data.talents && (this.data.talents.strength !== undefined ||
+            this.data.talents.dexterity !== undefined)) {
+          // Старая структура — сбрасываем таланты, возвращаем 100% золота
+          let refund = 0;
+          const oldKeys = ['strength', 'dexterity', 'intelligence', 'constitution', 'charisma'];
+          const oldCosts = [50, 150, 350, 700, 1200, 2000, 3200, 5000, 7500, 11000];
+          for (const k of oldKeys) {
+            const lvl = this.data.talents[k] || 0;
+            for (let i = 0; i < lvl; i++) refund += oldCosts[i] || 0;
+          }
+          this.data.gold += refund;
+          // Создаём новую структуру талантов
+          const newTalents = {};
+          for (const t of TALENT_DEFS) newTalents[t.id] = 0;
+          this.data.talents = newTalents;
+        }
+        // Обеспечить совместимость — добавить недостающие поля
         const def = this._createDefault();
         for (const k of Object.keys(def)) {
           if (this.data[k] === undefined) this.data[k] = def[k];
         }
-        if (!this.data.talents) this.data.talents = def.talents;
-        for (const k of Object.keys(def.talents)) {
-          if (this.data.talents[k] === undefined) this.data.talents[k] = 0;
+        // Убедиться что все таланты присутствуют
+        for (const t of TALENT_DEFS) {
+          if (this.data.talents[t.id] === undefined) this.data.talents[t.id] = 0;
         }
       } else {
         this.data = this._createDefault();
@@ -165,10 +368,10 @@ const MetaProgress = {
   /* ---------- Золото ---------- */
 
   addGold(amount) {
-    // Бонус от харизмы
-    const charLvl = this.data.talents.charisma || 0;
-    const bonus = 1 + charLvl * 0.05;
-    this.data.gold += Math.floor(amount * bonus);
+    // Бонус от таланта «Золотая лихорадка»
+    const goldLvl = this.data.talents.gold_bonus || 0;
+    const bonusPct = [0, 0.10, 0.20, 0.35][goldLvl] || 0;
+    this.data.gold += Math.floor(amount * (1 + bonusPct));
     this.save();
   },
 
@@ -179,24 +382,24 @@ const MetaProgress = {
     return true;
   },
 
-  /* ---------- Дерево талантов ---------- */
+  /* ---------- Система талантов (25 талантов) ---------- */
 
   /** Получить текущую стоимость следующего уровня таланта. */
   getTalentCost(talentId) {
-    const cfg = TALENT_CONFIG[talentId];
-    if (!cfg) return Infinity;
+    const def = TALENT_MAP[talentId];
+    if (!def) return Infinity;
     const lvl = this.data.talents[talentId] || 0;
-    if (lvl >= cfg.maxLevel) return Infinity;
-    return cfg.costs[lvl];
+    if (lvl >= def.maxLevel) return Infinity;
+    return def.costs[lvl];
   },
 
   /** Купить уровень таланта. Возвращает true если успешно. */
   upgradeTalent(talentId) {
-    const cfg = TALENT_CONFIG[talentId];
-    if (!cfg) return false;
+    const def = TALENT_MAP[talentId];
+    if (!def) return false;
     const lvl = this.data.talents[talentId] || 0;
-    if (lvl >= cfg.maxLevel) return false;
-    const cost = cfg.costs[lvl];
+    if (lvl >= def.maxLevel) return false;
+    const cost = def.costs[lvl];
     if (this.data.gold < cost) return false;
     this.data.gold -= cost;
     this.data.talents[talentId] = lvl + 1;
@@ -207,13 +410,12 @@ const MetaProgress = {
   /** Сбросить все таланты, вернуть 80% вложенного золота. */
   resetTalents() {
     let totalSpent = 0;
-    for (const id of Object.keys(TALENT_CONFIG)) {
-      const cfg = TALENT_CONFIG[id];
-      const lvl = this.data.talents[id] || 0;
+    for (const def of TALENT_DEFS) {
+      const lvl = this.data.talents[def.id] || 0;
       for (let i = 0; i < lvl; i++) {
-        totalSpent += cfg.costs[i];
+        totalSpent += def.costs[i];
       }
-      this.data.talents[id] = 0;
+      this.data.talents[def.id] = 0;
     }
     const refund = Math.floor(totalSpent * 0.8);
     this.data.gold += refund;
@@ -221,75 +423,166 @@ const MetaProgress = {
     return refund;
   },
 
-  /** Применить бонусы талантов к объекту игрока (при старте забега). */
+
+  /** Применить бонусы всех талантов к объекту игрока (при старте забега). */
   applyTalents(player) {
     const t = this.data.talents;
 
-    // Сила: +8% физ. урон за уровень; ур.8: +5% крит; ур.10: +10% крит. урон
-    if (t.strength > 0) {
-      player.damageMul *= (1 + t.strength * 0.08);
-      if (t.strength >= 8) player.critChance += 0.05;
-      if (t.strength >= 10) player._critDamageMul = (player._critDamageMul || 2) + 0.10;
+    // 1. Возрождение
+    const resLvl = t.resurrect || 0;
+    if (resLvl >= 2) {
+      player._resurrectCount = 2;
+      player._resurrectHpPct = 1.0;
+    } else if (resLvl >= 1) {
+      player._resurrectCount = 1;
+      player._resurrectHpPct = 0.30;
     }
 
-    // Ловкость: +5% скорость, -3% кулдаунов за уровень
-    // Ур.8: +1 снаряд, Ур.9: +2 снаряда (всего), Ур.10: +10% уклонения
-    if (t.dexterity > 0) {
-      player.speedMul *= (1 + t.dexterity * 0.05);
-      player.weaponCdMul *= (1 - t.dexterity * 0.03);
-      player.missileCdMul *= (1 - t.dexterity * 0.03);
-      // Feature #6: бонусные снаряды для всего оружия
-      if (t.dexterity >= 9) {
-        player._talentBonusProjectiles = 2;
-      } else if (t.dexterity >= 8) {
-        player._talentBonusProjectiles = 1;
-      }
-      if (t.dexterity >= 10) {
-        player._dodgeChance = (player._dodgeChance || 0) + 0.10;
-      }
+    // 2. Бонусные снаряды
+    const projLvl = t.bonus_projectiles || 0;
+    if (projLvl > 0) {
+      player._talentBonusProjectiles = projLvl; // 1 или 2
     }
 
-    // Интеллект: +8% маг. урон, +1% крит заклинаний за уровень
-    // Ур.8-9: +2% крит; Ур.9: +10% DoT; Ур.10: +3% крит, +5% магический отклик
-    if (t.intelligence > 0) {
-      player.magicDamageMul *= (1 + t.intelligence * 0.08);
-      let critBonus = t.intelligence * 0.01;
-      if (t.intelligence >= 8) critBonus += 0.01;
-      if (t.intelligence >= 9) critBonus += 0.01;
-      if (t.intelligence >= 10) critBonus += 0.02;
-      player.critChance += critBonus;
-      if (t.intelligence >= 9) player.dotDamageMul *= 1.10;
-      if (t.intelligence >= 10) player.magicEchoChance += 0.05;
-    }
-
-    // Телосложение: +15 макс HP, +1 HP/5с регенерации за уровень
-    // Ур.7: +3% снижение урона; Ур.8: Возрождение 1; Ур.9: Возрождение 2; Ур.10: +5% DR
-    if (t.constitution > 0) {
-      const bonusHp = t.constitution * 15;
-      player.talentBonusHp = bonusHp; // Bug fix #1: сохраняем отдельно для пересчёта
+    // 3. Закалка (макс HP)
+    const hpLvl = t.max_hp || 0;
+    if (hpLvl > 0) {
+      const bonusHp = [0, 20, 40, 70][hpLvl];
+      player.talentBonusHp = bonusHp;
       player.maxHp += bonusHp;
       player.hp += bonusHp;
-      player.hpRegen += t.constitution * (1 / 5); // 1 HP per 5 seconds = 0.2 HP/s
-      if (t.constitution >= 7) player.damageReduction += 0.03;
-      if (t.constitution >= 10) player.damageReduction += 0.05;
-      // Feature #6: Возрождение
-      if (t.constitution >= 9) {
-        player._resurrectCount = 2;
-        player._resurrectHpPct = 1.0; // 100% HP
-      } else if (t.constitution >= 8) {
-        player._resurrectCount = 1;
-        player._resurrectHpPct = 0.30; // 30% HP
-      }
     }
 
-    // Харизма: +5% XP и золота
-    // Ур.7: +2% двойной XP; Ур.8: +1 мин d20; Ур.9: +5% двойной XP; Ур.10: +2 мин d20
-    if (t.charisma > 0) {
-      player.xpBonusMul = 1 + t.charisma * 0.05;
-      if (t.charisma >= 7) player.doubleXpChance += 0.02;
-      if (t.charisma >= 8) player.d20MinBonus += 1;
-      if (t.charisma >= 9) player.doubleXpChance += 0.05;
-      if (t.charisma >= 10) player.d20MinBonus += 2;
+    // 4. Быстрые ноги
+    const spdLvl = t.move_speed || 0;
+    if (spdLvl > 0) {
+      const spdBonus = [0, 0.08, 0.16, 0.25][spdLvl];
+      player.speedMul *= (1 + spdBonus);
+    }
+
+    // 5. Грубая сила (физ. урон)
+    const physLvl = t.phys_damage || 0;
+    if (physLvl > 0) {
+      const physBonus = [0, 0.10, 0.20, 0.35][physLvl];
+      player.damageMul *= (1 + physBonus);
+    }
+
+    // 6. Магическая мощь
+    const magLvl = t.magic_damage || 0;
+    if (magLvl > 0) {
+      const magBonus = [0, 0.10, 0.20, 0.35][magLvl];
+      player.magicDamageMul *= (1 + magBonus);
+    }
+
+    // 7. Скорострельность (кулдауны)
+    const cdLvl = t.cooldown_reduce || 0;
+    if (cdLvl > 0) {
+      const cdReduce = [0, 0.08, 0.15, 0.22][cdLvl];
+      player.weaponCdMul *= (1 - cdReduce);
+      player.missileCdMul *= (1 - cdReduce);
+    }
+
+    // 8. Критический удар
+    const critLvl = t.crit_chance || 0;
+    if (critLvl > 0) {
+      const critBonus = [0, 0.05, 0.10, 0.16][critLvl];
+      player.critChance += critBonus;
+    }
+
+    // 9. Вампиризм
+    const lsLvl = t.lifesteal || 0;
+    if (lsLvl > 0) {
+      const lsBonus = [0, 0.03, 0.06, 0.10][lsLvl];
+      player.lifesteal += lsBonus;
+    }
+
+    // 10. Уворот
+    const dodgeLvl = t.dodge || 0;
+    if (dodgeLvl > 0) {
+      const dodgeBonus = [0, 0.05, 0.10, 0.15][dodgeLvl];
+      player._dodgeChance = (player._dodgeChance || 0) + dodgeBonus;
+    }
+
+    // 11. Магнит опыта
+    const pickLvl = t.xp_radius || 0;
+    if (pickLvl > 0) {
+      const pickBonus = [0, 0.25, 0.50, 0.80][pickLvl];
+      player.pickupMul *= (1 + pickBonus);
+    }
+
+    // 12. Золотая лихорадка — применяется в addGold(), не в player
+
+    // 13. Учёность (бонус опыта)
+    const xpLvl = t.xp_bonus || 0;
+    if (xpLvl > 0) {
+      const xpBonus = [0, 0.10, 0.20, 0.35][xpLvl];
+      player.xpBonusMul = (player.xpBonusMul || 1) * (1 + xpBonus);
+    }
+
+    // 14. Регенерация
+    const regenLvl = t.hp_regen || 0;
+    if (regenLvl > 0) {
+      const regenVal = [0, 1, 2, 3.5][regenLvl];
+      player.hpRegen += regenVal;
+    }
+
+    // 15. Стойкость (снижение урона)
+    const drLvl = t.damage_reduction || 0;
+    if (drLvl > 0) {
+      const drBonus = [0, 0.05, 0.10, 0.16][drLvl];
+      player.damageReduction += drBonus;
+    }
+
+    // 16. Ловкач (снижение урона от ловушек)
+    const trapLvl = t.trap_resist || 0;
+    if (trapLvl > 0) {
+      player._trapDamageReduce = [0, 0.30, 0.55][trapLvl];
+    }
+
+    // 17. Неуязвимость (доп. i-frames)
+    const iframeLvl = t.iframe_extend || 0;
+    if (iframeLvl > 0) {
+      player._iFrameBonus = [0, 0.2, 0.5][iframeLvl];
+    }
+
+    // 18. Жажда крови (кровотечение)
+    const bleedLvl = t.bleed_chance || 0;
+    if (bleedLvl > 0) {
+      player.bleedChance += [0, 0.08, 0.16][bleedLvl];
+    }
+
+    // 19. Арсенал — обрабатывается в getWeaponSlots()
+
+    // 20. Мастерство — обрабатывается в getAbilitySlots()
+
+    // 21. Сопротивление дебаффам
+    const debuffLvl = t.debuff_resist || 0;
+    if (debuffLvl > 0) {
+      player.debuffReduction += [0, 0.20, 0.40][debuffLvl];
+    }
+
+    // 22. Удачливый охотник (d20 бонус)
+    const luckLvl = t.chest_luck || 0;
+    if (luckLvl > 0) {
+      player.d20MinBonus += [0, 1, 2][luckLvl];
+    }
+
+    // 23. Взрывная смерть
+    const exploLvl = t.explosive_kill || 0;
+    if (exploLvl > 0) {
+      player.explosiveDeathChance += [0, 0.08, 0.15][exploLvl];
+    }
+
+    // 24. Мгновенная казнь
+    const instLvl = t.instant_kill || 0;
+    if (instLvl > 0) {
+      player._instantKillChance = [0, 0.03, 0.06][instLvl];
+    }
+
+    // 25. Двойной опыт
+    const dxpLvl = t.double_xp || 0;
+    if (dxpLvl > 0) {
+      player.doubleXpChance += [0, 0.05, 0.12][dxpLvl];
     }
   },
 
@@ -316,15 +609,14 @@ const MetaProgress = {
     const oldLvl = this.getGuildLevel();
     this.data.reputation += amount;
     const newLvl = this.getGuildLevel();
-    // Пересчитать бонусы гильдии
     this._recalcGuildBonuses();
     this.save();
-    return newLvl > oldLvl; // вернуть, повысился ли уровень
+    return newLvl > oldLvl;
   },
 
   /** Начислить репутацию за забег. */
   addRunReputation(bossKills, totalKills) {
-    let rep = 10; // базовая за забег
+    let rep = 10;
     rep += bossKills * 5;
     rep += Math.floor(totalKills / 100);
     return this.addReputation(rep);
@@ -344,14 +636,16 @@ const MetaProgress = {
     this.data.extraAbilitySlots = extraAbilities;
   },
 
-  /** Получить количество слотов оружия (6 + бонус гильдии). */
+  /** Получить количество слотов оружия (6 + бонус гильдии + талант). */
   getWeaponSlots() {
-    return CONFIG.PLAYER.SLOTS_WEAPONS + (this.data.extraWeaponSlots || 0);
+    const talentBonus = (this.data.talents.extra_weapon_slot || 0) >= 1 ? 1 : 0;
+    return CONFIG.PLAYER.SLOTS_WEAPONS + (this.data.extraWeaponSlots || 0) + talentBonus;
   },
 
-  /** Получить количество слотов пассивок (6 + бонус гильдии). */
+  /** Получить количество слотов пассивок (6 + бонус гильдии + талант). */
   getAbilitySlots() {
-    return CONFIG.PLAYER.SLOTS_ABILITIES + (this.data.extraAbilitySlots || 0);
+    const talentBonus = (this.data.talents.extra_ability_slot || 0) >= 1 ? 1 : 0;
+    return CONFIG.PLAYER.SLOTS_ABILITIES + (this.data.extraAbilitySlots || 0) + talentBonus;
   },
 
   /** Проверить, открыт ли бонус гильдии определённого типа. */
@@ -372,27 +666,24 @@ const MetaProgress = {
     this.save();
   },
 
-  /** Рассчитать золото за завершение забега (подобранное + бонус за уровень). */
+  /** Рассчитать золото за завершение забега. */
   calcEndOfRunGold(collectedGold, playerLevel) {
     const levelBonus = playerLevel * 10;
     return collectedGold + levelBonus;
   },
 
-  /* ---------- Кампания (Шаг 16) ---------- */
+  /* ---------- Кампания ---------- */
 
-  /** Проверить, завершена ли кампания. */
   isCampaignCompleted() {
     return this.data && this.data.campaignCompleted;
   },
 
-  /** Отметить кампанию как завершённую. */
   setCampaignCompleted() {
     if (!this.data) return;
     this.data.campaignCompleted = true;
     this.save();
   },
 
-  /** Добавить достижение (если ещё не получено). */
   addAchievement(achievementId) {
     if (!this.data) return false;
     if (!this.data.achievements) this.data.achievements = [];
@@ -402,7 +693,6 @@ const MetaProgress = {
     return true;
   },
 
-  /** Проверить наличие достижения. */
   hasAchievement(achievementId) {
     if (!this.data || !this.data.achievements) return false;
     return this.data.achievements.includes(achievementId);
@@ -411,5 +701,6 @@ const MetaProgress = {
 
 // Экспорт
 window.MetaProgress = MetaProgress;
-window.TALENT_CONFIG = TALENT_CONFIG;
+window.TALENT_DEFS = TALENT_DEFS;
+window.TALENT_MAP = TALENT_MAP;
 window.GUILD_CONFIG = GUILD_CONFIG;

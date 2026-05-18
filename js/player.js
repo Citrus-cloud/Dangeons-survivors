@@ -175,6 +175,14 @@ const Player = {
     // I-frames: если герой в состоянии неуязвимости — игнорируем урон
     if (player._iFrameTimer && player._iFrameTimer > 0) return 0;
 
+    // Уворот (талант): шанс полностью избежать удара
+    if (player._dodgeChance && player._dodgeChance > 0 && Math.random() < player._dodgeChance) {
+      if (window.Particles && Particles.text) {
+        Particles.text(player.x, player.y - 30, 'УВОРОТ!', 0.8, '#2ecc71', 14);
+      }
+      return 0;
+    }
+
     // Щит маны — полная блокировка
     if (player.manaShield && player.manaShield.tryBlock()) {
       // Визуал блока
@@ -189,14 +197,20 @@ const Player = {
 
     // Броня (снижение урона)
     let finalDmg = rawDmg;
+    // Талант «Ловкач»: снижение урона от ловушек (source === null для ловушек)
+    if (!source && player._trapDamageReduce && player._trapDamageReduce > 0) {
+      finalDmg *= (1 - player._trapDamageReduce);
+    }
     if (player.damageReduction > 0) {
       finalDmg *= (1 - Math.min(player.damageReduction, 0.75));
     }
 
     player.hp -= finalDmg;
 
-    // Активируем i-frames (0.3 сек неуязвимости)
-    player._iFrameTimer = 0.3;
+    // Активируем i-frames (0.3 сек + бонус от таланта «Неуязвимость»)
+    const iframeBase = 0.3;
+    const iframeBonus = player._iFrameBonus || 0;
+    player._iFrameTimer = iframeBase + iframeBonus;
 
     // Магический отклик — ответный снаряд
     if (player.magicEchoChance > 0 && Math.random() < player.magicEchoChance && source) {
