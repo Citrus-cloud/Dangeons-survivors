@@ -619,6 +619,14 @@ const Enemies = {
     if (window.Bosses && Bosses.isAlive()) {
       count = Math.max(1, Math.round(count * (1 - BOSS_CONFIG.WAVE_REDUCTION)));
     }
+    // Шаг 19: формула количества врагов из спеки
+    const waveCount = 3 + waveIndex * 2 + Math.floor(waveIndex / 5) * 3;
+    count = Math.max(count, waveCount);
+    // Снижение при живом боссе (повторно, если waveCount больше)
+    if (window.Bosses && Bosses.isAlive()) {
+      count = Math.max(1, Math.round(count * (1 - BOSS_CONFIG.WAVE_REDUCTION)));
+    }
+
     let ids = this._availableTierIds(waveIndex);
     // Шаг 13: фильтрация по биому
     ids = this._filterByBiome(ids);
@@ -641,11 +649,16 @@ const Enemies = {
         ey = player.y + Math.sin(angle) * dist;
       }
       const e = this.spawnByType(pool, typeId, ex, ey);
-      // Шаг 13: применяем множители сложности
-      if (e && diffMul.hpMul !== 1) {
-        e.hp = Math.round(e.hp * diffMul.hpMul);
+      if (e) {
+        // Шаг 19: масштабирование HP/урона по волне (спек формула)
+        const waveHpMul = 1 + waveIndex * 0.1;
+        const waveDmgMul = 1 + waveIndex * 0.08;
+        // Шаг 13: множители сложности карты (накладываются поверх)
+        const totalHpMul = waveHpMul * diffMul.hpMul;
+        const totalDmgMul = waveDmgMul * diffMul.dmgMul;
+        e.hp = Math.round(e.hp * totalHpMul);
         e.maxHp = e.hp;
-        e.damage = Math.round(e.damage * diffMul.dmgMul);
+        e.damage = Math.round(e.damage * totalDmgMul);
       }
     }
   },

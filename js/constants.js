@@ -67,7 +67,7 @@ const CONFIG = {
   POOLS: {
     ENEMIES: 80,
     PROJECTILES: 120,       // Шаг 7: расширено до 120 (20 оружий)
-    PARTICLES: 120,
+    PARTICLES: 100,         // Шаг 19: ограничено до 100 для мобильных
     XP: 200,
     GROUND_EFFECTS: 30,     // Шаг 4: лужи/следы (гниль, слизь, огонь)
   },
@@ -722,7 +722,7 @@ const ENEMY_TIERS = {
   2: { unlockWave: 3, ids: ['archer', 'ooze', 'gasspore', 'gnoll', 'kobold', 'cave_crab', 'ghost', 'alchemist_skel', 'harpy', 'dung_beetle'] },
   3: { unlockWave: 5, ids: ['mage', 'spider', 'fire_elem', 'bat', 'minotaur', 'basilisk', 'medusa', 'doppelganger', 'earth_elem', 'water_elem', 'beholder_spore', 'hell_hound'] },
   4: { unlockWave: 7, ids: ['captain', 'cultist', 'shadow', 'dragonid', 'drow', 'illithid', 'stone_golem', 'rust_monster', 'lich_minor', 'chimera', 'demon_berserker'] },
-  5: { unlockWave: 8, ids: ['rotgolem', 'dragonet', 'young_dragon', 'observer', 'death_knight', 'hydra_small', 'bone_colossus'] },
+  5: { unlockWave: 9, ids: ['rotgolem', 'dragonet', 'young_dragon', 'observer', 'death_knight', 'hydra_small', 'bone_colossus'] },
 };
 
 /* Спец-настройки спавна мимика (особый режим, отдельно от волн). */
@@ -1199,34 +1199,35 @@ window.BOSS_GUARDIANS_BY_BIOME = BOSS_GUARDIANS_BY_BIOME;
    ============================================================ */
 const WEAPON_CONFIGS = {
   // --- Существующие 4 ---
-  sword:    { baseDamage: 15, baseCooldown: 0.8,  type: 'melee'  },
-  bow:      { baseDamage: 12, baseCooldown: 1.2,  type: 'ranged' },
-  daggers:  { baseDamage: 6,  baseCooldown: 1.5,  type: 'multi'  },
-  fireball: { baseDamage: 20, baseCooldown: 2.5,  type: 'aoe'    },
+  // Шаг 19: нормализация DPS (melee ~18-22, ranged ~10-14, AoE ~8-12)
+  sword:    { baseDamage: 18, baseCooldown: 0.9,  type: 'melee'  },  // DPS 20
+  bow:      { baseDamage: 14, baseCooldown: 1.2,  type: 'ranged' },  // DPS 11.7
+  daggers:  { baseDamage: 7,  baseCooldown: 1.5,  type: 'multi'  },  // DPS 14 (3 daggers)
+  fireball: { baseDamage: 22, baseCooldown: 2.5,  type: 'aoe'    },  // DPS 8.8 (AoE)
 
-  // --- Категория 1: Ближний бой ---
-  axe:      { baseDamage: 22, baseCooldown: 1.0,  type: 'melee'  },
-  spear:    { baseDamage: 18, baseCooldown: 0.9,  type: 'melee'  },
-  hammer:   { baseDamage: 20, baseCooldown: 1.5,  type: 'melee'  },
-  whip:     { baseDamage: 14, baseCooldown: 0.7,  type: 'melee'  },
+  // --- Категория 1: Ближний бой (DPS ~18-22) ---
+  axe:      { baseDamage: 20, baseCooldown: 1.0,  type: 'melee'  },  // DPS 20
+  spear:    { baseDamage: 18, baseCooldown: 0.9,  type: 'melee'  },  // DPS 20
+  hammer:   { baseDamage: 30, baseCooldown: 1.5,  type: 'melee'  },  // DPS 20
+  whip:     { baseDamage: 14, baseCooldown: 0.7,  type: 'melee'  },  // DPS 20
 
-  // --- Категория 2: Дальний бой ---
-  crossbow:       { baseDamage: 28, baseCooldown: 1.8, type: 'ranged' },
-  throwing_axes:  { baseDamage: 10, baseCooldown: 1.0, type: 'ranged' },
-  darts:          { baseDamage: 6,  baseCooldown: 0.6, type: 'ranged' },
-  sling:          { baseDamage: 14, baseCooldown: 0.9, type: 'ranged' },
+  // --- Категория 2: Дальний бой (DPS ~10-14) ---
+  crossbow:       { baseDamage: 22, baseCooldown: 1.8, type: 'ranged' },  // DPS 12.2
+  throwing_axes:  { baseDamage: 10, baseCooldown: 1.0, type: 'ranged' },  // DPS 10
+  darts:          { baseDamage: 7,  baseCooldown: 0.6, type: 'ranged' },  // DPS 11.7
+  sling:          { baseDamage: 12, baseCooldown: 0.9, type: 'ranged' },  // DPS 13.3
 
-  // --- Категория 3: Магия ---
-  ice_arrow:      { baseDamage: 13, baseCooldown: 1.3, type: 'magic'  },
-  chain_lightning:{ baseDamage: 16, baseCooldown: 1.6, type: 'magic'  },
-  poison_cloud:   { baseDamage: 8,  baseCooldown: 2.0, type: 'magic'  },
-  spellbook:      { baseDamage: 10, baseCooldown: 0.8, type: 'magic'  },
+  // --- Категория 3: Магия (DPS ~10-14) ---
+  ice_arrow:      { baseDamage: 14, baseCooldown: 1.2, type: 'magic'  },  // DPS 11.7
+  chain_lightning:{ baseDamage: 18, baseCooldown: 1.5, type: 'magic'  },  // DPS 12
+  poison_cloud:   { baseDamage: 8,  baseCooldown: 2.0, type: 'magic'  },  // DPS 4 + DoT
+  spellbook:      { baseDamage: 10, baseCooldown: 0.8, type: 'magic'  },  // DPS 12.5
 
-  // --- Категория 4: AoE / Контроль ---
-  firestorm:      { baseDamage: 18, baseCooldown: 2.5, type: 'aoe'    },
-  holy_aura:      { baseDamage: 4,  baseCooldown: 0,   type: 'aoe'    }, // постоянное (без CD)
-  spike_ring:     { baseDamage: 14, baseCooldown: 0,   type: 'aoe'    }, // постоянное вращение
-  earthquake:     { baseDamage: 15, baseCooldown: 3.0, type: 'aoe'    },
+  // --- Категория 4: AoE / Контроль (DPS ~8-12) ---
+  firestorm:      { baseDamage: 22, baseCooldown: 2.5, type: 'aoe'    },  // DPS 8.8
+  holy_aura:      { baseDamage: 5,  baseCooldown: 0,   type: 'aoe'    },  // ~5 DPS constant
+  spike_ring:     { baseDamage: 12, baseCooldown: 0,   type: 'aoe'    },  // ~12 DPS constant
+  earthquake:     { baseDamage: 28, baseCooldown: 3.0, type: 'aoe'    },  // DPS 9.3
 };
 
 window.WEAPON_CONFIGS = WEAPON_CONFIGS;

@@ -492,9 +492,9 @@ ENEMY_TIERS[4].ids.push('dragon_wyrm', 'salamander', 'water_elem_large', 'air_el
 
 ENEMY_TIERS[5].ids.push('illithid_arcanist', 'rakshasa', 'iron_golem', 'star_spawn');
 
-// Новый тир 6 (волны 10+)
+// Новый тир 6 (волны 12+)
 ENEMY_TIERS[6] = {
-  unlockWave: 10,
+  unlockWave: 12,
   ids: ['ancient_dragon', 'kraken_tentacle', 'vampire_lord', 'demilich',
         'empyrean', 'beast_lord', 'titan_elem', 'night_walker'],
 };
