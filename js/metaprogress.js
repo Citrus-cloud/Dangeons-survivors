@@ -84,6 +84,8 @@ const MetaProgress = {
       unlockedExclusives: [],
       extraWeaponSlots: 0,
       extraAbilitySlots: 0,
+      achievements: [],
+      campaignCompleted: false,
     };
   },
 
@@ -299,6 +301,36 @@ const MetaProgress = {
   calcEndOfRunGold(collectedGold, playerLevel) {
     const levelBonus = playerLevel * 10;
     return collectedGold + levelBonus;
+  },
+
+  /* ---------- Кампания (Шаг 16) ---------- */
+
+  /** Проверить, завершена ли кампания. */
+  isCampaignCompleted() {
+    return this.data && this.data.campaignCompleted;
+  },
+
+  /** Отметить кампанию как завершённую. */
+  setCampaignCompleted() {
+    if (!this.data) return;
+    this.data.campaignCompleted = true;
+    this.save();
+  },
+
+  /** Добавить достижение (если ещё не получено). */
+  addAchievement(achievementId) {
+    if (!this.data) return false;
+    if (!this.data.achievements) this.data.achievements = [];
+    if (this.data.achievements.includes(achievementId)) return false;
+    this.data.achievements.push(achievementId);
+    this.save();
+    return true;
+  },
+
+  /** Проверить наличие достижения. */
+  hasAchievement(achievementId) {
+    if (!this.data || !this.data.achievements) return false;
+    return this.data.achievements.includes(achievementId);
   },
 };
 

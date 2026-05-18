@@ -60,7 +60,7 @@ const CONFIG = {
 
   XP: {
     BASE: 100,
-    GROWTH: 1.5,
+    GROWTH: 1.25,
     MAGNET_SPEED: 360,
   },
 
@@ -1148,6 +1148,44 @@ BOSS_CONFIG.REWARDS = {
   GUARDIAN_XP_MAX: 300,       // макс XP за стража
   EXCLUSIVE_DROP_CHANCE: 0.20, // шанс дропа эксклюзива
   REWARD_SCALE_PER_MAP: 0.20, // +20% за каждую карту после первой
+};
+
+/* ============================================================
+   Шаг 16: Древний дракон — финальный босс кампании.
+   3 фазы, уникальные атаки, эпичная финальная битва.
+   ============================================================ */
+BOSS_TYPES.boss_ancient_dragon = {
+  id: 'boss_ancient_dragon',
+  name: 'Древний дракон',
+  hp: 800,
+  speed: 45,
+  damage: 25,
+  xpReward: 600,
+  w: 60, h: 40,
+  color: '#cc3300',
+  stroke: '#ffd700',
+  shape: 'diamond',
+  letter: 'D',
+  hitInterval: 1.0,
+  // Фазы
+  phase2HpPct: 0.66,
+  phase3HpPct: 0.33,
+  // Атаки — фаза 1
+  attacks: {
+    fireBreath: { cooldown: 4.0, damage: 30, range: 140, arc: 90 },
+    dive: { cooldown: 6.0, damage: 25, speed: 350 },
+    summon: { cooldown: 8.0, count: 2, childId: 'fire_elem' },
+    // Фаза 2
+    lightningBreath: { cooldown: 5.0, damage: 35, range: 200, width: 30 },
+    roar: { cooldown: 10.0, damage: 0, radius: 180, slowPct: 0.40, duration: 1.0 },
+    summonDragonids: { cooldown: 7.0, count: 2, childId: 'dragonid' },
+    // Фаза 3
+    tailSwipe: { cooldown: 6.0, damage: 35, radius: 120, knockback: 80 },
+    deathExplosion: { damage: 60, radius: 200 },
+  },
+  // Специальные параметры
+  isCampaignOnly: true,
+  rewardMul: 2.0,
 };
 
 window.BOSS_CONFIG = BOSS_CONFIG;

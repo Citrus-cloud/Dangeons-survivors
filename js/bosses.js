@@ -279,7 +279,24 @@ const Bosses = {
      ============================================================ */
 
   _checkPhaseTransition(boss) {
-    if (!boss || boss.phase >= 2) return;
+    if (!boss || boss.phase >= 2) {
+      // Check phase 3 for Ancient Dragon
+      if (boss && boss.id === 'boss_ancient_dragon' && boss.phase === 2) {
+        const p3 = boss.cfg.phase3HpPct || 0.33;
+        if (boss.hp / boss.maxHp <= p3) {
+          boss.phase = 3;
+          if (window.Particles) {
+            Particles.ring(boss.x, boss.y, 80, 0.4, 'rgba(255, 0, 0, 0.9)', 5);
+            Particles.burst(boss.x, boss.y, 15, {
+              color: '#ff0000', speedMin: 80, speedMax: 200,
+              lifeMin: 0.4, lifeMax: 0.8, sizeMin: 3, sizeMax: 6,
+            });
+            Particles.text(boss.x, boss.y - 40, 'ФАЗА III — ЯРОСТЬ!', 2.0, '#ff0000', 18);
+          }
+        }
+      }
+      return;
+    }
     const cfg = boss.cfg;
     const threshold = cfg.phase2HpPct || 0.5;
     if (boss.hp / boss.maxHp <= threshold) {
@@ -338,6 +355,17 @@ const Bosses = {
       this._deathExplosionDamage(boss, cfg.attacks.deathExplosion.damage, cfg.attacks.deathExplosion.radius);
     }
 
+    // Древний дракон: взрыв при смерти + тряска + уведомление кампании
+    if (boss.id === 'boss_ancient_dragon' && !boss.deathExploded) {
+      boss.deathExploded = true;
+      this._deathExplosionDamage(boss, cfg.attacks.deathExplosion.damage, cfg.attacks.deathExplosion.radius);
+      this.screenShake = 1.0; // длительная тряска
+      // Уведомить кампанию
+      if (window.Campaign && Campaign.active) {
+        Campaign.onCampaignBossKilled();
+      }
+    }
+
     // Визуальные эффекты смерти
     const deathColor = cfg.color || '#fff';
     if (window.Particles) {
@@ -354,7 +382,14 @@ const Bosses = {
     this.defeatedMsg = BOSS_CONFIG.DEFEATED_MSG_DURATION;
 
     // Определяем, глобальный это или страж
-    if (boss.role === 'global') {
+    if (boss.role === 'campaign') {
+      // Кампания — не трогаем глобальную ротацию
+      setTimeout(() => { if (this.current === boss) this.current = null; }, 100);
+      // Уведомить кампанию (для боссов кроме дракона, у которого свой хендлер)
+      if (boss.id !== 'boss_ancient_dragon' && window.Campaign && Campaign.active) {
+        Campaign.onCampaignBossKilled();
+      }
+    } else if (boss.role === 'global') {
       this.bossIndex++;
       if (this.bossIndex < BOSS_CONFIG.SPAWN_TIMES.length) {
         this.nextSpawnTime = BOSS_CONFIG.SPAWN_TIMES[this.bossIndex];
@@ -544,6 +579,7 @@ const Bosses = {
       case 'boss_spider_matriarch':this._updateSpiderMatriarch(boss, player, dt); break;
       case 'boss_knight_commander':this._updateKnightCommander(boss, player, dt); break;
       case 'boss_shadow_dragon':   this._updateShadowDragon(boss, player, dt); break;
+      case 'boss_ancient_dragon':  this._updateAncientDragon(boss, player, dt); break;
     }
 
     // Контактный урон
@@ -1596,6 +1632,151 @@ const Bosses = {
     ctx.fillText('БОСС ПОВЕРЖЕН!', viewW / 2, viewH / 3);
     ctx.globalAlpha = 1;
     ctx.restore();
+  },
+
+  /* ============================================================
+     ДРЕВНИЙ ДРАКОН — финальный босс кампании (3 фазы)
+     ============================================================ */
+  _updateAncientDragon(boss, player, dt) {
+    const cfg = boss.cfg;
+    const atk = cfg.attacks;
+    const dx = player.x - boss.x, dy = player.y - boss.y;
+    const dist = Math.hypot(dx, dy) || 1;
+
+    // Инициализация кулдаунов
+    if (boss.breathCd === undefined) boss.breathCd = 2.0;
+    if (boss.specialCd === undefined) boss.specialCd = 4.0;
+    if (boss.summonCd === undefined) boss.summonCd = 6.0;
+    if (boss.fireRingCd === undefined) boss.fireRingCd = 8.0;
+    if (boss._diveCd === undefined) boss._diveCd = 5.0;
+    if (boss._roarCd === undefined) boss._roarCd = 8.0;
+    if (boss._tailCd === undefined) boss._tailCd = 5.0;
+    if (boss._lightningCd === undefined) boss._lightningCd = 4.0;
+
+    // Множитель кулдаунов по фазе
+    const cdMul = boss.phase >= 3 ? 0.5 : 1.0;
+
+    // Таймеры
+    boss.breathCd = Math.max(0, boss.breathCd - dt);
+    boss._diveCd = Math.max(0, boss._diveCd - dt);
+    boss.summonCd = Math.max(0, boss.summonCd - dt);
+    boss._roarCd = Math.max(0, boss._roarCd - dt);
+    boss._tailCd = Math.max(0, boss._tailCd - dt);
+    boss._lightningCd = Math.max(0, boss._lightningCd - dt);
+
+    // Движение: медленно преследует
+    this._moveTowards(boss, player.x, player.y, dt, 1);
+
+    // === ФАЗА 1 (100%-66%): Огонь и когти ===
+    // Огненное дыхание (конус)
+    if (boss.breathCd <= 0 && dist <= atk.fireBreath.range + 20) {
+      boss.breathCd = atk.fireBreath.cooldown * cdMul;
+      boss.breathAnim = 0.4;
+      if (this._inCone(boss, player, atk.fireBreath.arc)) {
+        const dmg = atk.fireBreath.damage * boss.difficultyMul;
+        if (Player.takeDamage) Player.takeDamage(player, dmg, boss);
+        else player.hp -= dmg;
+      }
+      if (window.Particles) {
+        const bAngle = Math.atan2(boss.facing.y, boss.facing.x);
+        for (let i = 0; i < 8; i++) {
+          const spread = (Math.random() - 0.5) * 1.2;
+          const spd = Utils.rand(100, 200);
+          Particles.burst(boss.x + boss.facing.x * 30, boss.y + boss.facing.y * 30, 3, {
+            color: '#ff4400', speedMin: spd, speedMax: spd + 50,
+            lifeMin: 0.3, lifeMax: 0.6, sizeMin: 3, sizeMax: 6,
+          });
+        }
+      }
+    }
+
+    // Пикирование (рывок к герою)
+    if (boss._diveCd <= 0 && dist > 80) {
+      boss._diveCd = atk.dive.cooldown * cdMul;
+      // Рывок
+      const nx = dx / dist, ny = dy / dist;
+      boss.x += nx * Math.min(dist - 30, 200);
+      boss.y += ny * Math.min(dist - 30, 200);
+      // Урон если оказались рядом
+      const newDist = Math.hypot(player.x - boss.x, player.y - boss.y);
+      if (newDist < 60) {
+        const dmg = atk.dive.damage * boss.difficultyMul;
+        if (Player.takeDamage) Player.takeDamage(player, dmg, boss);
+        else player.hp -= dmg;
+      }
+      if (window.Particles) {
+        Particles.burst(boss.x, boss.y, 8, {
+          color: '#ffd700', speedMin: 80, speedMax: 180,
+          lifeMin: 0.2, lifeMax: 0.5, sizeMin: 2, sizeMax: 4,
+        });
+      }
+    }
+
+    // Призыв огненных элементалей
+    if (boss.summonCd <= 0) {
+      const summonAtk = boss.phase >= 2 ? atk.summonDragonids : atk.summon;
+      boss.summonCd = summonAtk.cooldown * cdMul;
+      this._summonMinions(boss, summonAtk.childId, summonAtk.count);
+    }
+
+    // === ФАЗА 2 (66%-33%): Хаос стихий ===
+    if (boss.phase >= 2) {
+      // Молния (линия)
+      if (boss._lightningCd <= 0) {
+        boss._lightningCd = atk.lightningBreath.cooldown * cdMul;
+        // Стреляем молнией-снарядом
+        this._shootProjectile(boss, player, 'boss_bolt', atk.lightningBreath.damage, 350, {});
+        if (window.Particles) {
+          Particles.burst(boss.x + boss.facing.x * 20, boss.y + boss.facing.y * 20, 5, {
+            color: '#00ccff', speedMin: 100, speedMax: 200,
+            lifeMin: 0.2, lifeMax: 0.4, sizeMin: 2, sizeMax: 4,
+          });
+        }
+      }
+
+      // Крик дракона (AoE замедление)
+      if (boss._roarCd <= 0 && dist <= atk.roar.radius + 20) {
+        boss._roarCd = atk.roar.cooldown * cdMul;
+        if (dist <= atk.roar.radius) {
+          // Замедление
+          player.webSlow = Math.max(player.webSlow || 0, atk.roar.duration);
+        }
+        if (window.Particles) {
+          Particles.ring(boss.x, boss.y, atk.roar.radius, 0.5, 'rgba(128, 0, 255, 0.8)', 4);
+          Particles.text(boss.x, boss.y - 50, 'КРИК!', 1.0, '#a040ff', 16);
+        }
+      }
+    }
+
+    // === ФАЗА 3 (33%-0%): Ярость ===
+    if (boss.phase >= 3) {
+      // Удар хвостом (360° AoE)
+      if (boss._tailCd <= 0 && dist <= atk.tailSwipe.radius) {
+        boss._tailCd = atk.tailSwipe.cooldown * cdMul;
+        const dmg = atk.tailSwipe.damage * boss.difficultyMul;
+        if (Player.takeDamage) Player.takeDamage(player, dmg, boss);
+        else player.hp -= dmg;
+        // Отбрасывание
+        const kbx = dx / dist * atk.tailSwipe.knockback;
+        const kby = dy / dist * atk.tailSwipe.knockback;
+        player.x += kbx;
+        player.y += kby;
+        if (window.Particles) {
+          Particles.ring(boss.x, boss.y, atk.tailSwipe.radius, 0.3, 'rgba(255, 100, 0, 0.8)', 4);
+        }
+      }
+
+      // Комбо-дыхание (дополнительный огненный шар в фазе 3)
+      if (boss.breathCd <= atk.fireBreath.cooldown * cdMul * 0.5 && boss._diveCd > 2) {
+        // Огненный шар дополнительно
+        if (boss._extraFireball === undefined) boss._extraFireball = 0;
+        boss._extraFireball -= dt;
+        if (boss._extraFireball <= 0) {
+          boss._extraFireball = 2.0 * cdMul;
+          this._shootProjectile(boss, player, 'boss_fireball', 25, 200, { explodeRadius: 40 });
+        }
+      }
+    }
   },
 
   /** Рендер анонса имени босса при появлении. */
