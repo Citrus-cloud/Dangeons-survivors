@@ -488,9 +488,11 @@ const Game = {
     this.updateBuiltInMissile(dt);
 
     // Снаряды
-    const cam = GameMap.getCamera(this.player, this.viewW, this.viewH);
+    const camViewWUpdate = this.cameraViewW || this.viewW;
+    const camViewHUpdate = this.cameraViewH || this.viewH;
+    const cam = GameMap.getCamera(this.player, camViewWUpdate, camViewHUpdate);
     Projectiles.update(
-      this.projectiles, this.enemies, cam, this.viewW, this.viewH,
+      this.projectiles, this.enemies, cam, camViewWUpdate, camViewHUpdate,
       (e, dmg) => this.damageEnemy(e, dmg),
       dt
     );
@@ -1349,7 +1351,7 @@ const Game = {
       if (w && typeof w.renderOverlay === 'function') w.renderOverlay(ctx, this.player);
     }
 
-    Projectiles.render(ctx, this.projectiles, cam, this.viewW, this.viewH);
+    Projectiles.render(ctx, this.projectiles, cam, camViewW, camViewH);
 
     ctx.restore();
 
