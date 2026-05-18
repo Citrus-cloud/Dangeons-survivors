@@ -671,7 +671,6 @@ html, body {
 /* ----- Dialogue Overlay ----- */
 .dialogue-overlay {
   background: rgba(0, 0, 0, 0.85);
-  display: flex; align-items: center; justify-content: center;
 }
 .dialogue-panel {
   width: 90%; max-width: 500px;
@@ -705,7 +704,6 @@ html, body {
 /* ----- Victory Overlay ----- */
 .victory-overlay {
   background: rgba(0, 0, 0, 0.9);
-  display: flex; align-items: center; justify-content: center;
 }
 .victory-panel {
   width: 90%; max-width: 450px;
@@ -799,4 +797,86 @@ html, body {
 }
 .trap-warning.visible {
   opacity: 1;
+}
+
+
+
+/* ============================================================
+   Шаг 18: Settings (Audio) styles
+   ============================================================ */
+.settings-overlay {
+  background: rgba(10, 10, 20, 0.94);
+}
+.settings-panel {
+  width: 100%; max-width: 400px;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 16px; padding: 24px;
+  background: #1a1a2a;
+  border: 2px solid #555;
+  border-radius: 10px;
+}
+.settings-title {
+  font-size: 20px; color: #ccc;
+  margin-bottom: 8px;
+}
+.settings-section {
+  width: 100%;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.settings-row {
+  display: flex; align-items: center; gap: 10px;
+}
+.settings-row-btn {
+  justify-content: center;
+  margin-top: 8px;
+}
+.settings-label {
+  font-size: 14px; color: #ddd;
+  min-width: 80px;
+}
+.settings-slider {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #333;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+.settings-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #2980d9;
+  border: 2px solid #fff;
+  cursor: pointer;
+}
+.settings-slider::-moz-range-thumb {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #2980d9;
+  border: 2px solid #fff;
+  cursor: pointer;
+}
+.settings-value {
+  font-size: 13px; color: #aaa;
+  min-width: 40px; text-align: right;
+}
+.settings-mute-btn {
+  padding: 10px 20px;
+  font-size: 14px;
+  background: #2a5a2a;
+  border-color: #4caf50;
+  margin-top: 0;
+}
+.settings-mute-btn:hover { background: #3a7a3a; }
+.settings-mute-btn.muted {
+  background: #5a2a2a;
+  border-color: #e74c3c;
+}
+.settings-mute-btn.muted:hover { background: #7a3a3a; }
+.settings-footer {
+  margin-top: 8px;
 }
