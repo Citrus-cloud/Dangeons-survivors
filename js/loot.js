@@ -401,3 +401,73 @@ window.createGold = createGold;
 window.GOLD_CONFIG = GOLD_CONFIG;
 window.Loot = Loot;
 window.Chest = Chest;
+
+/* ============================================================
+   Шаг 17: Сундук-мимик (Mimic Chest).
+   При броске d20 = 1..5, обычный сундук превращается в мимика.
+   ============================================================ */
+const MimicChest = {
+  /**
+   * Проверить, должен ли сундук стать мимиком.
+   * @param {number} roll — результат броска d20
+   * @param {boolean} isSecret — секретный/загадочный сундук?
+   * @returns {boolean}
+   */
+  shouldBeMimic(roll, isSecret) {
+    if (!window.STEP17_CONFIG) return false;
+    const cfg = STEP17_CONFIG.MIMIC_CHEST;
+    if (isSecret) {
+      return Math.random() < cfg.SECRET_CHEST_MIMIC_CHANCE;
+    }
+    return roll <= cfg.MIMIC_ROLL_MAX;
+  },
+
+  /**
+   * Спавнить мимиков из сундука (1 основной + 1-2 доп в засаде).
+   * @param {object} player
+   * @param {number} chestX, chestY — позиция сундука
+   */
+  spawnMimics(player, chestX, chestY) {
+    if (!window.Enemies || !window.Game || !Game.enemies) return;
+    const cfg = STEP17_CONFIG.MIMIC_CHEST;
+
+    // Основной мимик (усиленный)
+    const mainMimic = Enemies.spawnByType(Game.enemies, 'mimic', chestX, chestY);
+    if (mainMimic) {
+      mainMimic.hp = Math.round(mainMimic.hp * (1 + cfg.HP_BONUS));
+      mainMimic.maxHp = mainMimic.hp;
+      if (mainMimic.cfg) {
+        mainMimic._originalDamage = mainMimic.cfg.damage;
+        // Увеличиваем урон через пометку (используется в Enemies.update)
+        mainMimic._mimicDmgMul = 1 + cfg.DAMAGE_BONUS;
+      }
+      mainMimic._mimicChestRewardMul = cfg.REWARD_MULTIPLIER;
+    }
+
+    // Дополнительные мимики (засада: 1-2 шт)
+    const extraCount = 1 + Math.floor(Math.random() * cfg.EXTRA_MIMICS);
+    for (let i = 0; i < extraCount; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const dist = 60 + Math.random() * 40;
+      const ex = chestX + Math.cos(ang) * dist;
+      const ey = chestY + Math.sin(ang) * dist;
+      const extra = Enemies.spawnByType(Game.enemies, 'mimic', ex, ey);
+      if (extra) {
+        extra.hp = Math.round(extra.hp * (1 + cfg.HP_BONUS * 0.5));
+        extra.maxHp = extra.hp;
+      }
+    }
+
+    // Визуальный эффект трансформации
+    if (window.Particles) {
+      Particles.burst(chestX, chestY, 8, {
+        color: '#ff3333', speedMin: 60, speedMax: 160,
+        lifeMin: 0.3, lifeMax: 0.6, sizeMin: 3, sizeMax: 6,
+      });
+      Particles.text(chestX, chestY - 30, 'МИМИК!', 1.5, '#ff3333', 16);
+    }
+  },
+};
+
+window.MimicChest = MimicChest;
+

@@ -1648,3 +1648,104 @@ window.BIOMES = BIOMES;
 window.BIOME_TRAP_CONFIG = BIOME_TRAP_CONFIG;
 window.PORTAL_CONFIG = PORTAL_CONFIG;
 window.INFINITE_MODE = INFINITE_MODE;
+
+
+/* ============================================================
+   STEP17_CONFIG — Шаг 17: параметры новых загадок и ловушек.
+   ============================================================ */
+const STEP17_CONFIG = {
+  /* ---------- Руны активации (RunePuzzle) ---------- */
+  RUNE_PUZZLE: {
+    INTERACT_RADIUS: 40,    // расстояние для активации руны
+    ERROR_DAMAGE: 10,       // урон при ошибке
+    ERROR_SPAWN_COUNT: 1,   // врагов призывается при ошибке
+    RUNE_SIZE: 30,          // визуальный размер руны
+    // Количество рун по номеру карты кампании
+    RUNES_BY_MAP: { 1: 3, 2: 3, 3: 4, 4: 4, 5: 5 },
+  },
+
+  /* ---------- Плиты-шифр (FloorPuzzle) ---------- */
+  FLOOR_PUZZLE: {
+    PLATE_SIZE: 40,         // размер плиты
+    ERROR_DAMAGE: 5,        // урон при неправильной плите
+    ERROR_SPAWN_COUNT: 1,   // врагов призывается при ошибке
+    // Количество плит / длина шифра по номеру карты
+    PLATES_BY_MAP: { 1: { plates: 4, seq: 3 }, 2: { plates: 5, seq: 3 }, 3: { plates: 5, seq: 4 }, 4: { plates: 6, seq: 4 }, 5: { plates: 6, seq: 4 } },
+  },
+
+  /* ---------- Катящийся валун (Boulder) ---------- */
+  BOULDER: {
+    RADIUS: 18,             // радиус валуна (px)
+    DAMAGE: 25,             // урон при столкновении
+    KNOCKBACK: 80,          // отбрасывание (px)
+    IDLE_TIME: 3.0,         // покой (секунды)
+    WARN_TIME: 0.5,         // предупреждение (секунды)
+    ROLL_SPEED: 220,        // скорость движения (px/sec)
+    MIN_CORRIDOR_LEN: 150,  // мин. длина коридора для размещения
+    MAX_PER_MAP: 3,         // максимум на карту
+  },
+
+  /* ---------- Исчезающая платформа (VanishingPlatform) ---------- */
+  VANISHING_PLATFORM: {
+    SIZE: 80,               // 80×80 px
+    SOLID_TIME: 3.0,        // платформа цела (секунды)
+    FLICKER_TIME: 1.0,      // мерцание (секунды)
+    GONE_TIME: 1.5,         // исчезла (секунды)
+    DAMAGE: 15,             // урон при падении героя
+    ENEMY_DAMAGE: 20,       // урон врагам
+    STUN_DURATION: 0.5,     // оглушение героя (секунды)
+    MAX_PER_MAP: 2,         // максимум на карту
+  },
+
+  /* ---------- Магическая руна на полу (MagicFloorRune) ---------- */
+  MAGIC_FLOOR_RUNE: {
+    RADIUS: 15,             // визуальный радиус
+    TRIGGER_RADIUS: 20,     // радиус срабатывания
+    FIRE_DAMAGE: 20,        // урон руны огня
+    FIRE_EXPLOSION_RADIUS: 60, // радиус взрыва
+    ICE_DAMAGE: 10,         // урон руны льда
+    ICE_SLOW_PCT: 0.50,     // замедление (50%)
+    ICE_SLOW_DURATION: 3.0, // длительность замедления
+    DARK_SPAWN_COUNT: 2,    // количество призванных врагов
+    HEAL_AMOUNT: 15,        // количество лечения
+    HEAL_CHANCE: 0.10,      // шанс руны лечения (10%)
+    MIN_PER_MAP: 4,         // минимум на карту
+    MAX_PER_MAP: 8,         // максимум на карту
+  },
+
+  /* ---------- Сундуки-мимики (Mimic Chest) ---------- */
+  MIMIC_CHEST: {
+    MIMIC_ROLL_MAX: 5,      // бросок 1-5 = мимик
+    EXTRA_MIMICS: 1,        // дополнительных мимиков в засаде (1-2)
+    HP_BONUS: 0.30,         // +30% HP мимика из сундука
+    DAMAGE_BONUS: 0.30,     // +30% урона мимика из сундука
+    REWARD_MULTIPLIER: 2.0, // удвоенная награда за убийство
+    SECRET_CHEST_MIMIC_CHANCE: 0.01, // 1% для секретных сундуков
+    TRANSFORM_TIME: 0.5,    // время трансформации (секунды)
+  },
+
+  /* ---------- Генерация — сколько загадок/ловушек на карту ---------- */
+  GENERATION: {
+    // Бесконечный режим
+    INFINITE: {
+      PUZZLES_MIN: 1,       // минимум загадок (рандомно rune/floor/lever)
+      PUZZLES_MAX: 2,
+      BOULDERS_MIN: 0,
+      BOULDERS_MAX: 2,
+      PLATFORMS_MIN: 1,
+      PLATFORMS_MAX: 2,
+      MAGIC_RUNES_MIN: 4,
+      MAGIC_RUNES_MAX: 8,
+    },
+    // Кампания (по картам)
+    CAMPAIGN: {
+      1: { puzzles: ['lever'], boulders: 1, platforms: 0, magicRunes: 3 },
+      2: { puzzles: ['floor_puzzle'], boulders: 0, platforms: 1, magicRunes: 3 },
+      3: { puzzles: [], boulders: 2, platforms: 0, magicRunes: 4 },
+      4: { puzzles: ['rune_puzzle'], boulders: 0, platforms: 0, magicRunes: 4 },
+      5: { puzzles: [], boulders: 1, platforms: 2, magicRunes: 3 },
+    },
+  },
+};
+
+window.STEP17_CONFIG = STEP17_CONFIG;

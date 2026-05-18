@@ -973,6 +973,126 @@ const UI = {
       this._mapNameEl.classList.remove('visible');
     }, 3000);
   },
+
+  /* ============================================================
+     Шаг 17: HUD-индикаторы для загадок и ловушек
+     ============================================================ */
+
+  /** Показать подсказку загадки в нижней части экрана (при приближении). */
+  renderPuzzleHints(ctx, player, viewW, viewH) {
+    if (!window.GameMap || !GameMap.dungeon || !player) return;
+
+    // Руновые загадки — показываем прогресс если рядом
+    if (GameMap.dungeon.runePuzzles) {
+      for (const puzzle of GameMap.dungeon.runePuzzles) {
+        if (puzzle.solved) continue;
+        // Проверяем, в комнате ли игрок
+        const room = puzzle.room;
+        if (player.x >= room.x && player.x <= room.x + room.w &&
+            player.y >= room.y && player.y <= room.y + room.h) {
+          this._renderPuzzleProgress(ctx, viewW, viewH, puzzle, 'Руны активации');
+          break;
+        }
+      }
+    }
+
+    // Плиты-шифры
+    if (GameMap.dungeon.floorPuzzles) {
+      for (const puzzle of GameMap.dungeon.floorPuzzles) {
+        if (puzzle.solved) continue;
+        const room = puzzle.room;
+        if (player.x >= room.x && player.x <= room.x + room.w &&
+            player.y >= room.y && player.y <= room.y + room.h) {
+          this._renderPuzzleProgress(ctx, viewW, viewH, puzzle, 'Шифр');
+          break;
+        }
+      }
+    }
+  },
+
+  /** Отрисовать полоску прогресса загадки внизу экрана. */
+  _renderPuzzleProgress(ctx, viewW, viewH, puzzle, label) {
+    const seq = puzzle.sequence;
+    const current = puzzle.currentStep;
+    const total = seq.length;
+
+    const barW = Math.min(300, total * 50);
+    const barH = 36;
+    const bx = (viewW - barW) / 2;
+    const by = viewH - 60;
+
+    // Фон
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(bx - 10, by - 8, barW + 20, barH + 16);
+    ctx.strokeStyle = 'rgba(200, 180, 255, 0.5)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(bx - 10, by - 8, barW + 20, barH + 16);
+
+    // Заголовок
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.font = '10px ui-monospace, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(label + ' (' + current + '/' + total + ')', viewW / 2, by - 4);
+
+    // Символы последовательности
+    const slotW = barW / total;
+    for (let i = 0; i < total; i++) {
+      const sx = bx + i * slotW + slotW / 2;
+      const sy = by + barH / 2 + 4;
+
+      if (i < current) {
+        // Выполнено — зелёный
+        ctx.fillStyle = '#00ff88';
+      } else if (i === current) {
+        // Текущий — белый пульсирующий
+        ctx.fillStyle = '#ffffff';
+      } else {
+        // Будущий — серый
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      }
+
+      ctx.font = 'bold 16px ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(seq[i].label, sx, sy);
+
+      // Стрелка (если не последний)
+      if (i < total - 1) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.font = '12px ui-monospace, monospace';
+        ctx.fillText('\u203A', sx + slotW / 2, sy);
+      }
+    }
+
+    // Подсказка о failed
+    if (puzzle.failed) {
+      ctx.fillStyle = 'rgba(255, 50, 50, 0.9)';
+      ctx.font = 'bold 12px ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText('Неверно! Сброс...', viewW / 2, by + barH + 12);
+    }
+  },
+
+  /** Показать предупреждение о ловушке (валун и т.д.) — кратковременное сообщение. */
+  showTrapWarning(message, color) {
+    if (!this._trapWarnEl) {
+      const el = document.createElement('div');
+      el.id = 'trapWarning';
+      el.className = 'trap-warning';
+      document.body.appendChild(el);
+      this._trapWarnEl = el;
+    }
+    this._trapWarnEl.textContent = message;
+    this._trapWarnEl.style.color = color || '#ff6633';
+    this._trapWarnEl.classList.add('visible');
+    clearTimeout(this._trapWarnTimer);
+    this._trapWarnTimer = setTimeout(() => {
+      this._trapWarnEl.classList.remove('visible');
+    }, 2000);
+  },
 };
 
 window.UI = UI;
+

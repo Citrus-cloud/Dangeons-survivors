@@ -252,6 +252,12 @@ const GameMap = {
     // 10) Кеш пола (Шаг 13: биом-зависимые цвета)
     this._buildFloorCache(dungeon, biome);
 
+    // Шаг 17: размещаем новые загадки и ловушки
+    const isCampaign = !!(window.Campaign && Campaign.active);
+    if (GameMap._placeStep17Objects) {
+      GameMap._placeStep17Objects(dungeon, mapNumber, isCampaign);
+    }
+
     this.dungeon = dungeon;
     return dungeon;
   },
@@ -1200,6 +1206,9 @@ const GameMap = {
         door._gridCleared = true;
       }
     }
+
+    // Шаг 17: обновить загадки и ловушки
+    if (GameMap.updateStep17) GameMap.updateStep17(dt, player);
   },
 
   _updateSpikeTrap(t, dt, player) {
@@ -1428,6 +1437,9 @@ const GameMap = {
 
     // Ловушки (под факелами, чтобы факелы перекрывали)
     this._renderTraps(ctx, cam, viewW, viewH);
+
+    // Шаг 17: новые загадки и ловушки
+    if (GameMap.renderStep17) GameMap.renderStep17(ctx, cam, viewW, viewH);
 
     // Декор: факелы (с пульсирующим свечением)
     this._renderTorches(ctx, cam, viewW, viewH);
@@ -2549,6 +2561,338 @@ GameMap.renderCampaignObjects = function(ctx, cam, viewW, viewH) {
         ctx.fillText('♦', obj.x, obj.y);
       }
     }
+  }
+};
+
+/* ============================================================
+   ШАГ 17: Интеграция новых загадок и ловушек в генерацию и цикл.
+   ============================================================ */
+
+/**
+ * Разместить новые загадки и ловушки (Шаг 17) после генерации подземелья.
+ * Вызывается в конце generateDungeon().
+ */
+GameMap._placeStep17Objects = function(dungeon, mapNumber, isCampaign) {
+  if (!window.STEP17_CONFIG) return;
+
+  // Инициализируем массивы
+  dungeon.runePuzzles = [];
+  dungeon.floorPuzzles = [];
+  dungeon.boulders = [];
+  dungeon.vanishingPlatforms = [];
+  dungeon.magicFloorRunes = [];
+
+  const cfg = STEP17_CONFIG;
+  let genCfg;
+
+  if (isCampaign && cfg.GENERATION.CAMPAIGN[mapNumber]) {
+    genCfg = cfg.GENERATION.CAMPAIGN[mapNumber];
+    if (genCfg.puzzles) {
+      for (const pType of genCfg.puzzles) {
+        if (pType === 'rune_puzzle') GameMap._placeRunePuzzle(dungeon, mapNumber);
+        else if (pType === 'floor_puzzle') GameMap._placeFloorPuzzle(dungeon, mapNumber);
+      }
+    }
+    GameMap._placeBoulders(dungeon, genCfg.boulders || 0);
+    GameMap._placeVanishingPlatforms(dungeon, genCfg.platforms || 0);
+    GameMap._placeMagicFloorRunes(dungeon, genCfg.magicRunes || 0);
+  } else {
+    genCfg = cfg.GENERATION.INFINITE;
+    const puzzleCount = Utils.randInt(genCfg.PUZZLES_MIN, genCfg.PUZZLES_MAX);
+    for (let i = 0; i < puzzleCount; i++) {
+      const roll = Math.random();
+      if (roll < 0.4) GameMap._placeRunePuzzle(dungeon, mapNumber);
+      else if (roll < 0.8) GameMap._placeFloorPuzzle(dungeon, mapNumber);
+    }
+    GameMap._placeBoulders(dungeon, Utils.randInt(genCfg.BOULDERS_MIN, genCfg.BOULDERS_MAX));
+    GameMap._placeVanishingPlatforms(dungeon, Utils.randInt(genCfg.PLATFORMS_MIN, genCfg.PLATFORMS_MAX));
+    GameMap._placeMagicFloorRunes(dungeon, Utils.randInt(genCfg.MAGIC_RUNES_MIN, genCfg.MAGIC_RUNES_MAX));
+  }
+};
+
+GameMap._placeRunePuzzle = function(dungeon, mapNumber) {
+  if (!window.RunePuzzle) return;
+  const candidates = dungeon.rooms.filter(r => !r.isStart && !r.isSecret && !r.isPuzzle && r.w >= 200 && r.h >= 150);
+  if (candidates.length === 0) return;
+  const room = candidates[Math.floor(Math.random() * candidates.length)];
+  room.isPuzzle = true;
+  const runeCount = (STEP17_CONFIG.RUNE_PUZZLE.RUNES_BY_MAP[mapNumber]) || 4;
+  const puzzle = RunePuzzle.create(room, runeCount);
+  dungeon.runePuzzles.push(puzzle);
+};
+
+GameMap._placeFloorPuzzle = function(dungeon, mapNumber) {
+  if (!window.FloorPuzzle) return;
+  const candidates = dungeon.rooms.filter(r => !r.isStart && !r.isSecret && !r.isPuzzle && r.w >= 200 && r.h >= 150);
+  if (candidates.length === 0) return;
+  const room = candidates[Math.floor(Math.random() * candidates.length)];
+  room.isPuzzle = true;
+  const plateCfg = (STEP17_CONFIG.FLOOR_PUZZLE.PLATES_BY_MAP[mapNumber]) || { plates: 5, seq: 3 };
+  const puzzle = FloorPuzzle.create(room, plateCfg.plates, plateCfg.seq);
+  dungeon.floorPuzzles.push(puzzle);
+};
+
+GameMap._placeBoulders = function(dungeon, count) {
+  if (!window.Boulder || count <= 0) return;
+  const cfg = STEP17_CONFIG.BOULDER;
+  const suitableCorridors = dungeon.corridors.filter(c => Math.max(c.w, c.h) >= cfg.MIN_CORRIDOR_LEN);
+  if (suitableCorridors.length === 0) return;
+  const maxBoulders = Math.min(count, cfg.MAX_PER_MAP, suitableCorridors.length);
+  const shuffled = suitableCorridors.slice();
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  for (let i = 0; i < maxBoulders; i++) {
+    dungeon.boulders.push(Boulder.create(shuffled[i]));
+  }
+};
+
+GameMap._placeVanishingPlatforms = function(dungeon, count) {
+  if (!window.VanishingPlatform || count <= 0) return;
+  const cfg = STEP17_CONFIG.VANISHING_PLATFORM;
+  const maxPlat = Math.min(count, cfg.MAX_PER_MAP);
+  const candidates = dungeon.rooms.filter(r => !r.isStart && !r.isSecret && r.w >= 200 && r.h >= 150);
+  if (candidates.length === 0) return;
+  let placed = 0;
+  for (let attempt = 0; attempt < 50 && placed < maxPlat; attempt++) {
+    const room = candidates[Math.floor(Math.random() * candidates.length)];
+    const x = room.x + 60 + Math.random() * (room.w - 120 - cfg.SIZE);
+    const y = room.y + 60 + Math.random() * (room.h - 120 - cfg.SIZE);
+    let ok = true;
+    for (const p of dungeon.pillars) {
+      if (GameMap._rectsOverlap(x, y, cfg.SIZE, cfg.SIZE, p.x - 10, p.y - 10, p.w + 20, p.h + 20)) {
+        ok = false; break;
+      }
+    }
+    if (!ok) continue;
+    dungeon.vanishingPlatforms.push(VanishingPlatform.create(x, y));
+    placed++;
+  }
+};
+
+GameMap._placeMagicFloorRunes = function(dungeon, count) {
+  if (!window.MagicFloorRune || count <= 0) return;
+  const candidates = dungeon.rooms.filter(r => !r.isStart && !r.isSecret);
+  if (candidates.length === 0) return;
+  let placed = 0;
+  for (let attempt = 0; attempt < 100 && placed < count; attempt++) {
+    const room = candidates[Math.floor(Math.random() * candidates.length)];
+    const x = room.x + 40 + Math.random() * (room.w - 80);
+    const y = room.y + 40 + Math.random() * (room.h - 80);
+    let ok = true;
+    for (const rune of dungeon.magicFloorRunes) {
+      const dx = x - rune.x, dy = y - rune.y;
+      if (dx * dx + dy * dy < 60 * 60) { ok = false; break; }
+    }
+    if (!ok) continue;
+    dungeon.magicFloorRunes.push(MagicFloorRune.create(x, y));
+    placed++;
+  }
+};
+
+/** Обновить объекты Шага 17 (вызывается из GameMap.update). */
+GameMap.updateStep17 = function(dt, player) {
+  if (!this.dungeon || !player) return;
+
+  if (this.dungeon.runePuzzles) {
+    for (const puzzle of this.dungeon.runePuzzles) {
+      const ev = RunePuzzle.update(puzzle, player, dt);
+      if (ev) GameMap._handlePuzzleEvent(ev, player);
+    }
+  }
+  if (this.dungeon.floorPuzzles) {
+    for (const puzzle of this.dungeon.floorPuzzles) {
+      const ev = FloorPuzzle.update(puzzle, player, dt);
+      if (ev) GameMap._handlePuzzleEvent(ev, player);
+    }
+  }
+  if (this.dungeon.boulders) {
+    const enemies = (window.Game && Game.enemies) ? Game.enemies : null;
+    for (const boulder of this.dungeon.boulders) {
+      const ev = Boulder.update(boulder, player, enemies, dt);
+      if (ev && ev.type === 'hit_player') {
+        player.hp -= ev.damage;
+        player.x += ev.knockX;
+        player.y += ev.knockY;
+        player.x = Utils.clamp(player.x, 20, GameMap.mapW - 20);
+        player.y = Utils.clamp(player.y, 20, GameMap.mapH - 20);
+        if (window.Particles) {
+          Particles.burst(player.x, player.y, 6, {
+            color: '#aaaaaa', speedMin: 60, speedMax: 140,
+            lifeMin: 0.2, lifeMax: 0.4, sizeMin: 3, sizeMax: 5,
+          });
+        }
+      }
+    }
+  }
+  if (this.dungeon.vanishingPlatforms) {
+    const enemies = (window.Game && Game.enemies) ? Game.enemies : null;
+    for (const plat of this.dungeon.vanishingPlatforms) {
+      const ev = VanishingPlatform.update(plat, player, enemies, dt);
+      if (ev && ev.type === 'player_fell') {
+        player.hp -= ev.damage;
+        const safePos = GameMap._findSafePosition(player.x, player.y, plat);
+        if (safePos) { player.x = safePos.x; player.y = safePos.y; }
+        player._stunTimer = ev.stunDuration;
+        if (window.Particles) {
+          Particles.burst(player.x, player.y, 4, {
+            color: '#333333', speedMin: 40, speedMax: 100,
+            lifeMin: 0.3, lifeMax: 0.5, sizeMin: 2, sizeMax: 4,
+          });
+        }
+      }
+    }
+  }
+  if (this.dungeon.magicFloorRunes) {
+    for (const rune of this.dungeon.magicFloorRunes) {
+      const ev = MagicFloorRune.update(rune, player, dt);
+      if (ev) GameMap._handleMagicRuneEvent(ev, player);
+    }
+  }
+};
+
+GameMap._handlePuzzleEvent = function(event, player) {
+  if (event.type === 'solved') {
+    if (window.Game && !event.puzzle.rewardSpawned) {
+      event.puzzle.rewardSpawned = true;
+      const room = event.puzzle.room;
+      const c = Chest.create();
+      c.x = room.cx; c.y = room.cy + 30;
+      c.guaranteedRare = true;
+      if (window.Particles) Particles.chestGlow(c.x, c.y);
+      Game.secretChest = c;
+      if (window.Particles) {
+        Particles.burst(c.x, c.y, 10, { color: '#ffd700', speedMin: 60, speedMax: 160, lifeMin: 0.4, lifeMax: 0.8, sizeMin: 3, sizeMax: 6 });
+        Particles.text(player.x, player.y - 40, 'ЗАГАДКА РЕШЕНА!', 1.5, '#ffd700', 14);
+      }
+    }
+  } else if (event.type === 'error') {
+    player.hp -= event.damage || 5;
+    if (window.Particles) {
+      Particles.burst(player.x, player.y, 4, { color: '#ff3333', speedMin: 40, speedMax: 100, lifeMin: 0.2, lifeMax: 0.4, sizeMin: 2, sizeMax: 4 });
+      Particles.text(player.x, player.y - 30, 'ОШИБКА!', 1.0, '#ff3333', 12);
+    }
+    if (window.Enemies && window.Game && Game.enemies) {
+      const count = event.damage >= 10 ? 2 : 1;
+      for (let i = 0; i < count; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const dist = 80 + Math.random() * 40;
+        Enemies.spawnByType(Game.enemies, 'skeleton', player.x + Math.cos(ang) * dist, player.y + Math.sin(ang) * dist);
+      }
+    }
+  }
+};
+
+GameMap._handleMagicRuneEvent = function(event, player) {
+  switch (event.type) {
+    case 'fire': {
+      const dx = player.x - event.x, dy = player.y - event.y;
+      if (dx * dx + dy * dy <= event.radius * event.radius) player.hp -= event.damage;
+      if (window.Game && Game.enemies) {
+        const items = Game.enemies.items;
+        for (let i = 0; i < items.length; i++) {
+          const e = items[i];
+          if (!e.active) continue;
+          const edx = e.x - event.x, edy = e.y - event.y;
+          if (edx * edx + edy * edy <= event.radius * event.radius) {
+            e.hp -= event.damage;
+            if (e.hp <= 0) Game.killEnemy(e);
+          }
+        }
+      }
+      if (window.Particles) Particles.burst(event.x, event.y, 12, { color: '#ff4400', speedMin: 80, speedMax: 200, lifeMin: 0.3, lifeMax: 0.6, sizeMin: 3, sizeMax: 6 });
+      break;
+    }
+    case 'ice': {
+      const dx = player.x - event.x, dy = player.y - event.y;
+      if (dx * dx + dy * dy <= 60 * 60) {
+        player.hp -= event.damage;
+        player._iceSlow = event.slowPct;
+        player._iceSlowTimer = event.slowDuration;
+      }
+      if (window.Particles) Particles.burst(event.x, event.y, 8, { color: '#44aaff', speedMin: 60, speedMax: 140, lifeMin: 0.3, lifeMax: 0.5, sizeMin: 2, sizeMax: 5 });
+      break;
+    }
+    case 'dark': {
+      if (window.Enemies && window.Game && Game.enemies) {
+        const biome = GameMap.currentBiome;
+        const pool = biome && biome.enemyTypes ? biome.enemyTypes : ['skeleton'];
+        for (let i = 0; i < event.spawnCount; i++) {
+          const ang = Math.random() * Math.PI * 2;
+          const dist = 40 + Math.random() * 30;
+          const typeId = pool[Math.floor(Math.random() * Math.min(5, pool.length))];
+          Enemies.spawnByType(Game.enemies, typeId, event.x + Math.cos(ang) * dist, event.y + Math.sin(ang) * dist);
+        }
+      }
+      if (window.Particles) Particles.burst(event.x, event.y, 8, { color: '#9933ff', speedMin: 50, speedMax: 120, lifeMin: 0.3, lifeMax: 0.6, sizeMin: 3, sizeMax: 5 });
+      break;
+    }
+    case 'teleport': {
+      const safePos = GameMap._findRandomSafePosition();
+      if (safePos) { player.x = safePos.x; player.y = safePos.y; }
+      if (window.Particles) {
+        Particles.burst(event.x, event.y, 10, { color: '#ffdd00', speedMin: 80, speedMax: 200, lifeMin: 0.3, lifeMax: 0.6, sizeMin: 2, sizeMax: 5 });
+        Particles.burst(player.x, player.y, 10, { color: '#ffdd00', speedMin: 80, speedMax: 200, lifeMin: 0.3, lifeMax: 0.6, sizeMin: 2, sizeMax: 5 });
+      }
+      break;
+    }
+    case 'heal': {
+      player.hp = Math.min(player.maxHp, player.hp + event.amount);
+      if (window.Particles) {
+        Particles.burst(event.x, event.y, 8, { color: '#33ff66', speedMin: 40, speedMax: 100, lifeMin: 0.4, lifeMax: 0.7, sizeMin: 2, sizeMax: 4 });
+        Particles.text(player.x, player.y - 30, '+' + event.amount + ' HP', 1.0, '#33ff66', 12);
+      }
+      break;
+    }
+  }
+};
+
+GameMap._findSafePosition = function(x, y, platform) {
+  const offsets = [
+    { x: -platform.w - 20, y: 0 }, { x: platform.w + 20, y: 0 },
+    { x: 0, y: -platform.h - 20 }, { x: 0, y: platform.h + 20 },
+  ];
+  for (const off of offsets) {
+    const nx = x + off.x, ny = y + off.y;
+    if (nx > 20 && nx < GameMap.mapW - 20 && ny > 20 && ny < GameMap.mapH - 20) {
+      if (GameMap.dungeon && GameMap.dungeon.grid) {
+        const cs = GameMap.dungeon.cellSize;
+        const gx = Math.floor(nx / cs), gy = Math.floor(ny / cs);
+        if (gx >= 0 && gx < GameMap.dungeon.gridW && gy >= 0 && gy < GameMap.dungeon.gridH) {
+          if (GameMap.dungeon.grid[gy * GameMap.dungeon.gridW + gx] === 1) return { x: nx, y: ny };
+        }
+      } else return { x: nx, y: ny };
+    }
+  }
+  return { x, y: y - 40 };
+};
+
+GameMap._findRandomSafePosition = function() {
+  if (!GameMap.dungeon || !GameMap.dungeon.rooms) return null;
+  const rooms = GameMap.dungeon.rooms.filter(r => !r.isSecret);
+  if (rooms.length === 0) return null;
+  const room = rooms[Math.floor(Math.random() * rooms.length)];
+  return { x: room.x + 40 + Math.random() * (room.w - 80), y: room.y + 40 + Math.random() * (room.h - 80) };
+};
+
+/** Отрисовать объекты Шага 17 (вызывается из GameMap.render). */
+GameMap.renderStep17 = function(ctx, cam, viewW, viewH) {
+  if (!this.dungeon) return;
+  if (this.dungeon.magicFloorRunes) {
+    for (const rune of this.dungeon.magicFloorRunes) MagicFloorRune.render(ctx, rune, cam, viewW, viewH);
+  }
+  if (this.dungeon.vanishingPlatforms) {
+    for (const plat of this.dungeon.vanishingPlatforms) VanishingPlatform.render(ctx, plat, cam, viewW, viewH);
+  }
+  if (this.dungeon.runePuzzles) {
+    for (const puzzle of this.dungeon.runePuzzles) RunePuzzle.render(ctx, puzzle, cam, viewW, viewH);
+  }
+  if (this.dungeon.floorPuzzles) {
+    for (const puzzle of this.dungeon.floorPuzzles) FloorPuzzle.render(ctx, puzzle, cam, viewW, viewH);
+  }
+  if (this.dungeon.boulders) {
+    for (const boulder of this.dungeon.boulders) Boulder.render(ctx, boulder, cam, viewW, viewH);
   }
 };
 
