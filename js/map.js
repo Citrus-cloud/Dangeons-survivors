@@ -1091,15 +1091,18 @@ const GameMap = {
   /**
    * Двинуть сущность по (dx, dy) с раздельной проверкой осей.
    * Если упёрлись — позволяет скользить вдоль стен.
+   * Bug fix #2: добавлен отступ 2px для предотвращения застревания в текстурах.
    * Возвращает { x, y, blockedX, blockedY }.
    */
   moveWithCollision(x, y, dx, dy, rad) {
     if (!this.dungeon) return { x: x + dx, y: y + dy, blockedX: false, blockedY: false };
+    // Bug fix #2: используем чуть увеличенный радиус для проверки, чтобы не застрять
+    const checkRad = rad + 2;
     let nx = x, ny = y;
     let blockedX = false, blockedY = false;
     if (dx !== 0) {
       const tryX = x + dx;
-      if (this.rectIsWalkable(tryX, y, rad)) nx = tryX;
+      if (this.rectIsWalkable(tryX, y, checkRad)) nx = tryX;
       else {
         // Попробуем доехать до стены маленькими шагами
         const sign = Math.sign(dx);
@@ -1107,7 +1110,7 @@ const GameMap = {
         const stepSize = 1;
         while (Math.abs(stepped) < Math.abs(dx)) {
           const next = stepped + sign * stepSize;
-          if (this.rectIsWalkable(x + next, y, rad)) stepped = next;
+          if (this.rectIsWalkable(x + next, y, checkRad)) stepped = next;
           else break;
         }
         nx = x + stepped;
@@ -1116,18 +1119,33 @@ const GameMap = {
     }
     if (dy !== 0) {
       const tryY = ny + dy;
-      if (this.rectIsWalkable(nx, tryY, rad)) ny = tryY;
+      if (this.rectIsWalkable(nx, tryY, checkRad)) ny = tryY;
       else {
         const sign = Math.sign(dy);
         let stepped = 0;
         const stepSize = 1;
         while (Math.abs(stepped) < Math.abs(dy)) {
           const next = stepped + sign * stepSize;
-          if (this.rectIsWalkable(nx, ny + next, rad)) stepped = next;
+          if (this.rectIsWalkable(nx, ny + next, checkRad)) stepped = next;
           else break;
         }
         ny = ny + stepped;
         blockedY = true;
+      }
+    }
+    // Bug fix #2: финальная проверка — если всё ещё застрял, вытолкнуть
+    if (!this.rectIsWalkable(nx, ny, rad)) {
+      // Попробовать найти ближайшую проходимую точку
+      const offsets = [
+        {dx: 0, dy: -2}, {dx: 0, dy: 2}, {dx: -2, dy: 0}, {dx: 2, dy: 0},
+        {dx: -2, dy: -2}, {dx: 2, dy: -2}, {dx: -2, dy: 2}, {dx: 2, dy: 2},
+      ];
+      for (const off of offsets) {
+        if (this.rectIsWalkable(nx + off.dx, ny + off.dy, rad)) {
+          nx += off.dx;
+          ny += off.dy;
+          break;
+        }
       }
     }
     return { x: nx, y: ny, blockedX, blockedY };

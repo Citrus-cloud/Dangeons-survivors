@@ -441,6 +441,11 @@ class Weapon {
 
   doAttack() { return false; }
 
+  /** Feature #6: получить бонусное количество снарядов от таланта Ловкости. */
+  getBonusProjectiles(player) {
+    return player._talentBonusProjectiles || 0;
+  }
+
   readyProgress(player) {
     const total = this.cooldownAt(player);
     if (total <= 0) return 1;
@@ -537,7 +542,13 @@ class DaggerWeapon extends Weapon {
       else { const n = Utils.norm(t.x - player.x, t.y - player.y); dx = n.x; dy = n.y; }
     }
     const baseAngle = Math.atan2(dy, dx);
-    const offsets = [-this.spread, 0, this.spread];
+    // Feature #6: бонусные снаряды от таланта Ловкости
+    const bonusProj = this.getBonusProjectiles(player);
+    const totalCount = 3 + bonusProj;
+    const offsets = [];
+    for (let i = 0; i < totalCount; i++) {
+      offsets.push((i - (totalCount - 1) / 2) * this.spread);
+    }
     let any = false;
     for (let i = 0; i < offsets.length; i++) {
       const a = baseAngle + offsets[i];
@@ -842,7 +853,8 @@ class DartsWeapon extends Weapon {
     const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.range);
     if (!target) { this.cooldown = 0.1; return; }
     this._lastDir = Utils.norm(target.x - player.x, target.y - player.y);
-    this._burstLeft = this.burstCount;
+    // Feature #6: бонусные снаряды от таланта Ловкости
+    this._burstLeft = this.burstCount + this.getBonusProjectiles(player);
     this._burstTimer = 0;
   }
   _fireOne(player, projectiles) {

@@ -5,7 +5,7 @@
    ============================================================ */
 
 function createXP() {
-  return { active: false, x: 0, y: 0, value: 0, pulse: 0, red: false };
+  return { active: false, x: 0, y: 0, value: 0, pulse: 0, red: false, blue: false };
 }
 
 function createGold() {
@@ -31,6 +31,7 @@ const Loot = {
    * Бросить кристалл опыта в точке (x, y).
    * Шаг 6: опыт увеличен в 5 раз. Начиная с 3-й волны —
    * 15% шанс красного кристалла (даёт опыт в 20 раз больше базового).
+   * Feature #8: начиная с 11-й волны — 30% шанс синего кристалла (100x опыт).
    */
   dropXP(pool, x, y, value) {
     const xp = pool.spawn();
@@ -41,13 +42,22 @@ const Loot = {
     // Шаг 6: базовый опыт ×5
     let finalValue = value * 5;
 
-    // Шаг 6: красный кристалл (15% шанс начиная с 3-й волны)
     const waveIndex = (window.Game && Game.waveIndex) || 0;
-    if (waveIndex >= 3 && Math.random() < 0.15) {
+
+    // Feature #8: синий кристалл (30% шанс начиная с 11-й волны, 100x опыт)
+    if (waveIndex >= 11 && Math.random() < 0.30) {
+      xp.red = false;
+      xp.blue = true;
+      finalValue = value * 100; // 100x от оригинального значения
+    }
+    // Шаг 6: красный кристалл (15% шанс начиная с 3-й волны)
+    else if (waveIndex >= 3 && Math.random() < 0.15) {
       xp.red = true;
+      xp.blue = false;
       finalValue = value * 20;  // 20x от оригинального значения
     } else {
       xp.red = false;
+      xp.blue = false;
     }
 
     xp.value = finalValue;
@@ -108,7 +118,22 @@ const Loot = {
       if (!x.active) continue;
       if (x.x < minX - 20 || x.x > maxX + 20 || x.y < minY - 20 || x.y > maxY + 20) continue;
       const pulse = 1 + Math.sin(x.pulse * 6) * 0.18;
-      if (x.red) {
+      if (x.blue) {
+        // Feature #8: синий кристалл — крупнее (10px), ярко-синий с пульсацией
+        const bluePulse = 1 + Math.sin(x.pulse * 8) * 0.25;
+        ctx.fillStyle = '#3399ff';
+        ctx.shadowColor = 'rgba(51, 153, 255, 0.9)';
+        ctx.shadowBlur = 16;
+        ctx.beginPath();
+        ctx.arc(x.x, x.y, 10 * bluePulse, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        // Внутренний блик
+        ctx.fillStyle = 'rgba(200, 230, 255, 0.7)';
+        ctx.beginPath();
+        ctx.arc(x.x - 2, x.y - 2, 4 * bluePulse, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (x.red) {
         // Красный кристалл: крупнее, с красным свечением
         ctx.fillStyle = '#ff3333';
         ctx.shadowColor = 'rgba(255, 50, 50, 0.9)';
@@ -276,7 +301,8 @@ const Chest = {
   },
 
   /** Заспавнить сундук в случайной точке на расстоянии 300..600 от героя
-   *  (в пределах карты). Возвращает объект Chest или null. */
+   *  (в пределах карты). Bug fix #3: проверяем isWalkable до 10 попыток.
+   *  Возвращает объект Chest или null. */
   spawnNear(player) {
     const c = Chest.create();
     const m = c.size;
@@ -289,15 +315,69 @@ const Chest = {
       // Внутри карты с отступом
       if (x < m || x > CONFIG.MAP.W - m) continue;
       if (y < m || y > CONFIG.MAP.H - m) continue;
-      c.x = Utils.clamp(x, m, CONFIG.MAP.W - m);
-      c.y = Utils.clamp(y, m, CONFIG.MAP.H - m);
+      const cx = Utils.clamp(x, m, CONFIG.MAP.W - m);
+      const cy = Utils.clamp(y, m, CONFIG.MAP.H - m);
+      // Bug fix #3: проверяем проходимость позиции (не в стене/колонне)
+      if (window.GameMap && GameMap.isWalkable && GameMap.dungeon) {
+        if (!GameMap.rectIsWalkable(cx, cy, m * 0.5 + 4)) continue;
+      }
+      c.x = cx;
+      c.y = cy;
       placed = true;
       break;
     }
     if (!placed) {
-      // fallback: просто рядом с героем под углом 0
-      c.x = Utils.clamp(player.x + 350, m, CONFIG.MAP.W - m);
-      c.y = Utils.clamp(player.y,       m, CONFIG.MAP.H - m);
+      // Bug fix #3: fallback — ищем проходимую точку рядом с героем
+      const fallbackPositions = [
+        { x: player.x + 350, y: player.y },
+        { x: player.x - 350, y: player.y },
+        { x: player.x, y: player.y + 350 },
+        { x: player.x, y: player.y - 350 },
+      ];
+      for (const fp of fallbackPositions) {
+        const fx = Utils.clamp(fp.x, m, CONFIG.MAP.W - m);
+        const fy = Utils.clamp(fp.y, m, CONFIG.MAP.H - m);
+        if (!window.GameMap || !GameMap.dungeon || GameMap.rectIsWalkable(fx, fy, m * 0.5 + 4)) {
+          c.x = fx;
+          c.y = fy;
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        c.x = Utils.clamp(player.x + 350, m, CONFIG.MAP.W - m);
+        c.y = Utils.clamp(player.y, m, CONFIG.MAP.H - m);
+      }
+    }
+    if (window.Particles) Particles.chestGlow(c.x, c.y);
+    return c;
+  },
+
+  /** Feature #5: Заспавнить сундук прямо в указанной точке (дроп с моба).
+   *  Если позиция не проходима, пробуем немного сдвинуть. */
+  spawnAt(x, y) {
+    const c = Chest.create();
+    const m = c.size;
+    // Проверяем проходимость
+    if (window.GameMap && GameMap.dungeon && GameMap.rectIsWalkable) {
+      if (GameMap.rectIsWalkable(x, y, m * 0.5)) {
+        c.x = x; c.y = y;
+      } else {
+        // Попробовать немного сдвинуть
+        const offsets = [{dx:20,dy:0},{dx:-20,dy:0},{dx:0,dy:20},{dx:0,dy:-20}];
+        let placed = false;
+        for (const off of offsets) {
+          const nx = x + off.dx, ny = y + off.dy;
+          if (GameMap.rectIsWalkable(nx, ny, m * 0.5)) {
+            c.x = nx; c.y = ny;
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) return null; // не смогли разместить
+      }
+    } else {
+      c.x = x; c.y = y;
     }
     if (window.Particles) Particles.chestGlow(c.x, c.y);
     return c;
