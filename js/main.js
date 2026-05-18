@@ -97,6 +97,8 @@ const Game = {
     this.state = 'camp';
     UI.hideAll();
     UI.showCamp();
+    // Шаг 18: музыка лагеря
+    if (window.GameAudio) GameAudio.playMusic('camp');
 
     this.lastTs = performance.now();
     requestAnimationFrame((t) => this.loop(t));
@@ -177,16 +179,22 @@ const Game = {
 
     UI.hideAll();
     this.state = 'playing';
+    // Шаг 18: запуск музыки биома (первая карта всегда склеп)
+    if (window.GameAudio) GameAudio.playMusic('crypt');
   },
 
   togglePause() {
     if (this.state === 'playing') {
       this.state = 'paused';
       Input.releaseJoystick();
+      // Шаг 18: пауза музыки
+      if (window.GameAudio) GameAudio.pauseMusic();
       UI.showPause();
     } else if (this.state === 'paused') {
       this.state = 'playing';
       UI.hideAll();
+      // Шаг 18: возобновление музыки
+      if (window.GameAudio) GameAudio.resumeMusic();
     }
   },
 
@@ -350,6 +358,8 @@ const Game = {
         // Вернуться в лагерь
         this.state = 'camp';
         UI.showCamp();
+        // Шаг 18: музыка лагеря
+        if (window.GameAudio) GameAudio.playMusic('camp');
       });
     } else {
       // Фоллбэк: старое поведение
@@ -368,6 +378,8 @@ const Game = {
       this.state = 'camp';
       UI.hideAll();
       UI.showCamp();
+      // Шаг 18: музыка лагеря
+      if (window.GameAudio) GameAudio.playMusic('camp');
     } else {
       this.startNewGame();
     }
@@ -494,12 +506,19 @@ const Game = {
       this.player.xp -= this.player.xpNext;
       this.player.level += 1;
       this.player.xpNext = Math.floor(CONFIG.XP.BASE * Math.pow(CONFIG.XP.GROWTH, this.player.level - 1));
+      // Шаг 18: звук повышения уровня
+      if (window.GameAudio) GameAudio.playSfx('levelup');
       this.triggerLevelUp();
     }
 
     // Смерть
     if (this.player.hp <= 0) {
       this.player.hp = 0;
+      // Шаг 18: звук смерти и остановка музыки
+      if (window.GameAudio) {
+        GameAudio.playSfx('death');
+        GameAudio.stopMusic();
+      }
       // Шаг 16: обработка смерти в кампании
       if (window.Campaign && Campaign.active) {
         Campaign.onPlayerDeath();
@@ -632,6 +651,9 @@ const Game = {
       attempts++;
     }
     this.lastBiomeId = newBiome.id;
+
+    // Шаг 18: смена музыки на новый биом
+    if (window.GameAudio) GameAudio.playMusic(newBiome.id);
 
     // Очистка объектов
     this.enemies.clearAll();
@@ -787,6 +809,11 @@ const Game = {
     if (window.UI && UI.showCampaignMapName) {
       UI.showCampaignMapName(mapCfg.name);
     }
+    // Шаг 18: музыка биома кампании
+    if (window.GameAudio) {
+      const biomeMusic = mapCfg.biome || 'crypt';
+      GameAudio.playMusic(biomeMusic);
+    }
   },
 
   /* ============================================================
@@ -838,6 +865,8 @@ const Game = {
   openSecretChest() {
     if (!this.secretChest) return;
     if (window.Particles) Particles.chestOpen(this.secretChest.x, this.secretChest.y);
+    // Шаг 18: звук открытия сундука
+    if (window.GameAudio) GameAudio.playSfx('chest');
     // Шаг 17: помечаем как секретный (практически не мимик)
     this._lastChestX = this.secretChest.x;
     this._lastChestY = this.secretChest.y;
@@ -849,6 +878,8 @@ const Game = {
 
     // Гарантированный редкий бросок: 19 или 20
     const finalRoll = 19 + Math.floor(Math.random() * 2);
+    // Шаг 18: звук броска d20
+    if (window.GameAudio) GameAudio.playSfx('d20');
     UI.showD20Roll(finalRoll, () => this.resolveChest(finalRoll));
   },
 
@@ -862,6 +893,8 @@ const Game = {
 
     // Визуальный эффект открытия в точке сундука
     if (window.Particles) Particles.chestOpen(this.chest.x, this.chest.y);
+    // Шаг 18: звук открытия сундука
+    if (window.GameAudio) GameAudio.playSfx('chest');
     // Сундук исчезает (логически — открыт)
     this.chest = null;
 
@@ -875,6 +908,8 @@ const Game = {
     let finalRoll = 1 + Math.floor(Math.random() * 20);
     const minRoll = 1 + (this.player.d20MinBonus || 0);
     if (finalRoll < minRoll) finalRoll = Math.min(minRoll, 20);
+    // Шаг 18: звук броска d20
+    if (window.GameAudio) GameAudio.playSfx('d20');
     UI.showD20Roll(finalRoll, () => this.resolveChest(finalRoll));
   },
 

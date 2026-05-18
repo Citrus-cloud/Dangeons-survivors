@@ -104,6 +104,7 @@ const UI = {
     if (this._resultsOverlay) this._resultsOverlay.classList.remove('active');
     if (this._dialogueOverlay) this._dialogueOverlay.classList.remove('active');
     if (this._victoryOverlay) this._victoryOverlay.classList.remove('active');
+    if (this._settingsOverlay) this._settingsOverlay.classList.remove('active');
   },
 
   showPause() { this.hideAll(); this.pauseOverlay.classList.add('active'); },
@@ -535,6 +536,7 @@ const UI = {
           <button id="campTalentsBtn" class="btn camp-btn">📖 Дерево талантов</button>
           <button id="campGuildBtn" class="btn camp-btn">⚜ Гильдия</button>
           <button id="campArsenalBtn" class="btn camp-btn camp-btn-disabled">🗡 Арсенал</button>
+          <button id="campSettingsBtn" class="btn camp-btn">⚙ Настройки</button>
         </div>
         <div class="camp-stats">
           <div>Забегов: <span id="campTotalRuns">0</span></div>
@@ -565,6 +567,10 @@ const UI = {
     });
     ov.querySelector('#campArsenalBtn').addEventListener('click', () => {
       // Заглушка
+    });
+    ov.querySelector('#campSettingsBtn').addEventListener('click', () => {
+      this.hideCamp();
+      this.showSettings();
     });
   },
 
@@ -856,22 +862,39 @@ const UI = {
     ov.querySelector('#dialogueText').textContent = text;
     ov.classList.add('active');
 
+    // Защита от двойного вызова onClose
+    let closed = false;
+    const doClose = () => {
+      if (closed) return;
+      closed = true;
+      clearTimeout(this._dialogueAutoClose);
+      ov.classList.remove('active');
+      onClose && onClose();
+    };
+
     const btn = ov.querySelector('#dialogueNextBtn');
     const newBtn = btn.cloneNode(true);
     btn.parentNode.replaceChild(newBtn, btn);
-    newBtn.addEventListener('click', () => {
-      ov.classList.remove('active');
-      onClose && onClose();
-    });
+    newBtn.addEventListener('click', doClose);
+    // Также закрывать при тапе/клике по панели (для мобильных)
+    const panel = ov.querySelector('.dialogue-panel');
+    if (panel) {
+      const newPanel = panel.cloneNode(true);
+      panel.parentNode.replaceChild(newPanel, panel);
+      // Перепривязать кнопку после замены панели
+      const innerBtn = newPanel.querySelector('#dialogueNextBtn');
+      if (innerBtn) innerBtn.addEventListener('click', doClose);
+      newPanel.addEventListener('click', (e) => {
+        // Закрыть при клике на панель (не только на кнопку)
+        doClose();
+      });
+    }
 
-    // Авто-закрытие через 8 секунд
+    // Авто-закрытие через 10 секунд (увеличено для чтения длинного текста)
     clearTimeout(this._dialogueAutoClose);
     this._dialogueAutoClose = setTimeout(() => {
-      if (ov.classList.contains('active')) {
-        ov.classList.remove('active');
-        onClose && onClose();
-      }
-    }, 8000);
+      doClose();
+    }, 10000);
   },
 
   _buildDialogueOverlay() {
@@ -897,13 +920,18 @@ const UI = {
     ov.querySelector('#victoryText').textContent = text;
     ov.classList.add('active');
 
+    let closed = false;
+    const doClose = () => {
+      if (closed) return;
+      closed = true;
+      ov.classList.remove('active');
+      onClose && onClose();
+    };
+
     const btn = ov.querySelector('#victoryBtn');
     const newBtn = btn.cloneNode(true);
     btn.parentNode.replaceChild(newBtn, btn);
-    newBtn.addEventListener('click', () => {
-      ov.classList.remove('active');
-      onClose && onClose();
-    });
+    newBtn.addEventListener('click', doClose);
   },
 
   _buildVictoryOverlay() {
@@ -1091,6 +1119,110 @@ const UI = {
     this._trapWarnTimer = setTimeout(() => {
       this._trapWarnEl.classList.remove('visible');
     }, 2000);
+  },
+
+  /* ============================================================
+     Шаг 18: Настройки звука (Settings screen)
+     ============================================================ */
+
+  showSettings() {
+    if (!this._settingsOverlay) this._buildSettingsOverlay();
+    this._updateSettingsData();
+    this._settingsOverlay.classList.add('active');
+  },
+
+  _buildSettingsOverlay() {
+    const ov = document.createElement('div');
+    ov.id = 'settingsOverlay';
+    ov.className = 'overlay settings-overlay';
+    ov.innerHTML = `
+      <div class="settings-panel">
+        <h1 class="settings-title">⚙ НАСТРОЙКИ</h1>
+        <div class="settings-section">
+          <div class="settings-row">
+            <span class="settings-label">Эффекты</span>
+            <input type="range" id="sfxVolumeSlider" class="settings-slider" min="0" max="100" value="70">
+            <span id="sfxVolumeVal" class="settings-value">70%</span>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">Музыка</span>
+            <input type="range" id="musicVolumeSlider" class="settings-slider" min="0" max="100" value="25">
+            <span id="musicVolumeVal" class="settings-value">25%</span>
+          </div>
+          <div class="settings-row settings-row-btn">
+            <button id="muteToggleBtn" class="btn settings-mute-btn">🔊 Звук ВКЛ</button>
+          </div>
+        </div>
+        <div class="settings-footer">
+          <button id="settingsBackBtn" class="btn">Назад</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(ov);
+    this._settingsOverlay = ov;
+
+    // SFX slider
+    const sfxSlider = ov.querySelector('#sfxVolumeSlider');
+    const sfxVal = ov.querySelector('#sfxVolumeVal');
+    sfxSlider.addEventListener('input', () => {
+      const v = parseInt(sfxSlider.value);
+      sfxVal.textContent = v + '%';
+      if (window.GameAudio) GameAudio.setSfxVolume(v / 100);
+    });
+
+    // Music slider
+    const musicSlider = ov.querySelector('#musicVolumeSlider');
+    const musicVal = ov.querySelector('#musicVolumeVal');
+    musicSlider.addEventListener('input', () => {
+      const v = parseInt(musicSlider.value);
+      musicVal.textContent = v + '%';
+      if (window.GameAudio) GameAudio.setMusicVolume(v / 100);
+    });
+
+    // Mute toggle
+    ov.querySelector('#muteToggleBtn').addEventListener('click', () => {
+      if (window.GameAudio) {
+        GameAudio.toggleMute();
+        this._updateMuteBtn();
+      }
+    });
+
+    // Back button
+    ov.querySelector('#settingsBackBtn').addEventListener('click', () => {
+      this._settingsOverlay.classList.remove('active');
+      this.showCamp();
+    });
+  },
+
+  _updateSettingsData() {
+    if (!this._settingsOverlay || !window.GameAudio) return;
+    const ov = this._settingsOverlay;
+    const sfxSlider = ov.querySelector('#sfxVolumeSlider');
+    const sfxVal = ov.querySelector('#sfxVolumeVal');
+    const musicSlider = ov.querySelector('#musicVolumeSlider');
+    const musicVal = ov.querySelector('#musicVolumeVal');
+
+    const sfxPct = Math.round(GameAudio.sfxVolume * 100);
+    const musicPct = Math.round(GameAudio.musicVolume * 100);
+
+    sfxSlider.value = sfxPct;
+    sfxVal.textContent = sfxPct + '%';
+    musicSlider.value = musicPct;
+    musicVal.textContent = musicPct + '%';
+
+    this._updateMuteBtn();
+  },
+
+  _updateMuteBtn() {
+    if (!this._settingsOverlay || !window.GameAudio) return;
+    const btn = this._settingsOverlay.querySelector('#muteToggleBtn');
+    if (GameAudio.muted) {
+      btn.textContent = '🔇 Звук ВЫКЛ';
+      btn.classList.add('muted');
+    } else {
+      btn.textContent = '🔊 Звук ВКЛ';
+      btn.classList.remove('muted');
+    }
   },
 };
 

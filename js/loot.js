@@ -92,6 +92,8 @@ const Loot = {
         const xpMul = player.xpBonusMul || 1;
         player.xp += Math.floor(x.value * xpMul);
         x.active = false;
+        // Шаг 18: звук подбора XP
+        if (window.GameAudio) GameAudio.playSfx('xp');
       }
     }
   },
@@ -218,6 +220,8 @@ const Loot = {
           Game.runGold = (Game.runGold || 0) + g.value;
         }
         g.active = false;
+        // Шаг 18: звук подбора золота
+        if (window.GameAudio) GameAudio.playSfx('gold');
       }
     }
   },

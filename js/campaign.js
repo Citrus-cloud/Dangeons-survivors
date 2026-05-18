@@ -170,6 +170,9 @@ const Campaign = {
     this.specialObjects = [];
     this.objective = null;
 
+    // Установить состояние игры в 'dialogue' чтобы не обновлять мир
+    if (window.Game) Game.state = 'dialogue';
+
     // Показать начальный диалог
     const mapCfg = CAMPAIGN_MAPS[this.currentMapIndex];
     if (this.currentMapIndex === 0) {
@@ -459,6 +462,8 @@ const Campaign = {
         boss.isCampaignBoss = true;
         Bosses.current = boss;
         Bosses._announcesBoss(boss.cfg.name);
+        // Шаг 18: музыка финального босса
+        if (window.GameAudio) GameAudio.playMusic('boss');
       }
       return;
     }

@@ -219,6 +219,8 @@ const Bosses = {
   _announcesBoss(name) {
     this.bossAnnounce = 2.5; // 2.5 секунды
     this.bossAnnounceName = name;
+    // Шаг 18: звук появления босса
+    if (window.GameAudio) GameAudio.playSfx('boss_appear');
   },
 
   /* ============================================================
@@ -380,6 +382,8 @@ const Bosses = {
     this.screenShake = 0.3;
     this._dropBossRewards(boss);
     this.defeatedMsg = BOSS_CONFIG.DEFEATED_MSG_DURATION;
+    // Шаг 18: звук смерти босса
+    if (window.GameAudio) GameAudio.playSfx('boss_death');
 
     // Определяем, глобальный это или страж
     if (boss.role === 'campaign') {

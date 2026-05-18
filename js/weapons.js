@@ -190,6 +190,8 @@ const Projectiles = {
 
   /** AoE-урон от огненного шара. */
   _fireballExplode(m, enemies, onDamage) {
+    // Шаг 18: звук взрыва
+    if (window.GameAudio) GameAudio.playSfx('explosion');
     const er2 = m.explodeRadius * m.explodeRadius;
     const eItems = enemies.items;
     for (let j = 0; j < eItems.length; j++) {
@@ -423,6 +425,13 @@ class Weapon {
     const fired = this.doAttack(player, enemies, projectiles, helpers);
     if (fired) {
       this.cooldown = this.cooldownAt(player);
+      // Шаг 18: звук атаки оружия
+      if (window.GameAudio) {
+        if (this.type === 'melee') GameAudio.playSfx('sword');
+        else if (this.type === 'ranged') GameAudio.playSfx('bow');
+        else if (this.type === 'magic') GameAudio.playSfx('magic');
+        else if (this.type === 'explosive') GameAudio.playSfx('explosion');
+      }
     } else {
       this.cooldown = 0.1;
     }
