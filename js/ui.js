@@ -614,9 +614,9 @@ const UI = {
     ov.className = 'overlay talent-overlay';
     ov.innerHTML = `
       <div class="talent-panel">
-        <h1 class="talent-title">ДЕРЕВО ТАЛАНТОВ</h1>
+        <h1 class="talent-title">⚜ ТАЛАНТЫ ⚜</h1>
         <div class="talent-gold"><span class="gold-icon">🪙</span> <span id="talentGoldVal">0</span></div>
-        <div id="talentBranches" class="talent-branches"></div>
+        <div id="talentGrid" class="talent-grid"></div>
         <div class="talent-footer">
           <button id="talentResetBtn" class="btn btn-secondary">Сбросить (80%)</button>
           <button id="talentBackBtn" class="btn">↩ Назад</button>
@@ -641,42 +641,44 @@ const UI = {
 
   _updateTalentData() {
     if (!window.MetaProgress || !MetaProgress.data) return;
+    if (!window.TALENT_DEFS) return;
     const ov = this._talentOverlay;
     ov.querySelector('#talentGoldVal').textContent = MetaProgress.data.gold;
 
-    const container = ov.querySelector('#talentBranches');
+    const container = ov.querySelector('#talentGrid');
     container.innerHTML = '';
 
-    for (const id of Object.keys(TALENT_CONFIG)) {
-      const cfg = TALENT_CONFIG[id];
-      const lvl = MetaProgress.data.talents[id] || 0;
-      const cost = MetaProgress.getTalentCost(id);
-      const canBuy = MetaProgress.data.gold >= cost && lvl < cfg.maxLevel;
-      const maxed = lvl >= cfg.maxLevel;
+    for (const def of TALENT_DEFS) {
+      const lvl = MetaProgress.data.talents[def.id] || 0;
+      const cost = MetaProgress.getTalentCost(def.id);
+      const canBuy = MetaProgress.data.gold >= cost && lvl < def.maxLevel;
+      const maxed = lvl >= def.maxLevel;
 
+      // Звёзды уровней
       let starsHtml = '';
-      for (let i = 0; i < cfg.maxLevel; i++) {
+      for (let i = 0; i < def.maxLevel; i++) {
         starsHtml += `<span class="talent-star ${i < lvl ? 'filled' : ''}">${i < lvl ? '★' : '☆'}</span>`;
       }
 
-      const row = document.createElement('div');
-      row.className = 'talent-row';
-      row.innerHTML = `
-        <div class="talent-icon" style="color:${cfg.color}">${cfg.icon}</div>
-        <div class="talent-info">
-          <div class="talent-name">${cfg.name} <small>${cfg.subtitle}</small></div>
-          <div class="talent-desc">${cfg.desc}</div>
-          <div class="talent-stars">${starsHtml}</div>
-        </div>
-        <button class="btn talent-buy-btn ${canBuy ? '' : 'btn-disabled'}" data-talent="${id}">
+      // Текущий эффект
+      const effectText = lvl > 0 ? def.effects[lvl - 1] : def.effects[0];
+
+      const card = document.createElement('div');
+      card.className = 'talent-card' + (maxed ? ' maxed' : '');
+      card.innerHTML = `
+        <div class="talent-card-icon">${def.icon}</div>
+        <div class="talent-card-name">${def.name}</div>
+        <div class="talent-card-stars">${starsHtml}</div>
+        <div class="talent-card-effect">${lvl > 0 ? def.effects[lvl - 1] : def.description}</div>
+        <button class="btn talent-buy-btn ${canBuy ? '' : 'btn-disabled'}">
           ${maxed ? 'МАКС' : '🪙 ' + cost}
         </button>
       `;
-      container.appendChild(row);
+      container.appendChild(card);
 
       if (!maxed) {
-        row.querySelector('.talent-buy-btn').addEventListener('click', () => {
-          if (MetaProgress.upgradeTalent(id)) {
+        card.querySelector('.talent-buy-btn').addEventListener('click', () => {
+          if (MetaProgress.upgradeTalent(def.id)) {
             this._updateTalentData();
           }
         });
