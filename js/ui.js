@@ -523,25 +523,23 @@ const UI = {
     ov.className = 'overlay camp-overlay';
     ov.innerHTML = `
       <div class="camp-bg">
-        <div class="camp-header">
-          <h1 class="camp-title">DUNGEON SURVIVORS: D20</h1>
-          <div class="camp-resources">
-            <div class="camp-gold"><span class="gold-icon">🪙</span> <span id="campGoldVal">0</span></div>
-            <div class="camp-rep"><span class="rep-icon">⚜</span> <span id="campRepVal">0</span> <span id="campGuildLvl">(Ур. 0)</span></div>
-          </div>
+        <h1 class="camp-title">DUNGEON SURVIVORS: D20</h1>
+        <div class="camp-tavern-name">Таверна «Последний бросок»</div>
+        <div class="camp-resources">
+          <div class="camp-gold"><span class="gold-icon">🪙</span> <span id="campGoldVal">0</span></div>
+          <div class="camp-rep"><span class="rep-icon">⚜</span> <span id="campRepVal">0</span> <span id="campGuildLvl">(Ур. 0)</span></div>
         </div>
         <div class="camp-buttons">
           <button id="campStartBtn" class="btn camp-btn camp-btn-main">⚔ В ПОДЗЕМЕЛЬЕ</button>
           <button id="campCampaignBtn" class="btn camp-btn camp-btn-campaign">📜 СЮЖЕТ</button>
-          <button id="campTalentsBtn" class="btn camp-btn">📖 Дерево талантов</button>
-          <button id="campGuildBtn" class="btn camp-btn">⚜ Гильдия</button>
-          <button id="campArsenalBtn" class="btn camp-btn camp-btn-disabled">🗡 Арсенал</button>
+          <button id="campTalentsBtn" class="btn camp-btn">🌟 Таланты</button>
+          <button id="campGuildBtn" class="btn camp-btn">🛡 Гильдия</button>
           <button id="campSettingsBtn" class="btn camp-btn">⚙ Настройки</button>
         </div>
         <div class="camp-stats">
           <div>Забегов: <span id="campTotalRuns">0</span></div>
           <div>Убийств: <span id="campTotalKills">0</span></div>
-          <div>Лучшее время: <span id="campBestTime">00:00</span></div>
+          <div>Лучшее: <span id="campBestTime">00:00</span></div>
         </div>
       </div>
     `;
@@ -564,9 +562,6 @@ const UI = {
     ov.querySelector('#campGuildBtn').addEventListener('click', () => {
       this.hideCamp();
       this.showGuild();
-    });
-    ov.querySelector('#campArsenalBtn').addEventListener('click', () => {
-      // Заглушка
     });
     ov.querySelector('#campSettingsBtn').addEventListener('click', () => {
       this.hideCamp();
@@ -623,8 +618,8 @@ const UI = {
         <div class="talent-gold"><span class="gold-icon">🪙</span> <span id="talentGoldVal">0</span></div>
         <div id="talentBranches" class="talent-branches"></div>
         <div class="talent-footer">
-          <button id="talentResetBtn" class="btn btn-secondary">Сбросить (возврат 80%)</button>
-          <button id="talentBackBtn" class="btn">Назад</button>
+          <button id="talentResetBtn" class="btn btn-secondary">Сбросить (80%)</button>
+          <button id="talentBackBtn" class="btn">↩ Назад</button>
         </div>
       </div>
     `;
@@ -637,8 +632,10 @@ const UI = {
     });
     ov.querySelector('#talentResetBtn').addEventListener('click', () => {
       if (!window.MetaProgress) return;
-      const refund = MetaProgress.resetTalents();
-      this._updateTalentData();
+      if (confirm('Сбросить все таланты? 80% золота будет возвращено.')) {
+        MetaProgress.resetTalents();
+        this._updateTalentData();
+      }
     });
   },
 
@@ -711,7 +708,7 @@ const UI = {
         </div>
         <div id="guildRewards" class="guild-rewards"></div>
         <div class="guild-footer">
-          <button id="guildBackBtn" class="btn">Назад</button>
+          <button id="guildBackBtn" class="btn">↩ Назад</button>
         </div>
       </div>
     `;
@@ -1152,9 +1149,12 @@ const UI = {
           <div class="settings-row settings-row-btn">
             <button id="muteToggleBtn" class="btn settings-mute-btn">🔊 Звук ВКЛ</button>
           </div>
+          <div class="settings-row settings-row-btn">
+            <button id="resetProgressBtn" class="btn settings-reset-btn">🗑 Сбросить прогресс</button>
+          </div>
         </div>
         <div class="settings-footer">
-          <button id="settingsBackBtn" class="btn">Назад</button>
+          <button id="settingsBackBtn" class="btn">↩ Назад</button>
         </div>
       </div>
     `;
@@ -1184,6 +1184,15 @@ const UI = {
       if (window.GameAudio) {
         GameAudio.toggleMute();
         this._updateMuteBtn();
+      }
+    });
+
+    // Reset progress
+    ov.querySelector('#resetProgressBtn').addEventListener('click', () => {
+      if (confirm('Вы уверены? Весь прогресс будет потерян!')) {
+        localStorage.clear();
+        if (window.MetaProgress) MetaProgress.load();
+        location.reload();
       }
     });
 
