@@ -219,7 +219,8 @@ class FortifyAbility extends Ability {
     }
   }
   _recalcMaxHp(player) {
-    const base = CONFIG.PLAYER.MAX_HP + (player.bonusMaxHp || 0);
+    // Bug fix #1: учитывать бонус HP от талантов при пересчёте процентных бонусов
+    const base = CONFIG.PLAYER.MAX_HP + (player.bonusMaxHp || 0) + (player.talentBonusHp || 0);
     const newMax = Math.round(base * (player.maxHpMul || 1));
     const ratio = player.hp / player.maxHp;
     player.maxHp = newMax;

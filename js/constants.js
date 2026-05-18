@@ -9,7 +9,7 @@ const CONFIG = {
   MAP: { W: 2000, H: 2000, TILE_SIZE: 80 },
 
   PLAYER: {
-    SIZE: 32,
+    SIZE: 48,               // Feature #4: увеличен на 50% (было 32)
     SPEED: 180,             // px/sec
     MAX_HP: 100,
     PICKUP_RADIUS: 40,

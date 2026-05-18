@@ -115,6 +115,10 @@ const Game = {
     const h = window.innerHeight;
     this.viewW = w;
     this.viewH = h;
+    // Feature #4: камера показывает на 50% больше карты (zoom-out)
+    this.cameraScale = 0.667; // 1 / 1.5 — показываем 150% области
+    this.cameraViewW = w / this.cameraScale;
+    this.cameraViewH = h / this.cameraScale;
     this.canvas.width = Math.floor(w * this.dpr);
     this.canvas.height = Math.floor(h * this.dpr);
     this.canvas.style.width = w + 'px';
@@ -529,6 +533,23 @@ const Game = {
 
     // Смерть
     if (this.player.hp <= 0) {
+      // Feature #6: Возрождение (талант Телосложения ур.8-9)
+      if (this.player._resurrectCount && this.player._resurrectCount > 0) {
+        this.player._resurrectCount--;
+        const healPct = this.player._resurrectHpPct || 0.30;
+        this.player.hp = Math.floor(this.player.maxHp * healPct);
+        // Визуальный эффект возрождения
+        if (window.Particles) {
+          Particles.burst(this.player.x, this.player.y, 15, {
+            color: '#ffd700', speedMin: 80, speedMax: 200,
+            lifeMin: 0.5, lifeMax: 1.0, sizeMin: 4, sizeMax: 8,
+          });
+          Particles.text(this.player.x, this.player.y - 40, 'ВОЗРОЖДЕНИЕ!', 2.0, '#ffd700', 18);
+        }
+        // Шаг 19: I-frames после воскрешения (2 сек)
+        this.player._iFrameTimer = 2.0;
+        return; // не умираем
+      }
       this.player.hp = 0;
       // Шаг 16: обработка смерти в кампании
       if (window.Campaign && Campaign.active) {
@@ -552,7 +573,7 @@ const Game = {
       dir = t ? Utils.norm(t.x - p.x, t.y - p.y) : { x: p.facing.x, y: p.facing.y };
     }
 
-    const count = p.missileCount;
+    const count = p.missileCount + (p._talentBonusProjectiles || 0);
     const spread = CONFIG.MISSILE.SPREAD;
     const baseAngle = Math.atan2(dir.y, dir.x);
     for (let i = 0; i < count; i++) {
@@ -781,15 +802,33 @@ const Game = {
       this.player = Player.create(startX, startY);
       UI.rebuildSlots(this.player.weaponSlots.length, this.player.abilitySlots.length);
     } else {
-      // Перемещаем игрока в стартовую комнату новой карты
-      let startX = (window.GameMap ? GameMap.mapW : CONFIG.MAP.W) / 2;
-      let startY = (window.GameMap ? GameMap.mapH : CONFIG.MAP.H) / 2;
-      if (window.GameMap && GameMap.dungeon && GameMap.dungeon.startRoom) {
-        const sp = GameMap.randomPointInRoom(GameMap.dungeon.startRoom, 18);
-        if (sp) { startX = sp.x; startY = sp.y; }
+      // Bug fix #7: если HP <= 0 (после смерти), пересоздаём героя полностью
+      if (this.player.hp <= 0) {
+        let startX = (window.GameMap ? GameMap.mapW : CONFIG.MAP.W) / 2;
+        let startY = (window.GameMap ? GameMap.mapH : CONFIG.MAP.H) / 2;
+        if (window.GameMap && GameMap.dungeon && GameMap.dungeon.startRoom) {
+          const sp = GameMap.randomPointInRoom(GameMap.dungeon.startRoom, 18);
+          if (sp) { startX = sp.x; startY = sp.y; }
+        }
+        this.player = Player.create(startX, startY);
+        UI.rebuildSlots(this.player.weaponSlots.length, this.player.abilitySlots.length);
+        // Сбрасываем счётчики забега
+        this.kills = 0;
+        this.runTime = 0;
+        this.waveIndex = 0;
+        this.runGold = 0;
+        this.bossKills = 0;
+      } else {
+        // Перемещаем игрока в стартовую комнату новой карты
+        let startX = (window.GameMap ? GameMap.mapW : CONFIG.MAP.W) / 2;
+        let startY = (window.GameMap ? GameMap.mapH : CONFIG.MAP.H) / 2;
+        if (window.GameMap && GameMap.dungeon && GameMap.dungeon.startRoom) {
+          const sp = GameMap.randomPointInRoom(GameMap.dungeon.startRoom, 18);
+          if (sp) { startX = sp.x; startY = sp.y; }
+        }
+        this.player.x = startX;
+        this.player.y = startY;
       }
-      this.player.x = startX;
-      this.player.y = startY;
     }
 
     // Применить благословение мага (если есть, карта 5)
@@ -1219,6 +1258,14 @@ const Game = {
       Loot.tryDropGold(this.goldDrops, e);
     }
 
+    // Feature #5: 7% шанс выпадения сундука из обычных мобов
+    if (Math.random() < 0.07 && !this.chest) {
+      const mobChest = Chest.spawnAt(e.x, e.y);
+      if (mobChest) {
+        this.chest = mobChest;
+      }
+    }
+
     // Шаг 16: кампания — проверка выпадения ключа
     if (window.Campaign && Campaign.active && e._hasKey) {
       Campaign.onKeyPickedUp();
@@ -1255,28 +1302,34 @@ const Game = {
 
     if (!this.player) return;
 
-    const cam = GameMap.getCamera(this.player, this.viewW, this.viewH);
+    // Feature #4: используем расширенную область камеры для рендера
+    const camViewW = this.cameraViewW || this.viewW;
+    const camViewH = this.cameraViewH || this.viewH;
+    const camScale = this.cameraScale || 1;
+    const cam = GameMap.getCamera(this.player, camViewW, camViewH);
     ctx.save();
+    // Feature #4: масштабирование для увеличения радиуса видимости
+    ctx.scale(camScale, camScale);
     ctx.translate(-cam.x, -cam.y);
 
-    GameMap.render(ctx, cam, this.viewW, this.viewH);
-    Loot.render(ctx, this.xpDrops, cam, this.viewW, this.viewH);
+    GameMap.render(ctx, cam, camViewW, camViewH);
+    Loot.render(ctx, this.xpDrops, cam, camViewW, camViewH);
     // Шаг 15: рендер золота
-    if (this.goldDrops) Loot.renderGold(ctx, this.goldDrops, cam, this.viewW, this.viewH);
+    if (this.goldDrops) Loot.renderGold(ctx, this.goldDrops, cam, camViewW, camViewH);
     // Шаг 4: лужи и следы под врагами/героем
-    if (GameMap.renderGroundEffects) GameMap.renderGroundEffects(ctx, cam, this.viewW, this.viewH);
+    if (GameMap.renderGroundEffects) GameMap.renderGroundEffects(ctx, cam, camViewW, camViewH);
     // Шаг 3: сундук рисуется в мире
-    if (this.chest) Chest.render(ctx, this.chest, cam, this.viewW, this.viewH);
-    if (this.secretChest) Chest.render(ctx, this.secretChest, cam, this.viewW, this.viewH);
+    if (this.chest) Chest.render(ctx, this.chest, cam, camViewW, camViewH);
+    if (this.secretChest) Chest.render(ctx, this.secretChest, cam, camViewW, camViewH);
     this.renderParticles(ctx, cam);
-    Enemies.render(ctx, this.enemies, cam, this.viewW, this.viewH);
+    Enemies.render(ctx, this.enemies, cam, camViewW, camViewH);
     // Шаг 6: рендер босса
-    if (window.Bosses) Bosses.render(ctx, cam, this.viewW, this.viewH);
+    if (window.Bosses) Bosses.render(ctx, cam, camViewW, camViewH);
     // Шаг 6: рендер золотого сундука босса
-    if (this.bossChest && window.Bosses) Bosses.renderBossChest(ctx, this.bossChest, cam, this.viewW, this.viewH);
+    if (this.bossChest && window.Bosses) Bosses.renderBossChest(ctx, this.bossChest, cam, camViewW, camViewH);
     // Шаг 16: рендер объектов кампании
     if (window.Campaign && Campaign.active && window.GameMap && GameMap.renderCampaignObjects) {
-      GameMap.renderCampaignObjects(ctx, cam, this.viewW, this.viewH);
+      GameMap.renderCampaignObjects(ctx, cam, camViewW, camViewH);
     }
     Player.render(ctx, this.player);
 
@@ -1306,8 +1359,8 @@ const Game = {
     }
 
     // Индикатор сундука — экранные координаты, без сдвига камеры
-    if (this.chest) Chest.renderIndicator(ctx, this.chest, cam, this.viewW, this.viewH);
-    if (this.secretChest) Chest.renderIndicator(ctx, this.secretChest, cam, this.viewW, this.viewH);
+    if (this.chest) Chest.renderIndicator(ctx, this.chest, cam, camViewW, camViewH);
+    if (this.secretChest) Chest.renderIndicator(ctx, this.secretChest, cam, camViewW, camViewH);
 
     // Шаг 5: миникарта
     if (GameMap.renderMinimap) GameMap.renderMinimap(ctx, this.player, this.viewW, this.viewH);
