@@ -162,12 +162,16 @@ const Player = {
   /**
    * Шаг 8: нанести урон герою с учётом пассивных эффектов.
    * Вызывать вместо прямого player.hp -= dmg.
+   * Шаг 19: добавлены i-frames (0.3 сек неуязвимости после удара).
    * @param {object} player
    * @param {number} rawDmg — базовый урон до защиты
    * @param {object} [source] — источник урона (враг) для магического отклика
    * @returns {number} финальный нанесённый урон
    */
   takeDamage(player, rawDmg, source) {
+    // I-frames: если герой в состоянии неуязвимости — игнорируем урон
+    if (player._iFrameTimer && player._iFrameTimer > 0) return 0;
+
     // Щит маны — полная блокировка
     if (player.manaShield && player.manaShield.tryBlock()) {
       // Визуал блока
@@ -187,6 +191,9 @@ const Player = {
     }
 
     player.hp -= finalDmg;
+
+    // Активируем i-frames (0.3 сек неуязвимости)
+    player._iFrameTimer = 0.3;
 
     // Магический отклик — ответный снаряд
     if (player.magicEchoChance > 0 && Math.random() < player.magicEchoChance && source) {
@@ -262,14 +269,21 @@ const Player = {
       GameMap.tryToggleLever(player);
     }
 
-    // Границы карты
+    // Границы карты (динамические, учитывают размер сгенерированной карты)
     const half = player.size / 2;
-    player.x = Utils.clamp(player.x, half, CONFIG.MAP.W - half);
-    player.y = Utils.clamp(player.y, half, CONFIG.MAP.H - half);
+    const mapW = (window.GameMap && GameMap.mapW) ? GameMap.mapW : CONFIG.MAP.W;
+    const mapH = (window.GameMap && GameMap.mapH) ? GameMap.mapH : CONFIG.MAP.H;
+    player.x = Utils.clamp(player.x, half, mapW - half);
+    player.y = Utils.clamp(player.y, half, mapH - half);
 
     // Регенерация
     if (player.hpRegen > 0 && player.hp > 0) {
       player.hp = Math.min(player.maxHp, player.hp + player.hpRegen * dt);
+    }
+
+    // Шаг 19: тик i-frames (неуязвимость после получения урона)
+    if (player._iFrameTimer && player._iFrameTimer > 0) {
+      player._iFrameTimer -= dt;
     }
 
     // Шаг 15: снятие стартового XP-буста после 2 минут
@@ -342,7 +356,12 @@ const Player = {
     }
 
     ctx.fillStyle = '#2980d9';
+    // Шаг 19: мерцание при i-frames (неуязвимость после удара)
+    if (player._iFrameTimer && player._iFrameTimer > 0) {
+      ctx.globalAlpha = 0.4 + Math.sin(player._iFrameTimer * 30) * 0.3;
+    }
     ctx.fillRect(player.x - ps / 2, player.y - ps / 2, ps, ps);
+    ctx.globalAlpha = 1;
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2;
     ctx.strokeRect(player.x - ps / 2 + 1, player.y - ps / 2 + 1, ps - 2, ps - 2);

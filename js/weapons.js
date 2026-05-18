@@ -10,7 +10,8 @@
    ============================================================ */
 
 // Множители на уровень оружия (индекс = level - 1)
-const WEAPON_LEVEL_DAMAGE  = [1.00, 1.15, 1.30, 1.45, 1.60];
+// Шаг 19: +12% урона, -5% кулдауна за уровень (итого ~+10-15% DPS за уровень)
+const WEAPON_LEVEL_DAMAGE  = [1.00, 1.12, 1.25, 1.40, 1.56];
 const WEAPON_LEVEL_CD_MUL  = [1.00, 0.95, 0.90, 0.85, 0.80];
 const MAX_WEAPON_LEVEL = 5;
 
@@ -453,7 +454,7 @@ class Weapon {
    ============================================================ */
 class SwordWeapon extends Weapon {
   constructor() {
-    super({ id: 'sword', name: 'Меч', type: 'melee', baseCooldown: 0.8, baseDamage: 15, icon: '⚔', desc: 'Удар по ближайшему врагу в радиусе 60 px.' });
+    super({ id: 'sword', name: 'Меч', type: 'melee', baseCooldown: 0.9, baseDamage: 18, icon: '⚔', desc: 'Удар по ближайшему врагу в радиусе 60 px.' });
     this.radius = 60; this.arc = Math.PI * 0.9; this.swingTime = 0.18;
     this.swing = { active: false, t: 0, angle: 0 };
   }
@@ -500,7 +501,7 @@ class SwordWeapon extends Weapon {
    ============================================================ */
 class BowWeapon extends Weapon {
   constructor() {
-    super({ id: 'bow', name: 'Лук', type: 'ranged', baseCooldown: 1.2, baseDamage: 12, icon: '🏹', desc: 'Стреляет в ближайшего врага.' });
+    super({ id: 'bow', name: 'Лук', type: 'ranged', baseCooldown: 1.2, baseDamage: 14, icon: '🏹', desc: 'Стреляет в ближайшего врага.' });
     this.arrowSpeed = 520; this.arrowLife = 1.6; this.range = 520;
   }
   doAttack(player, enemies, projectiles) {
@@ -523,7 +524,7 @@ class BowWeapon extends Weapon {
    ============================================================ */
 class DaggerWeapon extends Weapon {
   constructor() {
-    super({ id: 'daggers', name: 'Кинжалы', type: 'multi', baseCooldown: 1.5, baseDamage: 6, icon: '🗡', desc: 'Бросок 3 кинжалов веером.' });
+    super({ id: 'daggers', name: 'Кинжалы', type: 'multi', baseCooldown: 1.5, baseDamage: 7, icon: '🗡', desc: 'Бросок 3 кинжалов веером.' });
     this.speed = 480; this.life = 1.2; this.spread = (20 * Math.PI) / 180; this.range = 600;
   }
   doAttack(player, enemies, projectiles) {
@@ -557,7 +558,7 @@ class DaggerWeapon extends Weapon {
    ============================================================ */
 class FireballWeapon extends Weapon {
   constructor() {
-    super({ id: 'fireball', name: 'Огненный шар', type: 'aoe', baseCooldown: 2.5, baseDamage: 20, icon: '🔥', desc: 'Снаряд с AoE-взрывом 80 px.' });
+    super({ id: 'fireball', name: 'Огненный шар', type: 'aoe', baseCooldown: 2.5, baseDamage: 22, icon: '🔥', desc: 'Снаряд с AoE-взрывом 80 px.' });
     this.flightTime = 0.6; this.explodeRadius = 80; this.range = 700;
   }
   doAttack(player, enemies, projectiles) {
@@ -587,7 +588,7 @@ class FireballWeapon extends Weapon {
    ============================================================ */
 class AxeWeapon extends Weapon {
   constructor() {
-    super({ id: 'axe', name: 'Секира', type: 'melee', baseCooldown: 1.0, baseDamage: 22, icon: '🪓', desc: 'Широкий взмах перед героем (конус 140°).' });
+    super({ id: 'axe', name: 'Секира', type: 'melee', baseCooldown: 1.0, baseDamage: 20, icon: '🪓', desc: 'Широкий взмах перед героем (конус 140°).' });
     this.radius = 65; this.arc = (140 * Math.PI) / 180; this.swingTime = 0.20;
     this.swing = { active: false, t: 0, angle: 0 };
   }
@@ -682,7 +683,7 @@ class SpearWeapon extends Weapon {
    ============================================================ */
 class HammerWeapon extends Weapon {
   constructor() {
-    super({ id: 'hammer', name: 'Молот', type: 'melee', baseCooldown: 1.5, baseDamage: 20, icon: '🔨', desc: 'Удар по земле — AoE вокруг героя (70 px).' });
+    super({ id: 'hammer', name: 'Молот', type: 'melee', baseCooldown: 1.5, baseDamage: 30, icon: '🔨', desc: 'Удар по земле — AoE вокруг героя (70 px).' });
     this.radius = 70; this.slamTime = 0.25;
     this.slam = { active: false, t: 0 };
   }

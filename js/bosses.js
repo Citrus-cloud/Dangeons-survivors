@@ -135,7 +135,10 @@ const Bosses = {
     // Множитель по номеру карты
     const mapMul = (window.Game && Game.mapNumber)
       ? 1 + (Game.mapNumber - 1) * 0.15 : 1.0;
-    const totalMul = diffMul * mapMul;
+    // Шаг 19: масштабирование HP по времени забега (baseHP * (1 + minutes * 0.2))
+    const minutes = (window.Game && Game.runTime) ? Game.runTime / 60 : 0;
+    const timeMul = 1 + minutes * 0.2;
+    const totalMul = diffMul * mapMul * timeMul;
 
     const boss = {
       cfg: cfg,
@@ -474,7 +477,10 @@ const Bosses = {
     const cfg = boss.cfg;
     const rewards = BOSS_CONFIG.REWARDS;
     const mapScale = 1 + ((Game.mapNumber || 1) - 1) * rewards.REWARD_SCALE_PER_MAP;
-    const rewardMul = (cfg.rewardMul || 1.0) * mapScale;
+    // Шаг 19: масштабирование наград по времени забега
+    const minutes = (Game.runTime || 0) / 60;
+    const timeScale = 1 + minutes * 0.1;
+    const rewardMul = (cfg.rewardMul || 1.0) * mapScale * timeScale;
 
     // XP кристаллы
     const isGlobal = boss.role === 'global';

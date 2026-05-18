@@ -334,6 +334,17 @@ const Game = {
     this.state = 'gameover';
     Input.releaseJoystick();
 
+    // Шаг 19: остановить музыку и очистить все таймеры
+    if (window.GameAudio) {
+      GameAudio.playSfx('death');
+      GameAudio.stopMusic();
+    }
+
+    // Шаг 19: очистить все объекты для предотвращения утечек
+    this.enemies.clearAll();
+    this.projectiles.clearAll();
+    if (this.goldDrops) this.goldDrops.clearAll();
+
     // Шаг 15: сохранить мета-прогресс
     if (window.MetaProgress && MetaProgress.data) {
       const goldCollected = this.runGold || 0;
@@ -501,8 +512,8 @@ const Game = {
     this.updateBossChest(dt);
     this.updateParticles(dt);
 
-    // Левелап
-    if (this.player.xp >= this.player.xpNext) {
+    // Левелап (only trigger if still in playing state)
+    if (this.state === 'playing' && this.player.xp >= this.player.xpNext) {
       this.player.xp -= this.player.xpNext;
       this.player.level += 1;
       this.player.xpNext = Math.floor(CONFIG.XP.BASE * Math.pow(CONFIG.XP.GROWTH, this.player.level - 1));
@@ -514,11 +525,6 @@ const Game = {
     // Смерть
     if (this.player.hp <= 0) {
       this.player.hp = 0;
-      // Шаг 18: звук смерти и остановка музыки
-      if (window.GameAudio) {
-        GameAudio.playSfx('death');
-        GameAudio.stopMusic();
-      }
       // Шаг 16: обработка смерти в кампании
       if (window.Campaign && Campaign.active) {
         Campaign.onPlayerDeath();
