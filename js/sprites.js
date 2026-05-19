@@ -2326,10 +2326,454 @@ function initSprites() {
 
   // Шаг 2: генерация спрайтов оружий, пассивок, эволюций, снарядов
   if (window.initItemSprites) initItemSprites();
+
+  // Иконки классов 32×32 и кадры ходьбы 16×16
+  initClassSprites();
+  initPlayerWalkSprites();
+}
+
+/* ============================================================
+   CLASS_SPRITES — Качественные пиксельные иконки 32×32 для классов.
+   Используются в экране выбора героя и в лагере.
+   ============================================================ */
+
+const CLASS_SPRITES = {};
+
+/** Воин: рыцарь в серебряных латах, синий плащ, меч в правой руке. */
+function _sprite_class_warrior(ctx) {
+  const armor = '#c0c8d0';    // серебристые латы
+  const armorDark = '#8a9aaa'; // тень
+  const cape = '#2244aa';      // синий плащ
+  const capeDark = '#183080';
+  const skin = '#e8c8a0';
+  const swordBlade = '#d0d8e0';
+  const swordHilt = '#8b6914';
+  const eye = '#222';
+  const hair = '#6b4400';
+
+  // Плащ (за спиной, рисуем первым)
+  _rect(ctx, 8, 10, 4, 14, cape);
+  _rect(ctx, 7, 14, 6, 10, cape);
+  _rect(ctx, 9, 24, 4, 6, capeDark);
+  _px(ctx, 7, 24, capeDark);
+  _px(ctx, 12, 24, capeDark);
+
+  // Шлем (серебряный)
+  _rect(ctx, 12, 2, 8, 8, armor);
+  _rect(ctx, 11, 3, 10, 6, armor);
+  _rect(ctx, 13, 1, 6, 1, armorDark);
+  // Прорезь для глаз
+  _rect(ctx, 13, 5, 6, 2, '#222');
+  // Глаза
+  _px(ctx, 14, 5, '#4488ff');
+  _px(ctx, 17, 5, '#4488ff');
+  // Навершие шлема
+  _rect(ctx, 14, 1, 4, 1, '#ffd700');
+
+  // Тело (латы)
+  _rect(ctx, 11, 10, 10, 10, armor);
+  _rect(ctx, 10, 11, 12, 8, armor);
+  // Тёмные грани
+  _rect(ctx, 10, 11, 1, 8, armorDark);
+  _rect(ctx, 21, 11, 1, 8, armorDark);
+  _rect(ctx, 12, 14, 8, 1, armorDark);
+  // Пояс
+  _rect(ctx, 11, 19, 10, 2, '#6b4400');
+  _px(ctx, 15, 19, '#ffd700'); // пряжка
+  _px(ctx, 16, 19, '#ffd700');
+
+  // Наплечники
+  _rect(ctx, 8, 9, 3, 3, armor);
+  _rect(ctx, 21, 9, 3, 3, armor);
+  _px(ctx, 8, 9, armorDark);
+  _px(ctx, 23, 9, armorDark);
+
+  // Руки
+  _rect(ctx, 8, 12, 2, 8, armor);
+  _rect(ctx, 22, 12, 2, 8, armor);
+  // Кисти
+  _rect(ctx, 8, 20, 2, 2, skin);
+  _rect(ctx, 22, 20, 2, 2, skin);
+
+  // Ноги (латные поножи)
+  _rect(ctx, 12, 21, 3, 8, armorDark);
+  _rect(ctx, 17, 21, 3, 8, armorDark);
+  // Обувь
+  _rect(ctx, 12, 28, 3, 2, '#444');
+  _rect(ctx, 17, 28, 3, 2, '#444');
+
+  // Меч в правой руке
+  _rect(ctx, 23, 8, 2, 14, swordBlade);
+  _rect(ctx, 24, 6, 1, 2, swordBlade);
+  _px(ctx, 24, 5, '#fff'); // острие
+  // Гарда
+  _rect(ctx, 22, 21, 4, 1, swordHilt);
+  // Рукоять
+  _rect(ctx, 23, 22, 2, 3, '#5a3a0a');
+}
+
+/** Волшебник: фигура в фиолетовом плаще с капюшоном, посох с кристаллом, борода. */
+function _sprite_class_mage(ctx) {
+  const cloak = '#6a2fa0';
+  const cloakDark = '#4a1a70';
+  const cloakLight = '#8a4fcc';
+  const skin = '#e8c8a0';
+  const beard = '#cccccc';
+  const staff = '#6b4400';
+  const crystal = '#44ffcc';
+  const crystalGlow = '#22cc99';
+
+  // Плащ (широкий)
+  _rect(ctx, 9, 10, 14, 18, cloak);
+  _rect(ctx, 8, 12, 16, 14, cloak);
+  _rect(ctx, 7, 16, 18, 10, cloak);
+  _rect(ctx, 10, 26, 12, 4, cloakDark);
+  // Подол (волнистый)
+  _px(ctx, 7, 26, cloak); _px(ctx, 8, 27, cloak);
+  _px(ctx, 24, 26, cloak); _px(ctx, 23, 27, cloak);
+  // Тёмные складки
+  _rect(ctx, 12, 16, 1, 10, cloakDark);
+  _rect(ctx, 19, 16, 1, 10, cloakDark);
+  _rect(ctx, 15, 12, 2, 14, cloakDark);
+
+  // Капюшон
+  _rect(ctx, 11, 2, 10, 9, cloak);
+  _rect(ctx, 10, 3, 12, 7, cloak);
+  _rect(ctx, 12, 1, 8, 2, cloakDark);
+  // Тень внутри капюшона
+  _rect(ctx, 12, 4, 8, 4, '#2a0a40');
+
+  // Лицо в капюшоне
+  _rect(ctx, 13, 4, 6, 5, skin);
+  // Глаза
+  _px(ctx, 14, 5, '#8844ff');
+  _px(ctx, 17, 5, '#8844ff');
+  // Борода (белая)
+  _rect(ctx, 13, 8, 6, 3, beard);
+  _rect(ctx, 14, 11, 4, 2, beard);
+  _px(ctx, 15, 13, beard);
+  _px(ctx, 16, 13, beard);
+
+  // Рукава
+  _rect(ctx, 6, 12, 3, 8, cloak);
+  _rect(ctx, 23, 12, 3, 8, cloak);
+  // Кисти
+  _rect(ctx, 6, 20, 2, 2, skin);
+  _rect(ctx, 24, 20, 2, 2, skin);
+
+  // Посох (в левой руке)
+  _rect(ctx, 4, 3, 2, 26, staff);
+  _rect(ctx, 5, 2, 1, 1, staff);
+  // Кристалл на посохе
+  _rect(ctx, 3, 0, 4, 3, crystal);
+  _px(ctx, 4, 0, crystalGlow);
+  _px(ctx, 5, 1, '#ffffff'); // блик
+  // Свечение
+  _px(ctx, 2, 1, crystalGlow);
+  _px(ctx, 7, 1, crystalGlow);
+
+  // Ботинки
+  _rect(ctx, 12, 28, 3, 2, '#333');
+  _rect(ctx, 17, 28, 3, 2, '#333');
+}
+
+/** Плут: фигура в тёмном плаще с капюшоном, два кинжала, худая. */
+function _sprite_class_rogue(ctx) {
+  const cloak = '#2a2a2a';
+  const cloakDark = '#1a1a1a';
+  const cloakAccent = '#3a3a3a';
+  const skin = '#d4a870';
+  const blade = '#c0c8d0';
+  const bladeEdge = '#e8f0f8';
+
+  // Плащ (уже, чем у мага — худая фигура)
+  _rect(ctx, 11, 10, 10, 16, cloak);
+  _rect(ctx, 10, 12, 12, 12, cloak);
+  // Подол
+  _rect(ctx, 10, 24, 12, 4, cloakDark);
+  _px(ctx, 9, 24, cloak);
+  _px(ctx, 22, 24, cloak);
+  // Складки
+  _rect(ctx, 14, 14, 1, 10, cloakAccent);
+  _rect(ctx, 17, 14, 1, 10, cloakAccent);
+
+  // Капюшон (угловатый)
+  _rect(ctx, 12, 2, 8, 8, cloak);
+  _rect(ctx, 11, 3, 10, 6, cloak);
+  _rect(ctx, 13, 1, 6, 2, cloakDark);
+  // Тень внутри
+  _rect(ctx, 13, 4, 6, 4, '#0a0a0a');
+
+  // Лицо (в тени, только глаза)
+  _rect(ctx, 14, 4, 4, 3, '#3a2a1a');
+  // Глаза (зеленоватые)
+  _px(ctx, 14, 5, '#44ff44');
+  _px(ctx, 17, 5, '#44ff44');
+
+  // Рукава (тонкие)
+  _rect(ctx, 8, 11, 2, 8, cloak);
+  _rect(ctx, 22, 11, 2, 8, cloak);
+  // Кисти
+  _rect(ctx, 7, 19, 2, 2, skin);
+  _rect(ctx, 23, 19, 2, 2, skin);
+
+  // Кинжал левый
+  _rect(ctx, 6, 14, 1, 6, blade);
+  _px(ctx, 6, 13, bladeEdge);
+  _px(ctx, 6, 12, bladeEdge); // острие
+  _px(ctx, 6, 20, '#6b4400'); // рукоять
+
+  // Кинжал правый
+  _rect(ctx, 25, 14, 1, 6, blade);
+  _px(ctx, 25, 13, bladeEdge);
+  _px(ctx, 25, 12, bladeEdge); // острие
+  _px(ctx, 25, 20, '#6b4400'); // рукоять
+
+  // Ноги (узкие)
+  _rect(ctx, 12, 26, 2, 5, '#222');
+  _rect(ctx, 18, 26, 2, 5, '#222');
+  // Ботинки
+  _rect(ctx, 11, 29, 3, 2, '#333');
+  _rect(ctx, 18, 29, 3, 2, '#333');
+
+  // Пояс с ножнами
+  _rect(ctx, 11, 20, 10, 1, '#4a3a1a');
+  _px(ctx, 14, 21, '#888'); // нож на поясе
+  _px(ctx, 14, 22, '#888');
+}
+
+/** Танк: массивная фигура в тяжёлых серых латах, молот на плече, шлем с рогами. */
+function _sprite_class_tank(ctx) {
+  const armor = '#6a7080';
+  const armorDark = '#4a5060';
+  const armorLight = '#8a9aaa';
+  const hammerHead = '#555';
+  const hammerHandle = '#6b4400';
+  const horn = '#c8a83a';
+  const skin = '#e8c8a0';
+
+  // Тело (широкое, массивное)
+  _rect(ctx, 8, 10, 16, 12, armor);
+  _rect(ctx, 7, 11, 18, 10, armor);
+  _rect(ctx, 9, 10, 14, 1, armorLight);
+  // Тёмные грани
+  _rect(ctx, 7, 11, 1, 10, armorDark);
+  _rect(ctx, 24, 11, 1, 10, armorDark);
+  _rect(ctx, 14, 12, 4, 8, armorDark);
+  // Пояс
+  _rect(ctx, 8, 21, 16, 2, '#5a4a2a');
+  _rect(ctx, 14, 21, 4, 2, '#ffd700'); // большая пряжка
+
+  // Шлем (с рогами)
+  _rect(ctx, 11, 2, 10, 8, armor);
+  _rect(ctx, 10, 3, 12, 6, armor);
+  _rect(ctx, 12, 1, 8, 2, armorDark);
+  // Прорезь
+  _rect(ctx, 12, 5, 8, 2, '#111');
+  // Глаза
+  _px(ctx, 13, 5, '#ff8800');
+  _px(ctx, 18, 5, '#ff8800');
+  // Рога
+  _rect(ctx, 8, 2, 2, 4, horn);
+  _px(ctx, 7, 1, horn);
+  _px(ctx, 7, 0, horn);
+  _rect(ctx, 22, 2, 2, 4, horn);
+  _px(ctx, 24, 1, horn);
+  _px(ctx, 24, 0, horn);
+
+  // Наплечники (массивные)
+  _rect(ctx, 5, 9, 4, 4, armorLight);
+  _rect(ctx, 23, 9, 4, 4, armorLight);
+  _rect(ctx, 5, 9, 4, 1, armorDark);
+  _rect(ctx, 23, 9, 4, 1, armorDark);
+  // Шипы на наплечниках
+  _px(ctx, 5, 8, '#aaa');
+  _px(ctx, 7, 8, '#aaa');
+  _px(ctx, 25, 8, '#aaa');
+  _px(ctx, 23, 8, '#aaa');
+
+  // Руки (толстые)
+  _rect(ctx, 5, 13, 3, 8, armor);
+  _rect(ctx, 24, 13, 3, 8, armor);
+  // Перчатки
+  _rect(ctx, 5, 20, 3, 2, armorDark);
+  _rect(ctx, 24, 20, 3, 2, armorDark);
+
+  // Ноги (широкие)
+  _rect(ctx, 10, 23, 4, 7, armorDark);
+  _rect(ctx, 18, 23, 4, 7, armorDark);
+  // Сапоги
+  _rect(ctx, 10, 28, 4, 3, '#333');
+  _rect(ctx, 18, 28, 4, 3, '#333');
+
+  // Молот на правом плече
+  _rect(ctx, 26, 4, 2, 18, hammerHandle);
+  // Головка молота
+  _rect(ctx, 24, 1, 6, 4, hammerHead);
+  _rect(ctx, 25, 0, 4, 1, hammerHead);
+  _rect(ctx, 25, 5, 4, 1, hammerHead);
+  // Блик на молоте
+  _px(ctx, 26, 1, '#888');
+  _px(ctx, 27, 2, '#888');
+}
+
+/** Генерация спрайтов классов. Вызывается внутри initSprites(). */
+function initClassSprites() {
+  const defs = {
+    warrior: _sprite_class_warrior,
+    mage: _sprite_class_mage,
+    rogue: _sprite_class_rogue,
+    tank: _sprite_class_tank,
+  };
+  for (const [id, fn] of Object.entries(defs)) {
+    const canvas = _createSpriteCanvas(32);
+    const ctx = canvas.getContext('2d');
+    fn(ctx);
+    _addOutline(ctx, 32, '#000000');
+    CLASS_SPRITES[id] = canvas;
+  }
+  console.log('[Sprites] Сгенерировано 4 иконки классов (32×32)');
+}
+
+/* ============================================================
+   PLAYER_WALK_SPRITES — Два кадра ходьбы для каждого класса (16×16).
+   frame1 = ноги вместе / левая вперёд, frame2 = правая вперёд.
+   ============================================================ */
+
+const PLAYER_WALK_SPRITES = {};
+
+function _drawPlayerBase_warrior(ctx, frame) {
+  const armor = '#c0c8d0';
+  const armorDark = '#8a9aaa';
+  const cape = '#2244aa';
+  const skin = '#e8c8a0';
+  // Шлем
+  _rect(ctx, 5, 0, 6, 5, armor);
+  _rect(ctx, 6, 0, 4, 1, armorDark);
+  _px(ctx, 6, 2, '#4488ff'); _px(ctx, 9, 2, '#4488ff');
+  _rect(ctx, 6, 3, 4, 1, '#222');
+  // Тело
+  _rect(ctx, 5, 5, 6, 5, armor);
+  _rect(ctx, 4, 6, 1, 3, cape);
+  // Ноги
+  if (frame === 1) {
+    _rect(ctx, 6, 10, 2, 4, armorDark);
+    _rect(ctx, 9, 11, 2, 3, armorDark);
+  } else {
+    _rect(ctx, 6, 11, 2, 3, armorDark);
+    _rect(ctx, 9, 10, 2, 4, armorDark);
+  }
+  // Меч
+  _vline(ctx, 12, 3, 7, '#d0d8e0');
+  _px(ctx, 12, 2, '#fff');
+}
+
+function _drawPlayerBase_mage(ctx, frame) {
+  const cloak = '#6a2fa0';
+  const cloakDark = '#4a1a70';
+  const beard = '#ccc';
+  // Капюшон
+  _rect(ctx, 5, 0, 6, 5, cloak);
+  _rect(ctx, 6, 1, 4, 3, '#2a0a40');
+  _px(ctx, 7, 2, '#8844ff'); _px(ctx, 9, 2, '#8844ff');
+  // Борода
+  _px(ctx, 7, 4, beard); _px(ctx, 8, 4, beard);
+  // Тело
+  _rect(ctx, 5, 5, 6, 6, cloak);
+  _rect(ctx, 4, 7, 8, 3, cloak);
+  // Ноги (под плащом)
+  if (frame === 1) {
+    _rect(ctx, 6, 11, 2, 3, cloakDark);
+    _rect(ctx, 9, 12, 2, 2, cloakDark);
+  } else {
+    _rect(ctx, 6, 12, 2, 2, cloakDark);
+    _rect(ctx, 9, 11, 2, 3, cloakDark);
+  }
+  // Посох
+  _vline(ctx, 3, 0, 14, '#6b4400');
+  _px(ctx, 3, 0, '#44ffcc');
+}
+
+function _drawPlayerBase_rogue(ctx, frame) {
+  const cloak = '#2a2a2a';
+  const cloakDark = '#1a1a1a';
+  // Капюшон
+  _rect(ctx, 5, 0, 6, 5, cloak);
+  _rect(ctx, 6, 1, 4, 3, '#0a0a0a');
+  _px(ctx, 7, 2, '#44ff44'); _px(ctx, 9, 2, '#44ff44');
+  // Тело (худое)
+  _rect(ctx, 6, 5, 4, 5, cloak);
+  _rect(ctx, 5, 6, 6, 3, cloak);
+  // Кинжалы
+  _vline(ctx, 4, 4, 5, '#c0c8d0');
+  _px(ctx, 4, 3, '#e8f0f8');
+  _vline(ctx, 12, 4, 5, '#c0c8d0');
+  _px(ctx, 12, 3, '#e8f0f8');
+  // Ноги (тонкие)
+  if (frame === 1) {
+    _rect(ctx, 6, 10, 2, 4, cloakDark);
+    _rect(ctx, 9, 11, 2, 3, cloakDark);
+  } else {
+    _rect(ctx, 6, 11, 2, 3, cloakDark);
+    _rect(ctx, 9, 10, 2, 4, cloakDark);
+  }
+}
+
+function _drawPlayerBase_tank(ctx, frame) {
+  const armor = '#6a7080';
+  const armorDark = '#4a5060';
+  const horn = '#c8a83a';
+  // Шлем с рогами
+  _rect(ctx, 5, 0, 6, 5, armor);
+  _px(ctx, 4, 0, horn); _px(ctx, 4, 1, horn);
+  _px(ctx, 11, 0, horn); _px(ctx, 11, 1, horn);
+  _rect(ctx, 6, 2, 4, 1, '#111');
+  _px(ctx, 6, 2, '#ff8800'); _px(ctx, 9, 2, '#ff8800');
+  // Тело (массивное)
+  _rect(ctx, 4, 5, 8, 5, armor);
+  _rect(ctx, 3, 6, 10, 3, armor);
+  // Наплечники
+  _rect(ctx, 3, 4, 2, 2, armorDark);
+  _rect(ctx, 12, 4, 2, 2, armorDark);
+  // Ноги (широкие)
+  if (frame === 1) {
+    _rect(ctx, 5, 10, 3, 4, armorDark);
+    _rect(ctx, 9, 11, 3, 3, armorDark);
+  } else {
+    _rect(ctx, 5, 11, 3, 3, armorDark);
+    _rect(ctx, 9, 10, 3, 4, armorDark);
+  }
+  // Молот
+  _vline(ctx, 14, 1, 10, '#6b4400');
+  _rect(ctx, 13, 0, 3, 2, '#555');
+}
+
+/** Генерирует два кадра (frame1, frame2) для каждого класса. */
+function initPlayerWalkSprites() {
+  const classes = {
+    warrior: _drawPlayerBase_warrior,
+    mage: _drawPlayerBase_mage,
+    rogue: _drawPlayerBase_rogue,
+    tank: _drawPlayerBase_tank,
+  };
+  for (const [id, fn] of Object.entries(classes)) {
+    const frames = [];
+    for (let f = 1; f <= 2; f++) {
+      const canvas = _createSpriteCanvas(16);
+      const ctx = canvas.getContext('2d');
+      fn(ctx, f);
+      _addOutline(ctx, 16, '#000000');
+      frames.push(canvas);
+    }
+    PLAYER_WALK_SPRITES[id] = frames;
+  }
+  console.log('[Sprites] Сгенерировано 8 кадров ходьбы игрока (16×16)');
 }
 
 // Экспорт в глобальную область
 window.ENEMY_SPRITES = ENEMY_SPRITES;
+window.CLASS_SPRITES = CLASS_SPRITES;
+window.PLAYER_WALK_SPRITES = PLAYER_WALK_SPRITES;
 window.initSprites = initSprites;
 window.getEnemySprite = getEnemySprite;
 window.getSpriteDisplaySize = getSpriteDisplaySize;

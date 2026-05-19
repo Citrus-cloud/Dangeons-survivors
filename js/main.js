@@ -1383,7 +1383,6 @@ const Game = {
     }
 
     e.hp -= finalDmg;
-    e.flash = 0.10;
 
     // Шаг 8: вампиризм (лечение от нанесённого урона)
     if (this.player && this.player.lifesteal > 0) {

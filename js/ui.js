@@ -183,7 +183,7 @@ const UI = {
     // XP
     const xpPct = Utils.clamp(p.xp / p.xpNext, 0, 1);
     this.xpFill.style.width = (xpPct * 100) + '%';
-    this.xpLabel.textContent = `Lv ${p.level}  XP: ${Math.floor(p.xp)}/${Math.floor(p.xpNext)}`;
+    this.xpLabel.textContent = '';
 
     // Magic Missile cd (встроенная способность) — только если не отключена
     if (p._noBuiltInMissile) {
