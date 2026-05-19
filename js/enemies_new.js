@@ -1090,33 +1090,31 @@ Enemies.render = function(ctx, pool, cam, viewW, viewH) {
   const minX = cam.x, minY = cam.y;
   const maxX = cam.x + viewW, maxY = cam.y + viewH;
   const items = pool.items;
-  // Pre-pass: draw aura/glow for elites and rare enemies
+  // Pre-pass: draw soft aura glow for elites and rare enemies (no stroke outlines)
   for (let i = 0; i < items.length; i++) {
     const e = items[i];
     if (!e.active || !e.cfg) continue;
     const halfR = Math.max(e.cfg.w, e.cfg.h);
     if (e.x + halfR < minX || e.x - halfR > maxX ||
         e.y + halfR < minY || e.y - halfR > maxY) continue;
-    // Elite glow
+    // Elite glow — soft filled aura (no stroke outline)
     if (e._elite) {
       ctx.save();
-      ctx.globalAlpha = 0.3 + 0.15 * Math.sin(e.lifeTime * 4);
-      ctx.strokeStyle = '#ffd700';
-      ctx.lineWidth = 3;
+      ctx.globalAlpha = 0.12 + 0.06 * Math.sin(e.lifeTime * 4);
+      ctx.fillStyle = '#ffd700';
       ctx.beginPath();
-      ctx.arc(e.x, e.y, halfR * 0.7, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.arc(e.x, e.y, halfR * 0.8, 0, Math.PI * 2);
+      ctx.fill();
       ctx.restore();
     }
-    // Rare enemy aura (archlich, eldritch_horror)
+    // Rare enemy aura (archlich, eldritch_horror) — soft filled glow
     if (e.cfg.auraGlow || e.cfg.rareSpawn) {
       ctx.save();
-      ctx.globalAlpha = 0.2 + 0.1 * Math.sin(e.lifeTime * 3);
-      ctx.strokeStyle = e.cfg.stroke || '#ffd700';
-      ctx.lineWidth = 4;
+      ctx.globalAlpha = 0.10 + 0.05 * Math.sin(e.lifeTime * 3);
+      ctx.fillStyle = e.cfg.stroke || '#ffd700';
       ctx.beginPath();
-      ctx.arc(e.x, e.y, halfR * 0.9, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.arc(e.x, e.y, halfR * 1.0, 0, Math.PI * 2);
+      ctx.fill();
       ctx.restore();
     }
   }
