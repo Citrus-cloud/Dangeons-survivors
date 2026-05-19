@@ -84,6 +84,9 @@ const Game = {
     Input.init();
     GameAudio.init();
 
+    // Генерация пиксельных спрайтов врагов
+    if (window.initSprites) initSprites();
+
     // Шаг 15: загрузить мета-прогресс
     if (window.MetaProgress) MetaProgress.load();
 

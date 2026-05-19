@@ -1408,8 +1408,6 @@ const Bosses = {
 
     const drawW = cfg.w * scale;
     const drawH = cfg.h * scale;
-    const fillColor = boss.flash > 0 ? '#ffffff' : cfg.color;
-    const strokeColor = cfg.stroke || '#ffffff';
 
     ctx.save();
 
@@ -1421,7 +1419,7 @@ const Bosses = {
       ctx.translate(-boss.x, -boss.y);
     }
 
-    // Аура
+    // Аура (shadow/glow)
     if (boss.id === 'boss_lich' || boss.id === 'boss_shadow_dragon') {
       ctx.shadowColor = 'rgba(128, 0, 255, 0.6)';
       ctx.shadowBlur = 15;
@@ -1436,68 +1434,68 @@ const Bosses = {
       ctx.shadowBlur = 12;
     }
 
-    // Фигура
-    ctx.fillStyle = fillColor;
-    ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = 2;
+    // --- Спрайтовая отрисовка ---
+    const sprite = window.getEnemySprite ? getEnemySprite(boss.id) : null;
+    const spriteSize = (window.getSpriteDisplaySize ? getSpriteDisplaySize(boss.id) : Math.max(drawW, drawH)) * scale;
 
-    switch (cfg.shape) {
-      case 'rect':
-        ctx.fillRect(boss.x - drawW / 2, boss.y - drawH / 2, drawW, drawH);
-        ctx.strokeRect(boss.x - drawW / 2, boss.y - drawH / 2, drawW, drawH);
-        break;
-      case 'circle':
-        ctx.beginPath();
-        ctx.arc(boss.x, boss.y, drawW / 2, 0, Math.PI * 2);
-        ctx.fill(); ctx.stroke();
-        break;
-      case 'oval':
-        ctx.beginPath();
-        ctx.ellipse(boss.x, boss.y, drawW / 2, drawH / 2, 0, 0, Math.PI * 2);
-        ctx.fill(); ctx.stroke();
-        break;
-      case 'diamond':
-        ctx.beginPath();
-        ctx.moveTo(boss.x, boss.y - drawH / 2);
-        ctx.lineTo(boss.x + drawW / 2, boss.y);
-        ctx.lineTo(boss.x, boss.y + drawH / 2);
-        ctx.lineTo(boss.x - drawW / 2, boss.y);
-        ctx.closePath();
-        ctx.fill(); ctx.stroke();
-        break;
+    if (sprite) {
+      ctx.imageSmoothingEnabled = false;
+
+      if (boss.flash > 0) {
+        // Рисуем спрайт + белая вспышка
+        ctx.drawImage(sprite, boss.x - spriteSize / 2, boss.y - spriteSize / 2, spriteSize, spriteSize);
+        const prevA = ctx.globalAlpha;
+        ctx.globalAlpha = 0.7;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(boss.x - spriteSize / 2, boss.y - spriteSize / 2, spriteSize, spriteSize);
+        ctx.globalAlpha = prevA;
+      } else {
+        ctx.drawImage(sprite, boss.x - spriteSize / 2, boss.y - spriteSize / 2, spriteSize, spriteSize);
+      }
+
+      ctx.imageSmoothingEnabled = true;
+    } else {
+      // Fallback: старая геометрическая отрисовка
+      const fillColor = boss.flash > 0 ? '#ffffff' : cfg.color;
+      const strokeColor = cfg.stroke || '#ffffff';
+      ctx.fillStyle = fillColor;
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 2;
+
+      switch (cfg.shape) {
+        case 'rect':
+          ctx.fillRect(boss.x - drawW / 2, boss.y - drawH / 2, drawW, drawH);
+          ctx.strokeRect(boss.x - drawW / 2, boss.y - drawH / 2, drawW, drawH);
+          break;
+        case 'circle':
+          ctx.beginPath();
+          ctx.arc(boss.x, boss.y, drawW / 2, 0, Math.PI * 2);
+          ctx.fill(); ctx.stroke();
+          break;
+        case 'oval':
+          ctx.beginPath();
+          ctx.ellipse(boss.x, boss.y, drawW / 2, drawH / 2, 0, 0, Math.PI * 2);
+          ctx.fill(); ctx.stroke();
+          break;
+        case 'diamond':
+          ctx.beginPath();
+          ctx.moveTo(boss.x, boss.y - drawH / 2);
+          ctx.lineTo(boss.x + drawW / 2, boss.y);
+          ctx.lineTo(boss.x, boss.y + drawH / 2);
+          ctx.lineTo(boss.x - drawW / 2, boss.y);
+          ctx.closePath();
+          ctx.fill(); ctx.stroke();
+          break;
+      }
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold ' + Math.max(12, Math.floor(drawW * 0.4)) + 'px ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(cfg.letter, boss.x, boss.y + 1);
     }
 
     ctx.shadowBlur = 0;
-
-    // Декоративные элементы
-    if (boss.id === 'boss_skeleton_knight' || boss.id === 'boss_knight_commander') {
-      // Корона/шлем
-      ctx.fillStyle = '#ffd700';
-      const cy = boss.y - drawH / 2 - 8;
-      ctx.beginPath();
-      ctx.moveTo(boss.x - 12, cy + 5);
-      ctx.lineTo(boss.x - 6, cy - 5);
-      ctx.lineTo(boss.x, cy + 2);
-      ctx.lineTo(boss.x + 6, cy - 5);
-      ctx.lineTo(boss.x + 12, cy + 5);
-      ctx.closePath();
-      ctx.fill();
-    }
-
-    if (boss.id === 'boss_spider_queen' || boss.id === 'boss_spider_matriarch') {
-      // Лапы (8 маленьких линий)
-      ctx.strokeStyle = cfg.stroke;
-      ctx.lineWidth = 1.5;
-      for (let i = 0; i < 8; i++) {
-        const ang = (Math.PI * 2 / 8) * i + Date.now() * 0.002;
-        const lx = boss.x + Math.cos(ang) * (drawW / 2 + 6);
-        const ly = boss.y + Math.sin(ang) * (drawH / 2 + 4);
-        ctx.beginPath();
-        ctx.moveTo(boss.x + Math.cos(ang) * drawW * 0.35, boss.y + Math.sin(ang) * drawH * 0.35);
-        ctx.lineTo(lx, ly);
-        ctx.stroke();
-      }
-    }
 
     // Ледяной шторм (фаза 2 ледяного змея)
     if (boss.id === 'boss_ice_serpent' && boss.iceStormActive) {
@@ -1511,13 +1509,6 @@ const Bosses = {
       ctx.lineWidth = 1;
       ctx.stroke();
     }
-
-    // Буква в центре
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold ' + Math.max(12, Math.floor(drawW * 0.4)) + 'px ui-monospace, monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(cfg.letter, boss.x, boss.y + 1);
 
     // Визуал атак
     if (boss.slashAnim > 0) {

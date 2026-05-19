@@ -104,16 +104,67 @@ const UIExtended = {
       const cell = document.createElement('div');
       cell.className = 'bestiary-cell' + (unlocked ? ' unlocked' : ' locked');
       if (unlocked) {
-        cell.innerHTML = `
-          <div class="bestiary-cell-icon" style="background:${cfg.color};border-color:${cfg.stroke || '#666'};">${cfg.letter}</div>
-          <div class="bestiary-cell-name">${cfg.name}</div>
-          <div class="bestiary-cell-desc">${Bestiary.getDescription(cfg.id)}</div>
-        `;
+        // Используем пиксельный спрайт, если доступен
+        const sprite = window.getEnemySprite ? getEnemySprite(cfg.id) : null;
+        const iconDiv = document.createElement('div');
+        iconDiv.className = 'bestiary-cell-icon';
+        if (sprite) {
+          // Рисуем спрайт в маленький canvas (32x32 для отображения)
+          const display = document.createElement('canvas');
+          display.width = 32; display.height = 32;
+          display.style.imageRendering = 'pixelated';
+          display.style.width = '32px'; display.style.height = '32px';
+          const dCtx = display.getContext('2d');
+          dCtx.imageSmoothingEnabled = false;
+          dCtx.drawImage(sprite, 0, 0, 32, 32);
+          iconDiv.style.background = 'transparent';
+          iconDiv.style.border = 'none';
+          iconDiv.innerHTML = '';
+          iconDiv.appendChild(display);
+        } else {
+          iconDiv.style.background = cfg.color;
+          iconDiv.style.borderColor = cfg.stroke || '#666';
+          iconDiv.textContent = cfg.letter;
+        }
+        cell.appendChild(iconDiv);
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'bestiary-cell-name';
+        nameDiv.textContent = cfg.name;
+        cell.appendChild(nameDiv);
+        const descDiv = document.createElement('div');
+        descDiv.className = 'bestiary-cell-desc';
+        descDiv.textContent = Bestiary.getDescription(cfg.id);
+        cell.appendChild(descDiv);
       } else {
-        cell.innerHTML = `
-          <div class="bestiary-cell-icon locked-icon">?</div>
-          <div class="bestiary-cell-name">???</div>
-        `;
+        // Неоткрытый враг — чёрный силуэт
+        const sprite = window.getEnemySprite ? getEnemySprite(cfg.id) : null;
+        const iconDiv = document.createElement('div');
+        iconDiv.className = 'bestiary-cell-icon locked-icon';
+        if (sprite) {
+          const display = document.createElement('canvas');
+          display.width = 32; display.height = 32;
+          display.style.imageRendering = 'pixelated';
+          display.style.width = '32px'; display.style.height = '32px';
+          const dCtx = display.getContext('2d');
+          dCtx.imageSmoothingEnabled = false;
+          dCtx.drawImage(sprite, 0, 0, 32, 32);
+          // Затемняем (чёрный силуэт)
+          dCtx.globalCompositeOperation = 'source-in';
+          dCtx.fillStyle = '#222222';
+          dCtx.fillRect(0, 0, 32, 32);
+          dCtx.globalCompositeOperation = 'source-over';
+          iconDiv.style.background = 'transparent';
+          iconDiv.style.border = 'none';
+          iconDiv.innerHTML = '';
+          iconDiv.appendChild(display);
+        } else {
+          iconDiv.textContent = '?';
+        }
+        cell.appendChild(iconDiv);
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'bestiary-cell-name';
+        nameDiv.textContent = '???';
+        cell.appendChild(nameDiv);
       }
       grid.appendChild(cell);
     }
