@@ -906,19 +906,10 @@ const GameMap = {
   },
 
   _placeDecor(dungeon, cfg) {
-    // Факелы — вдоль стен комнат и коридоров (визуально на полу у стены)
+    // Факелы полностью убраны (по запросу)
+
+    // Руны и паутина — остаются
     for (const r of dungeon.rooms) {
-      const spacing = cfg.TORCH_SPACING;
-      // Вдоль верхней и нижней стен
-      for (let xx = r.x + 30; xx < r.x + r.w - 30; xx += spacing) {
-        dungeon.decor.torches.push({ x: xx, y: r.y + 14, phase: this.rng() * 6 });
-        dungeon.decor.torches.push({ x: xx, y: r.y + r.h - 14, phase: this.rng() * 6 });
-      }
-      // Вдоль левой/правой
-      for (let yy = r.y + 60; yy < r.y + r.h - 30; yy += spacing) {
-        dungeon.decor.torches.push({ x: r.x + 14, y: yy, phase: this.rng() * 6 });
-        dungeon.decor.torches.push({ x: r.x + r.w - 14, y: yy, phase: this.rng() * 6 });
-      }
       // Руны (только в обычных комнатах)
       if (!r.isSecret) {
         const runesCount = this._randInt(3, cfg.RUNES_PER_ROOM + 1);
@@ -956,18 +947,7 @@ const GameMap = {
         color: '#c47bff',
       }));
     }
-    // Корридорные факелы (по середине)
-    for (const c of dungeon.corridors) {
-      if (c.w > c.h) {
-        for (let xx = c.x + 30; xx < c.x + c.w - 30; xx += cfg.TORCH_SPACING) {
-          dungeon.decor.torches.push({ x: xx, y: c.y + c.h / 2, phase: this.rng() * 6 });
-        }
-      } else {
-        for (let yy = c.y + 30; yy < c.y + c.h - 30; yy += cfg.TORCH_SPACING) {
-          dungeon.decor.torches.push({ x: c.x + c.w / 2, y: yy, phase: this.rng() * 6 });
-        }
-      }
-    }
+    // Корридорные факелы полностью убраны
 
     // === Богатый декор по биомам (D&D стиль) ===
     if (!dungeon.decor.biomeDecor) dungeon.decor.biomeDecor = [];
@@ -2290,8 +2270,7 @@ const GameMap = {
     // Шаг 17: новые загадки и ловушки
     if (GameMap.renderStep17) GameMap.renderStep17(ctx, cam, viewW, viewH);
 
-    // Декор: факелы (с пульсирующим свечением)
-    this._renderTorches(ctx, cam, viewW, viewH);
+    // Декор: факелы полностью удалены
 
     // Подсказки рунами над рычагами
     if (this.dungeon.puzzleHints) {
@@ -2509,28 +2488,8 @@ const GameMap = {
   },
 
   _renderTorches(ctx, cam, vw, vh) {
-    // Bug fix #3: факелы со статичным отображением (без пульсации/мерцания)
-    if (!this.dungeon || !this.dungeon.decor.torches) return;
-    for (const torch of this.dungeon.decor.torches) {
-      if (torch.x < cam.x - 10 || torch.x > cam.x + vw + 10 ||
-          torch.y < cam.y - 10 || torch.y > cam.y + vh + 10) continue;
-      // Основание (статичное)
-      ctx.fillStyle = '#5a4a3a';
-      ctx.fillRect(torch.x - 2, torch.y - 1, 4, 6);
-      // Пламя (статичное, без пульсации)
-      const fSize = 3.7;
-      ctx.fillStyle = 'rgba(255, 180, 30, 0.85)';
-      ctx.beginPath();
-      ctx.arc(torch.x, torch.y - 3, fSize, 0, Math.PI * 2);
-      ctx.fill();
-      // Свечение (статичное, мягкое)
-      ctx.globalAlpha = 0.10;
-      ctx.fillStyle = '#ffaa00';
-      ctx.beginPath();
-      ctx.arc(torch.x, torch.y, 16, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-    }
+    // Факелы полностью удалены — метод оставлен для совместимости
+    return;
   },
 
   _renderTraps(ctx, cam, vw, vh) {

@@ -890,11 +890,12 @@ const Enemies = {
         // Обычная отрисовка спрайта
         ctx.drawImage(sprite, renderX - spriteSize / 2, renderY - spriteSize / 2, spriteSize, spriteSize);
 
-        // Золотая обводка для элитных (captainBuffed)
+        // Элитные (captainBuffed) — без обводки, только мягкая аура (glow через shadowBlur)
         if (e.captainBuffed) {
-          ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
-          ctx.lineWidth = 1;
-          ctx.strokeRect(renderX - spriteSize / 2 - 1, renderY - spriteSize / 2 - 1, spriteSize + 2, spriteSize + 2);
+          ctx.shadowColor = 'rgba(255, 215, 0, 0.5)';
+          ctx.shadowBlur = 6;
+          ctx.drawImage(sprite, renderX - spriteSize / 2, renderY - spriteSize / 2, spriteSize, spriteSize);
+          ctx.shadowBlur = 0;
         }
 
       } else {

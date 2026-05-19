@@ -1450,7 +1450,7 @@ Enemies.render = function(ctx, pool, cam, viewW, viewH) {
   const maxX = cam.x + viewW, maxY = cam.y + viewH;
   const items = pool.items;
 
-  // Pre-pass for step 12 specific effects
+  // Pre-pass for step 12 specific effects (soft aura, no stroke outlines)
   for (let i = 0; i < items.length; i++) {
     const e = items[i];
     if (!e.active || !e.cfg) continue;
@@ -1458,33 +1458,30 @@ Enemies.render = function(ctx, pool, cam, viewW, viewH) {
     if (e.x + halfR < minX || e.x - halfR > maxX ||
         e.y + halfR < minY || e.y - halfR > maxY) continue;
 
-    // Elite: thick golden outline (20% larger)
+    // Elite: soft golden aura (no outline)
     if (e._elite && e._eliteAuraRadius) {
       ctx.save();
-      ctx.globalAlpha = 0.4 + 0.2 * Math.sin(e.lifeTime * 5);
-      ctx.strokeStyle = '#ffd700';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.arc(e.x, e.y, halfR * 0.8, 0, Math.PI * 2);
-      ctx.stroke();
-      // Aura range indicator (subtle)
-      ctx.globalAlpha = 0.08;
+      ctx.globalAlpha = 0.15 + 0.08 * Math.sin(e.lifeTime * 5);
       ctx.fillStyle = '#ffd700';
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, halfR * 0.85, 0, Math.PI * 2);
+      ctx.fill();
+      // Aura range indicator (subtle)
+      ctx.globalAlpha = 0.06;
       ctx.beginPath();
       ctx.arc(e.x, e.y, e._eliteAuraRadius, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
 
-    // Tier 6 enemies: subtle purple glow
+    // Tier 6 enemies: subtle purple aura (no stroke)
     if (e.cfg.tier === 6) {
       ctx.save();
-      ctx.globalAlpha = 0.15 + 0.1 * Math.sin(e.lifeTime * 2.5);
-      ctx.strokeStyle = '#9933ff';
-      ctx.lineWidth = 3;
+      ctx.globalAlpha = 0.10 + 0.05 * Math.sin(e.lifeTime * 2.5);
+      ctx.fillStyle = '#9933ff';
       ctx.beginPath();
-      ctx.arc(e.x, e.y, halfR * 0.9, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.arc(e.x, e.y, halfR * 0.95, 0, Math.PI * 2);
+      ctx.fill();
       ctx.restore();
     }
   }
