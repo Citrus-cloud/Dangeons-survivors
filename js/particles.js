@@ -17,18 +17,20 @@
 function createParticle() {
   return {
     active: false,
-    kind: 'spark',          // 'spark' | 'ring' | 'text'
+    kind: 'spark',          // 'spark' | 'ring' | 'text' | 'dust'
     x: 0, y: 0,
     vx: 0, vy: 0,
     life: 0, maxLife: 0,
     color: '#888',
-    size: 3,                // для 'spark' — сторона квадрата; для 'text' — px шрифта
+    size: 3,                // для 'spark' — сторона квадрата; для 'text' — px шрифта; для 'dust' — 2px
     // Для 'ring':
     radius: 0,
     maxRadius: 0,
     lineWidth: 2,
     // Для 'text':
     text: '',
+    // Для 'dust':
+    gravity: 0,             // px/s² вниз (лёгкое оседание)
   };
 }
 window.createParticle = createParticle;
@@ -46,6 +48,7 @@ const Particles = {
     p.maxRadius = 0;
     p.lineWidth = 2;
     p.text = '';
+    p.gravity = 0;
     return p;
   },
 
@@ -171,6 +174,93 @@ const Particles = {
     this.text(x, y - 30, 'БОСС ПОВЕРЖЕН!', 2.0, '#ffd700', 20);
   },
 
+  /* ============================================================
+     Шаг 3 (анимации): Эффект «dusting» — рассыпание в пыль при смерти врага.
+     ============================================================ */
+
+  /** Одна пылевая частица 2×2, с гравитацией и альфа-затуханием. */
+  dust(x, y, vx, vy, life, color, gravity) {
+    const p = this._spawn();
+    if (!p) return null;
+    p.kind = 'dust';
+    p.x = x; p.y = y;
+    p.vx = vx; p.vy = vy;
+    p.life = p.maxLife = life;
+    p.color = color || '#aaa';
+    p.size = 2;
+    p.gravity = gravity || 30;
+    return p;
+  },
+
+  /**
+   * «Щелчок Таноса» — рассыпание обычного врага (8–12 частиц, 0.3 сек).
+   * @param {number} x - позиция врага
+   * @param {number} y - позиция врага
+   * @param {string} color - основной цвет врага
+   */
+  enemyDust(x, y, color) {
+    const count = Utils.randInt(8, 12);
+    const baseColor = color || '#888';
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Utils.rand(20, 40);
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed - Utils.rand(5, 15); // лёгкий подлёт вверх
+      const life = Utils.rand(0.2, 0.35);
+      this.dust(
+        x + Utils.rand(-6, 6),
+        y + Utils.rand(-6, 6),
+        vx, vy, life, baseColor, Utils.rand(20, 40)
+      );
+    }
+  },
+
+  /**
+   * «Щелчок Таноса» для боссов — 20-30 частиц, 0.5 сек + вспышка.
+   * @param {number} x - позиция босса
+   * @param {number} y - позиция босса
+   * @param {string} color - цвет босса
+   */
+  bossDust(x, y, color) {
+    const count = Utils.randInt(20, 30);
+    const baseColor = color || '#c00';
+    // Вспышка
+    this.ring(x, y, 60, 0.3, 'rgba(255, 255, 200, 0.9)', 4);
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Utils.rand(30, 60);
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed - Utils.rand(8, 20);
+      const life = Utils.rand(0.3, 0.55);
+      this.dust(
+        x + Utils.rand(-10, 10),
+        y + Utils.rand(-10, 10),
+        vx, vy, life, baseColor, Utils.rand(15, 35)
+      );
+    }
+  },
+
+  /**
+   * Вспышка при атаке оружия — лёгкие искры заданного цвета.
+   * @param {number} x - позиция появления
+   * @param {number} y - позиция появления
+   * @param {number} count - количество искр (2-5)
+   * @param {string} color - цвет
+   */
+  attackSparks(x, y, count, color) {
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Utils.rand(40, 100);
+      this.spark(
+        x, y,
+        Math.cos(angle) * speed, Math.sin(angle) * speed,
+        Utils.rand(0.08, 0.15),
+        color || '#fff',
+        Utils.rand(1.5, 3)
+      );
+    }
+  },
+
   /** Обновление одной частицы, специфичное для kind.
    *  Возвращает true, если частицу нужно деактивировать. */
   step(p, dt) {
@@ -192,6 +282,13 @@ const Particles = {
         p.x += p.vx * dt;
         p.y += p.vy * dt;
         p.vy *= 0.98;
+        break;
+      case 'dust':
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += p.gravity * dt; // гравитация — оседание вниз
+        p.vx *= 0.92;
+        p.vy *= 0.92;
         break;
     }
     return false;
@@ -225,6 +322,14 @@ const Particles = {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(p.text, p.x, p.y);
+        ctx.globalAlpha = 1;
+        break;
+      }
+      case 'dust': {
+        // Квадратик 2×2 с быстрым альфа-затуханием
+        ctx.globalAlpha = a * a; // квадратичное затухание — быстрее исчезает
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x - 1, p.y - 1, p.size, p.size);
         ctx.globalAlpha = 1;
         break;
       }

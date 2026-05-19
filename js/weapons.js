@@ -254,12 +254,12 @@ const Projectiles = {
       // Попробовать отрисовать пиксельный спрайт
       const sprite = PS ? PS[m.kind] : null;
       if (sprite) {
+        // Шаг 3: масштаб снаряда кратный BASE_SCALE (8×BASE_SCALE)
         const drawSize = Math.max(m.radius * 2.5, 16);
         const half = drawSize / 2;
         ctx.save();
         ctx.translate(m.x, m.y);
         if (m.angle) ctx.rotate(m.angle);
-        ctx.imageSmoothingEnabled = false;
         ctx.drawImage(sprite, -half, -half, drawSize, drawSize);
         ctx.restore();
         continue;
@@ -373,6 +373,20 @@ class Weapon {
     const fired = this.doAttack(player, enemies, projectiles, helpers);
     if (fired) {
       this.cooldown = this.cooldownAt(player);
+      // Шаг 3 (анимации): лёгкие вспышки при атаке
+      if (window.Particles) {
+        if (this.type === 'ranged') {
+          // Вспышка на позиции оружия (жёлтая точка)
+          Particles.attackSparks(player.x, player.y, 2, '#ffdd44');
+        } else if (this.type === 'magic') {
+          // Фиолетовые искры при магии
+          Particles.attackSparks(player.x, player.y, 2, '#b388ff');
+        } else if (this.type === 'aoe' || this.type === 'explosive') {
+          // Оранжевая вспышка для AoE
+          Particles.attackSparks(player.x, player.y, 3, '#ff9944');
+        }
+        // melee — не нужно, есть renderOverlay дуги
+      }
       // Шаг 18: звук атаки оружия
       if (window.GameAudio) {
         if (this.type === 'melee') GameAudio.playSfx('sword');

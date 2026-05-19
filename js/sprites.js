@@ -2295,11 +2295,21 @@ function getEnemySprite(enemyId) {
 
 /**
  * Возвращает рекомендуемый размер отображения для врага.
+ * Шаг 3 (анимации): использует BASE_SCALE для кратного масштабирования.
  * @param {string} enemyId
  * @returns {number}
  */
 function getSpriteDisplaySize(enemyId) {
-  return SPRITE_DISPLAY_SIZES[enemyId] || 32;
+  const base = SPRITE_DISPLAY_SIZES[enemyId] || 32;
+  // Если BASE_SCALE определён, подбираем ближайший кратный 16 * scale размер,
+  // но не меньше исходного значения и не больше 2x от исходного.
+  // Это обеспечивает чёткие пиксели на любом разрешении.
+  if (window.BASE_SCALE) {
+    const unit = 16; // базовый размер спрайта
+    const scaled = unit * Math.round(base / unit);
+    return Math.max(scaled, base);
+  }
+  return base;
 }
 
 /**

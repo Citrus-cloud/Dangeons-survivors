@@ -120,12 +120,9 @@ function _spawnGroundEffect(kind, x, y, opts) {
 function _emitDeathParticles(e) {
   if (!window.Particles) return;
   const cfg = e.cfg || {};
-  Particles.burst(e.x, e.y, Utils.randInt(3, 5), {
-    color: cfg.color || '#888',
-    speedMin: 40, speedMax: 110,
-    lifeMin: 0.4, lifeMax: 0.7,
-    sizeMin: 2, sizeMax: 4,
-  });
+  const color = cfg.color || '#888';
+  // Шаг 3 (анимации): «dusting» — рассыпание в пыль при смерти
+  Particles.enemyDust(e.x, e.y, color);
 }
 
 /* Урон игроку при контакте (для тех behaviour'ов, где есть). */
@@ -691,7 +688,7 @@ const Enemies = {
       const e = items[i];
       if (!e.active || !e.cfg) continue;
       e.lifeTime += dt;
-      e.bobPhase += dt * 4;
+      e.bobPhase += dt * (3.5 + (i % 5) * 0.4); // slight speed variation per enemy
       e.flash = Math.max(0, e.flash - dt);
       e.attackPunch = Math.max(0, e.attackPunch - dt);
       // Шаг 7: тик таймера замедления от оружий
@@ -850,8 +847,9 @@ const Enemies = {
       if (e.x + halfMaxR < minX || e.x - halfMaxR > maxX ||
           e.y + halfMaxR < minY || e.y - halfMaxR > maxY) continue;
 
-      // Покачивание (по высоте)
-      const renderY = e.y + Math.sin(e.bobPhase) * (cfg.wobble || 0);
+      // Покачивание (по высоте) — всегда ±1px синусоида для оживления
+      const bobAmount = cfg.wobble || 1;
+      const renderY = e.y + Math.sin(e.bobPhase) * bobAmount;
       const renderX = e.x;
 
       // Пульсация атаки: до +20% размера в течение 0.1 сек
@@ -872,9 +870,6 @@ const Enemies = {
       const sprite = hasSprites ? getEnemySprite(e.type) : null;
 
       if (sprite) {
-        // Отключаем сглаживание для чётких пикселей
-        ctx.imageSmoothingEnabled = false;
-
         // Мимик в idle — рисуем спрайт сундука с подсветкой
         if (cfg.behavior === 'mimic' && !e.activated) {
           ctx.shadowColor = 'rgba(255, 215, 80, 0.7)';
@@ -914,64 +909,12 @@ const Enemies = {
           ctx.strokeRect(renderX - spriteSize / 2 - 1, renderY - spriteSize / 2 - 1, spriteSize + 2, spriteSize + 2);
         }
 
-        ctx.imageSmoothingEnabled = true;
       } else {
-        // Fallback: старая отрисовка геометрических фигур (если спрайта нет)
+        // Fallback: минимальный цветной квадрат (если спрайта нет — не должно происходить)
         const drawW = w * punch, drawH = h * punch;
         const fillColor = e.flash > 0 ? '#ffffff' : (cfg.color || '#888');
         ctx.fillStyle = fillColor;
-        ctx.strokeStyle = cfg.stroke || '#ffffff';
-        ctx.lineWidth = 1;
-
-        if (cfg.behavior === 'mimic' && !e.activated) {
-          ctx.fillStyle = '#d8a826';
-          ctx.fillRect(renderX - drawW / 2, renderY - drawH / 2, drawW, drawH);
-          ctx.globalAlpha = prevAlpha;
-          continue;
-        }
-
-        switch (cfg.shape) {
-          case 'rect':
-            ctx.fillRect(renderX - drawW / 2, renderY - drawH / 2, drawW, drawH);
-            ctx.strokeRect(renderX - drawW / 2 + 0.5, renderY - drawH / 2 + 0.5, drawW - 1, drawH - 1);
-            break;
-          case 'oval':
-            ctx.beginPath();
-            ctx.ellipse(renderX, renderY, drawW / 2, drawH / 2, 0, 0, Math.PI * 2);
-            ctx.fill(); ctx.stroke();
-            break;
-          case 'circle':
-            ctx.beginPath();
-            ctx.arc(renderX, renderY, drawW / 2, 0, Math.PI * 2);
-            ctx.fill(); ctx.stroke();
-            break;
-          case 'diamond':
-            ctx.beginPath();
-            ctx.moveTo(renderX, renderY - drawH / 2);
-            ctx.lineTo(renderX + drawW / 2, renderY);
-            ctx.lineTo(renderX, renderY + drawH / 2);
-            ctx.lineTo(renderX - drawW / 2, renderY);
-            ctx.closePath();
-            ctx.fill(); ctx.stroke();
-            break;
-          case 'triangle':
-            ctx.beginPath();
-            ctx.moveTo(renderX, renderY - drawH / 2);
-            ctx.lineTo(renderX + drawW / 2, renderY + drawH / 2);
-            ctx.lineTo(renderX - drawW / 2, renderY + drawH / 2);
-            ctx.closePath();
-            ctx.fill(); ctx.stroke();
-            break;
-          default:
-            ctx.fillRect(renderX - drawW / 2, renderY - drawH / 2, drawW, drawH);
-        }
-
-        // Буква (fallback)
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold ' + Math.min(16, Math.floor(Math.min(w, h) * 0.6)) + 'px ui-monospace, monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(cfg.letter || '?', renderX, renderY + 1);
+        ctx.fillRect(renderX - drawW / 2, renderY - drawH / 2, drawW, drawH);
       }
 
       // HP-бар (всегда показываем при повреждении)

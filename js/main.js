@@ -128,6 +128,14 @@ const Game = {
     const h = window.innerHeight;
     this.viewW = w;
     this.viewH = h;
+
+    // Шаг 3 (анимации): BASE_SCALE — кратный масштаб спрайтов для чёткости
+    if (w < 600) this.baseScale = 2;
+    else if (w <= 1200) this.baseScale = 3;
+    else this.baseScale = 4;
+    // Экспорт глобально для использования в sprites.js и других модулях
+    window.BASE_SCALE = this.baseScale;
+
     // Камера показывает в 2 раза больше карты (zoom-out x2)
     this.cameraScale = 0.5; // 1 / 2.0 — показываем 200% области
     this.cameraViewW = w / this.cameraScale;
@@ -137,6 +145,8 @@ const Game = {
     this.canvas.style.width = w + 'px';
     this.canvas.style.height = h + 'px';
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    // Шаг 3: отключаем сглаживание глобально
+    this.ctx.imageSmoothingEnabled = false;
   },
 
   /* ----- состояния ----- */
@@ -1373,7 +1383,7 @@ const Game = {
     }
 
     e.hp -= finalDmg;
-    e.flash = 0.08;
+    e.flash = 0.10;
 
     // Шаг 8: вампиризм (лечение от нанесённого урона)
     if (this.player && this.player.lifesteal > 0) {
@@ -1508,6 +1518,8 @@ const Game = {
   /* ----- рендер ----- */
   render() {
     const ctx = this.ctx;
+    // Шаг 3: гарантируем crisp-pixels каждый кадр (setTransform может сбросить)
+    ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = '#1f1f1f';
     ctx.fillRect(0, 0, this.viewW, this.viewH);
 
