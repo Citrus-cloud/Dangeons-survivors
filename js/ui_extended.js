@@ -73,11 +73,15 @@ const UIExtended = {
   },
 
   /* ============================================================
-     БЕСТИАРИЙ
+     БЕСТИАРИЙ — двухпанельный UI (Шаг 3 переработка)
+     Левая панель: сетка карточек 48×48.
+     Правая панель: подробная информация о выбранном враге.
      ============================================================ */
   showBestiary(onBack) {
     if (!this._bestiaryOverlay) this._buildBestiaryOverlay();
-    this._updateBestiaryOverlay();
+    Bestiary.selectedEnemyId = null;
+    this._updateBestiaryGrid();
+    this._updateBestiaryDetail();
     this._bestiaryOverlay._onBack = onBack;
     this._bestiaryOverlay.classList.add('active');
   },
@@ -87,11 +91,25 @@ const UIExtended = {
     ov.id = 'bestiaryOverlay';
     ov.className = 'overlay camp-overlay';
     ov.innerHTML = `
-      <div class="camp-bg" style="max-height:95vh;overflow-y:auto;">
-        <h1 class="camp-title" style="font-size:1.3em;">📕 БЕСТИАРИЙ</h1>
-        <div id="bestiaryStats" class="bestiary-stats"></div>
-        <div id="bestiaryGrid" class="bestiary-grid"></div>
-        <button id="bestiaryBackBtn" class="btn" style="margin-top:12px;">↩ Назад</button>
+      <div class="bestiary-layout">
+        <div class="bestiary-header">
+          <h1 class="bestiary-title">📕 БЕСТИАРИЙ</h1>
+          <div id="bestiaryStats" class="bestiary-stats-header"></div>
+          <button id="bestiaryBackBtn" class="btn bestiary-back-btn">↩ Назад</button>
+        </div>
+        <div class="bestiary-body">
+          <div class="bestiary-left" id="bestiaryLeft">
+            <div id="bestiaryGrid" class="bestiary-grid-v2"></div>
+          </div>
+          <div class="bestiary-right" id="bestiaryRight">
+            <div id="bestiaryDetail" class="bestiary-detail">
+              <div class="bestiary-detail-empty">
+                <div class="bestiary-detail-empty-icon">🔍</div>
+                <div class="bestiary-detail-empty-text">Выберите врага для просмотра</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     `;
     document.body.appendChild(ov);
@@ -102,7 +120,8 @@ const UIExtended = {
     });
   },
 
-  _updateBestiaryOverlay() {
+  /** Отрисовка левой сетки бестиария. */
+  _updateBestiaryGrid() {
     const stats = Bestiary.getStats();
     this._bestiaryOverlay.querySelector('#bestiaryStats').textContent =
       `Открыто: ${stats.unlocked} / ${stats.total}`;
@@ -112,71 +131,144 @@ const UIExtended = {
     for (const cfg of enemies) {
       const unlocked = Bestiary.isUnlocked(cfg.id);
       const cell = document.createElement('div');
-      cell.className = 'bestiary-cell' + (unlocked ? ' unlocked' : ' locked');
-      if (unlocked) {
-        // Используем пиксельный спрайт, если доступен
-        const sprite = window.getEnemySprite ? getEnemySprite(cfg.id) : null;
-        const iconDiv = document.createElement('div');
-        iconDiv.className = 'bestiary-cell-icon';
-        if (sprite) {
-          // Рисуем спрайт в маленький canvas (32x32 для отображения)
-          const display = document.createElement('canvas');
-          display.width = 32; display.height = 32;
-          display.style.imageRendering = 'pixelated';
-          display.style.width = '32px'; display.style.height = '32px';
-          const dCtx = display.getContext('2d');
-          dCtx.imageSmoothingEnabled = false;
-          dCtx.drawImage(sprite, 0, 0, 32, 32);
-          iconDiv.style.background = 'transparent';
-          iconDiv.style.border = 'none';
-          iconDiv.innerHTML = '';
-          iconDiv.appendChild(display);
-        } else {
-          iconDiv.style.background = cfg.color;
-          iconDiv.style.borderColor = cfg.stroke || '#666';
-          iconDiv.textContent = cfg.letter;
-        }
-        cell.appendChild(iconDiv);
-        const nameDiv = document.createElement('div');
-        nameDiv.className = 'bestiary-cell-name';
-        nameDiv.textContent = cfg.name;
-        cell.appendChild(nameDiv);
-        const descDiv = document.createElement('div');
-        descDiv.className = 'bestiary-cell-desc';
-        descDiv.textContent = Bestiary.getDescription(cfg.id);
-        cell.appendChild(descDiv);
-      } else {
-        // Неоткрытый враг — чёрный силуэт
-        const sprite = window.getEnemySprite ? getEnemySprite(cfg.id) : null;
-        const iconDiv = document.createElement('div');
-        iconDiv.className = 'bestiary-cell-icon locked-icon';
-        if (sprite) {
-          const display = document.createElement('canvas');
-          display.width = 32; display.height = 32;
-          display.style.imageRendering = 'pixelated';
-          display.style.width = '32px'; display.style.height = '32px';
-          const dCtx = display.getContext('2d');
-          dCtx.imageSmoothingEnabled = false;
-          dCtx.drawImage(sprite, 0, 0, 32, 32);
-          // Затемняем (чёрный силуэт)
+      cell.className = 'bestiary-cell-v2' + (unlocked ? ' unlocked' : ' locked');
+      if (Bestiary.selectedEnemyId === cfg.id) cell.classList.add('selected');
+
+      // Иконка спрайта (маленькая 32×32 отображаемая как 48×48)
+      const iconDiv = document.createElement('div');
+      iconDiv.className = 'bestiary-cell-v2-icon';
+      const sprite = window.getEnemySprite ? getEnemySprite(cfg.id) : null;
+
+      if (sprite) {
+        const display = document.createElement('canvas');
+        display.width = 16; display.height = 16;
+        display.style.imageRendering = 'pixelated';
+        display.style.width = '32px'; display.style.height = '32px';
+        const dCtx = display.getContext('2d');
+        dCtx.imageSmoothingEnabled = false;
+        dCtx.drawImage(sprite, 0, 0, 16, 16);
+        if (!unlocked) {
+          // Чёрный силуэт
           dCtx.globalCompositeOperation = 'source-in';
-          dCtx.fillStyle = '#222222';
-          dCtx.fillRect(0, 0, 32, 32);
+          dCtx.fillStyle = '#1a1a1a';
+          dCtx.fillRect(0, 0, 16, 16);
           dCtx.globalCompositeOperation = 'source-over';
-          iconDiv.style.background = 'transparent';
-          iconDiv.style.border = 'none';
-          iconDiv.innerHTML = '';
-          iconDiv.appendChild(display);
+        }
+        iconDiv.appendChild(display);
+      } else {
+        if (unlocked) {
+          iconDiv.style.background = cfg.color;
+          iconDiv.textContent = cfg.letter;
         } else {
           iconDiv.textContent = '?';
+          iconDiv.classList.add('silhouette');
         }
-        cell.appendChild(iconDiv);
-        const nameDiv = document.createElement('div');
-        nameDiv.className = 'bestiary-cell-name';
-        nameDiv.textContent = '???';
-        cell.appendChild(nameDiv);
       }
+      cell.appendChild(iconDiv);
+
+      // Мини-название
+      const nameDiv = document.createElement('div');
+      nameDiv.className = 'bestiary-cell-v2-name';
+      nameDiv.textContent = unlocked ? cfg.name : '???';
+      cell.appendChild(nameDiv);
+
+      // Клик — выбрать
+      cell.addEventListener('click', () => {
+        if (!unlocked) return; // Неоткрытых не выбираем
+        Bestiary.selectedEnemyId = cfg.id;
+        // Обновить подсветку
+        grid.querySelectorAll('.bestiary-cell-v2').forEach(c => c.classList.remove('selected'));
+        cell.classList.add('selected');
+        this._updateBestiaryDetail();
+      });
+
       grid.appendChild(cell);
+    }
+  },
+
+  /** Отрисовка правой панели деталей. */
+  _updateBestiaryDetail() {
+    const detail = this._bestiaryOverlay.querySelector('#bestiaryDetail');
+    const id = Bestiary.selectedEnemyId;
+    if (!id || !window.ENEMY_TYPES || !ENEMY_TYPES[id]) {
+      detail.innerHTML = `
+        <div class="bestiary-detail-empty">
+          <div class="bestiary-detail-empty-icon">🔍</div>
+          <div class="bestiary-detail-empty-text">Выберите врага для просмотра</div>
+        </div>`;
+      return;
+    }
+
+    const cfg = ENEMY_TYPES[id];
+    const desc = Bestiary.getDescription(id);
+    const abilities = Bestiary.getAbilities(id);
+    const speedLabel = Bestiary.getSpeedLabel(id);
+    const xpMin = cfg.xp ? cfg.xp[0] : 0;
+    const xpMax = cfg.xp ? cfg.xp[1] : 0;
+
+    // Крупный спрайт
+    let spriteHtml = '';
+    const sprite = window.getEnemySprite ? getEnemySprite(id) : null;
+    if (sprite) {
+      // Рисуем в canvas 48×48 и масштабируем отображение
+      const cvs = document.createElement('canvas');
+      cvs.width = 32; cvs.height = 32;
+      cvs.style.imageRendering = 'pixelated';
+      cvs.style.width = '96px'; cvs.style.height = '96px';
+      cvs.className = 'bestiary-detail-sprite';
+      const ctx2 = cvs.getContext('2d');
+      ctx2.imageSmoothingEnabled = false;
+      ctx2.drawImage(sprite, 0, 0, 32, 32);
+      spriteHtml = cvs.outerHTML;
+    } else {
+      spriteHtml = `<div class="bestiary-detail-sprite-fallback" style="background:${cfg.color};border-color:${cfg.stroke || '#666'};">${cfg.letter}</div>`;
+    }
+
+    // Тир
+    const tierNames = { 0: 'Особый', 1: 'Тир I', 2: 'Тир II', 3: 'Тир III', 4: 'Тир IV', 5: 'Тир V' };
+    const tierLabel = tierNames[cfg.tier] || 'Тир ' + cfg.tier;
+
+    let html = `
+      <div class="bestiary-detail-card">
+        <div class="bestiary-detail-sprite-wrap">${spriteHtml}</div>
+        <div class="bestiary-detail-name">${cfg.name}</div>
+        <div class="bestiary-detail-tier">${tierLabel}</div>
+        <div class="bestiary-detail-divider"></div>
+        <div class="bestiary-detail-desc">"${desc}"</div>
+        <div class="bestiary-detail-divider"></div>
+        <div class="bestiary-detail-stats">
+          <div class="bestiary-stat-row"><span class="bestiary-stat-label">❤ HP:</span><span class="bestiary-stat-value">${cfg.hp}</span></div>
+          <div class="bestiary-stat-row"><span class="bestiary-stat-label">⚔ Урон:</span><span class="bestiary-stat-value">${cfg.damage}</span></div>
+          <div class="bestiary-stat-row"><span class="bestiary-stat-label">🏃 Скорость:</span><span class="bestiary-stat-value">${speedLabel}</span></div>
+          <div class="bestiary-stat-row"><span class="bestiary-stat-label">✨ Опыт:</span><span class="bestiary-stat-value">${xpMin}–${xpMax}</span></div>
+        </div>`;
+
+    if (abilities) {
+      html += `
+        <div class="bestiary-detail-divider"></div>
+        <div class="bestiary-detail-abilities">
+          <div class="bestiary-abilities-title">⚡ Особые способности</div>
+          <div class="bestiary-abilities-text">${abilities}</div>
+        </div>`;
+    }
+
+    html += `</div>`;
+    detail.innerHTML = html;
+
+    // Заменяем canvas placeholder на реальный спрайт (innerHTML теряет canvas)
+    if (sprite) {
+      const wrap = detail.querySelector('.bestiary-detail-sprite-wrap');
+      wrap.innerHTML = '';
+      const cvs = document.createElement('canvas');
+      cvs.width = 32; cvs.height = 32;
+      cvs.style.imageRendering = 'pixelated';
+      cvs.style.width = '96px';
+      cvs.style.height = '96px';
+      cvs.className = 'bestiary-detail-sprite';
+      const ctx2 = cvs.getContext('2d');
+      ctx2.imageSmoothingEnabled = false;
+      ctx2.drawImage(sprite, 0, 0, 32, 32);
+      wrap.appendChild(cvs);
     }
   },
 
