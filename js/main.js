@@ -634,6 +634,17 @@ const Game = {
     Loot.update(this.xpDrops, this.player, dt);
     // Шаг 15: обновление золота
     if (this.goldDrops) Loot.updateGold(this.goldDrops, this.player, dt);
+
+    // Притяжение застрявших объектов к проходимой зоне (раз в 0.5 сек)
+    if (!this._attractTimer) this._attractTimer = 0;
+    this._attractTimer += dt;
+    if (this._attractTimer >= 0.5) {
+      if (window.GameMap && GameMap.attractAllStuck) {
+        GameMap.attractAllStuck(this, this._attractTimer);
+      }
+      this._attractTimer = 0;
+    }
+
     this.updateChest(dt);
     this.updateBossChest(dt);
     this.updateParticles(dt);
@@ -1533,6 +1544,15 @@ const Game = {
     // Feature #4: масштабирование для увеличения радиуса видимости
     ctx.scale(camScale, camScale);
     ctx.translate(-cam.x, -cam.y);
+
+    // Анимация парения для Небесного города (Sky Citadel)
+    let _skyFloatOffset = 0;
+    if (window.GameMap && GameMap.currentBiome && GameMap.currentBiome.floatingAnimation) {
+      const amp = GameMap.currentBiome.floatAmplitude || 2;
+      const spd = GameMap.currentBiome.floatSpeed || 1.5;
+      _skyFloatOffset = Math.sin(this.runTime * spd) * amp;
+      ctx.translate(0, _skyFloatOffset);
+    }
 
     GameMap.render(ctx, cam, camViewW, camViewH);
     Loot.render(ctx, this.xpDrops, cam, camViewW, camViewH);

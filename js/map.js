@@ -426,7 +426,9 @@ const GameMap = {
         if (this._pointInCorridor(dungeon, cx, cy)) continue;
         const pillar = { x, y, w: ps, h: ps };
         dungeon.pillars.push(pillar);
-        this._fillRectWall(dungeon, x, y, ps, ps);
+        // Половинная коллизия для колонн: только центральная 50% площадь
+        const inset = Math.floor(ps * 0.25);
+        this._fillRectWall(dungeon, x + inset, y + inset, ps - inset * 2, ps - inset * 2);
         placed++;
       }
     }
@@ -966,6 +968,93 @@ const GameMap = {
         }
       }
     }
+
+    // === Богатый декор по биомам (D&D стиль) ===
+    if (!dungeon.decor.biomeDecor) dungeon.decor.biomeDecor = [];
+    const biomeId = dungeon.biome ? dungeon.biome.id : 'crypt';
+    this._placeBiomeDecor(dungeon, biomeId);
+  },
+
+  /** Размещение декоративных объектов в зависимости от биома. */
+  _placeBiomeDecor(dungeon, biomeId) {
+    const decor = dungeon.decor.biomeDecor;
+    const rooms = dungeon.rooms.filter(r => !r.isSecret);
+
+    for (const room of rooms) {
+      if (room.isStart && this.rng() > 0.5) continue; // меньше декора в стартовой
+      const area = room.w * room.h;
+      const decorCount = Math.max(2, Math.floor(area / 8000));
+
+      for (let d = 0; d < decorCount; d++) {
+        const decorItem = this._generateBiomeDecorItem(biomeId, room);
+        if (decorItem) {
+          // Проверяем что не перекрывает рычаги/ловушки
+          if (!this._tooCloseToLevers(dungeon, decorItem.x - 8, decorItem.y - 8, 16, 16, 20)) {
+            decor.push(decorItem);
+          }
+        }
+      }
+    }
+
+    // Декор в коридорах (менее густо)
+    for (const corr of dungeon.corridors) {
+      if (this.rng() < 0.6) {
+        const decorItem = this._generateBiomeDecorItem(biomeId, corr);
+        if (decorItem) decor.push(decorItem);
+      }
+    }
+  },
+
+  /** Генерация одного декоративного объекта по биому и области. */
+  _generateBiomeDecorItem(biomeId, area) {
+    const x = area.x + this._randInt(20, Math.max(20, area.w - 40));
+    const y = area.y + this._randInt(20, Math.max(20, area.h - 40));
+    const rng = this.rng;
+
+    switch (biomeId) {
+      case 'crypt': {
+        const types = ['bones', 'skull', 'broken_column', 'cobweb_floor', 'cracked_tile', 'chain_skull'];
+        const type = this._randPick(types);
+        return { x, y, type, biome: biomeId, size: type === 'broken_column' ? 16 : 8, hasCollision: type === 'broken_column' };
+      }
+      case 'ice_caves': {
+        const types = ['ice_crystal', 'stalactite', 'frozen_corpse', 'snow_pile', 'ice_crack'];
+        const type = this._randPick(types);
+        return { x, y, type, biome: biomeId, size: type === 'ice_crystal' ? 12 : 8, hasCollision: false };
+      }
+      case 'fire_mines': {
+        const types = ['lava_pool', 'ore_chunk', 'mine_cart', 'chain', 'bellows', 'ember'];
+        const type = this._randPick(types);
+        return { x, y, type, biome: biomeId, size: type === 'mine_cart' ? 16 : 8, hasCollision: type === 'mine_cart', glow: type === 'lava_pool' || type === 'ember' };
+      }
+      case 'forest_ruins': {
+        const types = ['glowing_mushroom', 'vine', 'broken_statue', 'mossy_rock', 'fallen_tree', 'flower_bush'];
+        const type = this._randPick(types);
+        return { x, y, type, biome: biomeId, size: type === 'fallen_tree' ? 24 : 8, hasCollision: type === 'fallen_tree' || type === 'mossy_rock' };
+      }
+      case 'castle': {
+        const types = ['tapestry', 'armor_stand', 'candelabra', 'bookshelf', 'throne', 'cage', 'banner'];
+        const type = this._randPick(types);
+        return { x, y, type, biome: biomeId, size: type === 'throne' ? 16 : (type === 'bookshelf' ? 16 : 8), hasCollision: type === 'throne' || type === 'bookshelf' };
+      }
+      case 'sky_citadel': {
+        const types = ['golden_urn', 'marble_statue', 'floating_crystal', 'cloud_fountain', 'light_pillar', 'angel_wing'];
+        const type = this._randPick(types);
+        return { x, y, type, biome: biomeId, size: type === 'marble_statue' ? 16 : 8, hasCollision: type === 'golden_urn', glow: type === 'floating_crystal' || type === 'light_pillar', floats: true };
+      }
+      case 'elven_forest': {
+        const types = ['rune_stone', 'elven_lantern', 'bloom_bush', 'magic_mushroom', 'nature_altar', 'fairy_circle'];
+        const type = this._randPick(types);
+        return { x, y, type, biome: biomeId, size: type === 'nature_altar' ? 16 : 8, hasCollision: type === 'nature_altar', glow: type === 'elven_lantern' || type === 'magic_mushroom' };
+      }
+      case 'mountain_keep': {
+        const types = ['barrel', 'ore_crate', 'pickaxe', 'chain_lantern', 'forge_anvil', 'stone_bridge', 'rock_pile'];
+        const type = this._randPick(types);
+        return { x, y, type, biome: biomeId, size: type === 'forge_anvil' ? 16 : (type === 'barrel' ? 12 : 8), hasCollision: type === 'barrel' || type === 'ore_crate' || type === 'forge_anvil' };
+      }
+      default:
+        return { x, y, type: 'generic_rock', biome: biomeId, size: 8, hasCollision: false };
+    }
   },
 
   /** Сборка прямоугольников стен — для рендера. */
@@ -1064,7 +1153,128 @@ const GameMap = {
       ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
     }
 
+    // === Дверные проёмы/арки на стыках комнат и коридоров ===
+    this._renderDoorways(ctx, dungeon, biomeId);
+
+    // === Узкая плиточная текстура коридоров (отличие от комнат) ===
+    this._renderCorridorNarrowTiles(ctx, dungeon, biomeId);
+
     this._floorCache = off;
+  },
+
+  /** Рисует дверные проёмы на стыках коридоров и комнат. */
+  _renderDoorways(ctx, dungeon, biomeId) {
+    const rooms = dungeon.rooms;
+    const corridors = dungeon.corridors;
+
+    for (const room of rooms) {
+      if (room.isSecret) continue;
+      for (const corr of corridors) {
+        // Проверяем пересечение коридора со стеной комнаты
+        const doorways = this._findDoorway(room, corr);
+        for (const dw of doorways) {
+          // Тёмная арка
+          ctx.fillStyle = biomeId === 'sky_citadel' ? '#a0b0c0' :
+                         biomeId === 'elven_forest' ? '#3a5a2a' :
+                         '#1a1a1a';
+          ctx.fillRect(dw.x, dw.y, dw.w, dw.h);
+          // Арка (полукруг сверху)
+          ctx.fillStyle = biomeId === 'sky_citadel' ? '#c9a84c' :
+                         biomeId === 'castle' ? '#5a4a3a' :
+                         biomeId === 'elven_forest' ? '#2a4a1a' :
+                         '#2a2a2a';
+          if (dw.w > dw.h) {
+            // Горизонтальный проход — арка слева и справа
+            ctx.beginPath();
+            ctx.arc(dw.x, dw.y + dw.h / 2, 4, 0, Math.PI * 2);
+            ctx.arc(dw.x + dw.w, dw.y + dw.h / 2, 4, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            // Вертикальный проход — арка сверху
+            ctx.beginPath();
+            ctx.arc(dw.x + dw.w / 2, dw.y, dw.w / 2, 0, Math.PI);
+            ctx.fill();
+          }
+          // Боковые колонны/столбы у проёма
+          ctx.fillStyle = biomeId === 'sky_citadel' ? '#f0f0f0' :
+                         biomeId === 'elven_forest' ? '#5a3a1a' :
+                         '#4a4a4a';
+          if (dw.w > dw.h) {
+            ctx.fillRect(dw.x - 3, dw.y - 2, 3, dw.h + 4);
+            ctx.fillRect(dw.x + dw.w, dw.y - 2, 3, dw.h + 4);
+          } else {
+            ctx.fillRect(dw.x - 2, dw.y - 3, dw.w + 4, 3);
+            ctx.fillRect(dw.x - 2, dw.y + dw.h, dw.w + 4, 3);
+          }
+        }
+      }
+    }
+  },
+
+  /** Находит точки пересечения коридора со стенами комнаты (для дверных проёмов). */
+  _findDoorway(room, corr) {
+    const doorways = [];
+    const overlap = 6; // ширина дверного проёма визуальная
+    // Верхняя стена
+    if (corr.y < room.y && corr.y + corr.h >= room.y) {
+      const overlapX = Math.max(corr.x, room.x);
+      const overlapW = Math.min(corr.x + corr.w, room.x + room.w) - overlapX;
+      if (overlapW > 20) {
+        doorways.push({ x: overlapX + 4, y: room.y - overlap / 2, w: overlapW - 8, h: overlap });
+      }
+    }
+    // Нижняя стена
+    if (corr.y + corr.h > room.y + room.h && corr.y <= room.y + room.h) {
+      const overlapX = Math.max(corr.x, room.x);
+      const overlapW = Math.min(corr.x + corr.w, room.x + room.w) - overlapX;
+      if (overlapW > 20) {
+        doorways.push({ x: overlapX + 4, y: room.y + room.h - overlap / 2, w: overlapW - 8, h: overlap });
+      }
+    }
+    // Левая стена
+    if (corr.x < room.x && corr.x + corr.w >= room.x) {
+      const overlapY = Math.max(corr.y, room.y);
+      const overlapH = Math.min(corr.y + corr.h, room.y + room.h) - overlapY;
+      if (overlapH > 20) {
+        doorways.push({ x: room.x - overlap / 2, y: overlapY + 4, w: overlap, h: overlapH - 8 });
+      }
+    }
+    // Правая стена
+    if (corr.x + corr.w > room.x + room.w && corr.x <= room.x + room.w) {
+      const overlapY = Math.max(corr.y, room.y);
+      const overlapH = Math.min(corr.y + corr.h, room.y + room.h) - overlapY;
+      if (overlapH > 20) {
+        doorways.push({ x: room.x + room.w - overlap / 2, y: overlapY + 4, w: overlap, h: overlapH - 8 });
+      }
+    }
+    return doorways;
+  },
+
+  /** Рисует узкую плиточную разметку в коридорах (отличающуюся от комнат). */
+  _renderCorridorNarrowTiles(ctx, dungeon, biomeId) {
+    ctx.globalAlpha = 0.10;
+    ctx.strokeStyle = biomeId === 'sky_citadel' ? '#a0b8c8' :
+                     biomeId === 'elven_forest' ? '#4a6a3a' :
+                     biomeId === 'mountain_keep' ? '#5a5040' :
+                     '#3a3a3a';
+    ctx.lineWidth = 0.5;
+    const narrowTile = 20; // узкие плитки 20px (vs 40px в комнатах)
+    for (const c of dungeon.corridors) {
+      // Узкая сетка
+      for (let xx = c.x; xx <= c.x + c.w; xx += narrowTile) {
+        ctx.beginPath();
+        ctx.moveTo(xx + 0.5, c.y);
+        ctx.lineTo(xx + 0.5, c.y + c.h);
+        ctx.stroke();
+      }
+      for (let yy = c.y; yy <= c.y + c.h; yy += narrowTile) {
+        ctx.beginPath();
+        ctx.moveTo(c.x, yy + 0.5);
+        ctx.lineTo(c.x + c.w, yy + 0.5);
+        ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1.0;
   },
 
   /** Текстура стен по биому (рисуется за пределами комнат). */
@@ -1098,7 +1308,7 @@ const GameMap = {
             }
             break;
           }
-          case 'ice': {
+          case 'ice_caves': {
             // Замёрзший камень — голубые прожилки
             ctx.strokeStyle = '#3a5a7a';
             ctx.lineWidth = 0.8;
@@ -1108,7 +1318,7 @@ const GameMap = {
             ctx.stroke();
             break;
           }
-          case 'fire': {
+          case 'fire_mines': {
             // Обсидиан с рудными жилами
             ctx.strokeStyle = '#5a2a0a';
             ctx.lineWidth = 1;
@@ -1119,7 +1329,7 @@ const GameMap = {
             }
             break;
           }
-          case 'forest': {
+          case 'forest_ruins': {
             // Лианы и корни
             ctx.strokeStyle = '#2a4a2a';
             ctx.lineWidth = 1.2;
@@ -1139,6 +1349,57 @@ const GameMap = {
               ctx.beginPath();
               ctx.moveTo(wx, wy + cellSize);
               ctx.lineTo(wx + cellSize * 2, wy + cellSize);
+              ctx.stroke();
+            }
+            break;
+          }
+          case 'sky_citadel': {
+            // Облачная текстура — мягкие белые волны
+            ctx.strokeStyle = '#d0d8e0';
+            ctx.lineWidth = 1.5;
+            if (rng() < 0.3) {
+              ctx.beginPath();
+              const cx = wx + rng() * cellSize * 2;
+              const cy = wy + rng() * cellSize * 2;
+              ctx.arc(cx, cy, 4 + rng() * 6, 0, Math.PI, false);
+              ctx.stroke();
+            }
+            break;
+          }
+          case 'elven_forest': {
+            // Кора деревьев — вертикальные линии с изгибами
+            ctx.strokeStyle = '#4a3a1a';
+            ctx.lineWidth = 1.2;
+            if (rng() < 0.35) {
+              ctx.beginPath();
+              const sx = wx + rng() * cellSize * 2;
+              ctx.moveTo(sx, wy);
+              ctx.quadraticCurveTo(sx + rng() * 8 - 4, wy + cellSize, sx + rng() * 6 - 3, wy + cellSize * 2);
+              ctx.stroke();
+            }
+            // Листья
+            if (rng() < 0.15) {
+              ctx.fillStyle = '#3a6a2a';
+              ctx.beginPath();
+              ctx.arc(wx + rng() * cellSize * 2, wy + rng() * cellSize * 2, 2, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            break;
+          }
+          case 'mountain_keep': {
+            // Трещины и грубый камень
+            ctx.strokeStyle = '#4a4a4a';
+            ctx.lineWidth = 1;
+            if ((j % 3) === 0) {
+              ctx.beginPath();
+              ctx.moveTo(wx, wy + cellSize);
+              ctx.lineTo(wx + cellSize * 2, wy + cellSize + rng() * 4 - 2);
+              ctx.stroke();
+            }
+            if (rng() < 0.2) {
+              ctx.beginPath();
+              ctx.moveTo(wx + rng() * cellSize * 2, wy);
+              ctx.lineTo(wx + rng() * cellSize * 2, wy + cellSize * 2);
               ctx.stroke();
             }
             break;
@@ -1168,7 +1429,7 @@ const GameMap = {
         }
         break;
       }
-      case 'ice': {
+      case 'ice_caves': {
         // Ледяные прожилки
         ctx.strokeStyle = '#6090b0';
         ctx.lineWidth = 0.6;
@@ -1182,7 +1443,7 @@ const GameMap = {
         }
         break;
       }
-      case 'fire': {
+      case 'fire_mines': {
         // Потрескавшаяся лава
         ctx.strokeStyle = '#8a3a0a';
         ctx.lineWidth = 1;
@@ -1194,6 +1455,40 @@ const GameMap = {
           ctx.lineTo(x1 + rng() * 20, y1 + rng() * 20);
           ctx.lineTo(x1 + rng() * 20, y1 + rng() * 20);
           ctx.stroke();
+        }
+        break;
+      }
+      case 'sky_citadel': {
+        // Золотые линии на мраморе
+        ctx.strokeStyle = '#c9a84c';
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i < 2; i++) {
+          const x1 = corridor.x + rng() * corridor.w;
+          const y1 = corridor.y + rng() * corridor.h;
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x1 + rng() * 30, y1 + rng() * 10 - 5);
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'elven_forest': {
+        // Мох и мелкие камушки
+        ctx.fillStyle = '#3a6a2a';
+        for (let i = 0; i < 3; i++) {
+          ctx.beginPath();
+          ctx.arc(corridor.x + rng() * corridor.w, corridor.y + rng() * corridor.h, 2 + rng() * 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        break;
+      }
+      case 'mountain_keep': {
+        // Грубый камень — мелкие точки
+        ctx.fillStyle = '#4a4a3a';
+        for (let i = 0; i < 4; i++) {
+          ctx.beginPath();
+          ctx.arc(corridor.x + rng() * corridor.w, corridor.y + rng() * corridor.h, 1 + rng() * 2, 0, Math.PI * 2);
+          ctx.fill();
         }
         break;
       }
@@ -1227,7 +1522,7 @@ const GameMap = {
         }
         break;
       }
-      case 'ice': {
+      case 'ice_caves': {
         // Голубоватые прожилки льда
         ctx.strokeStyle = '#5080a0';
         ctx.lineWidth = 0.8;
@@ -1249,7 +1544,7 @@ const GameMap = {
         }
         break;
       }
-      case 'fire': {
+      case 'fire_mines': {
         // Потрескавшийся камень с оранжевыми жилами
         ctx.strokeStyle = '#6a2a0a';
         ctx.lineWidth = 1;
@@ -1273,7 +1568,7 @@ const GameMap = {
         }
         break;
       }
-      case 'forest': {
+      case 'forest_ruins': {
         // Замшелые пятна и корни
         ctx.fillStyle = '#3a5a3a';
         ctx.globalAlpha = 0.10;
@@ -1304,7 +1599,6 @@ const GameMap = {
         const tileSize = 30;
         for (let xx = room.x; xx < room.x + room.w; xx += tileSize) {
           for (let yy = room.y; yy < room.y + room.h; yy += tileSize) {
-            // Ромб
             ctx.beginPath();
             ctx.moveTo(xx + tileSize / 2, yy);
             ctx.lineTo(xx + tileSize, yy + tileSize / 2);
@@ -1316,20 +1610,109 @@ const GameMap = {
         }
         break;
       }
+      case 'sky_citadel': {
+        // Мраморные узоры — диагональные прожилки
+        ctx.strokeStyle = '#b0c0d0';
+        ctx.lineWidth = 0.6;
+        const marbleCount = Math.floor(room.w * room.h / 3000);
+        for (let i = 0; i < marbleCount; i++) {
+          const cx = room.x + rng() * room.w;
+          const cy = room.y + rng() * room.h;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + rng() * 20 - 10, cy + rng() * 20 - 10);
+          ctx.stroke();
+        }
+        // Золотые акценты на плитке
+        ctx.strokeStyle = '#c9a84c';
+        ctx.globalAlpha = 0.08;
+        ctx.lineWidth = 0.8;
+        const tileS = 40;
+        for (let xx = room.x + tileS; xx < room.x + room.w - tileS; xx += tileS * 2) {
+          for (let yy = room.y + tileS; yy < room.y + room.h - tileS; yy += tileS * 2) {
+            if (rng() < 0.3) {
+              ctx.beginPath();
+              ctx.arc(xx, yy, 3, 0, Math.PI * 2);
+              ctx.stroke();
+            }
+          }
+        }
+        break;
+      }
+      case 'elven_forest': {
+        // Мох, цветы и трава
+        ctx.fillStyle = '#5a9a4a';
+        ctx.globalAlpha = 0.10;
+        const grassCount = Math.floor(room.w * room.h / 3000);
+        for (let i = 0; i < grassCount; i++) {
+          const gx = room.x + rng() * room.w;
+          const gy = room.y + rng() * room.h;
+          ctx.beginPath();
+          ctx.arc(gx, gy, 2 + rng() * 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // Цветочки (маленькие яркие точки)
+        ctx.globalAlpha = 0.15;
+        const flowers = ['#ff69b4', '#ffa500', '#add8e6', '#dda0dd', '#ffff00'];
+        for (let i = 0; i < 6; i++) {
+          ctx.fillStyle = flowers[Math.floor(rng() * flowers.length)];
+          ctx.beginPath();
+          ctx.arc(room.x + rng() * room.w, room.y + rng() * room.h, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // Тропинки из светлого камня
+        ctx.strokeStyle = '#a0a080';
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 0.06;
+        ctx.beginPath();
+        ctx.moveTo(room.x + room.w * 0.2, room.y + room.h * 0.5);
+        ctx.quadraticCurveTo(room.x + room.w * 0.5, room.y + room.h * (0.3 + rng() * 0.4), room.x + room.w * 0.8, room.y + room.h * 0.5);
+        ctx.stroke();
+        break;
+      }
+      case 'mountain_keep': {
+        // Грубый каменный пол со сколами
+        ctx.strokeStyle = '#5a5040';
+        ctx.lineWidth = 0.8;
+        const chipCount = Math.floor(room.w * room.h / 4000);
+        for (let i = 0; i < chipCount; i++) {
+          const cx = room.x + rng() * room.w;
+          const cy = room.y + rng() * room.h;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + rng() * 12 - 6, cy + rng() * 12 - 6);
+          ctx.stroke();
+        }
+        // Вырубленные ступени (горизонтальные линии через неравные промежутки)
+        ctx.strokeStyle = '#4a4030';
+        ctx.lineWidth = 0.5;
+        ctx.globalAlpha = 0.08;
+        for (let yy = room.y + 20; yy < room.y + room.h - 20; yy += 25 + rng() * 15) {
+          ctx.beginPath();
+          ctx.moveTo(room.x + 10, yy);
+          ctx.lineTo(room.x + room.w - 10, yy);
+          ctx.stroke();
+        }
+        break;
+      }
     }
     ctx.globalAlpha = 1.0;
   },
 
 
   /* ============================================================
-     Walkability / collisions
+     Walkability / collisions — «половинная» проходимость (v2).
+     
+     Система коллизий с уменьшенными хитбоксами:
+     - Визуальный размер блока остаётся прежним (32×32).
+     - Хитбокс коллизии уменьшен: стены ~70%, колонны ~50%.
+     - Игрок может «заходить» визуально за край блока.
+     - Для врагов — чуть более строгая коллизия (60–70%).
      ============================================================ */
 
   /**
    * Может ли точка (x, y) находиться на проходимом полу?
-   * Учитывает стены, колонны, закрытые двери. Объект-сущность
-   * проверяется как точка центра — у вызывающих стороны должны
-   * проверять "свой" контур через вспомогательный _rectIsWalkable.
+   * Базовая проверка по сетке.
    */
   isWalkable(x, y) {
     if (!this.dungeon) return true;
@@ -1340,10 +1723,52 @@ const GameMap = {
     return this.dungeon.grid[j * this.dungeon.gridW + i] === 1;
   },
 
-  /** Проверка, что прямоугольник (cx-rad..cx+rad) полностью на полу.
-   *  Используется для движения сущностей. rad — половина ширины квадрата. */
-  rectIsWalkable(cx, cy, rad) {
+  /**
+   * Проверка с учётом «половинного» хитбокса.
+   * Стены на сетке имеют уменьшенную зону коллизии: центральные 50–70%
+   * ячейки считаются непроходимыми, остаток — «мягкий край».
+   * @param {number} x — мировая координата
+   * @param {number} y — мировая координата
+   * @param {number} shrinkFactor — 0..1, сколько «сжимать» хитбокс стены
+   *   (0.5 = 50% хитбокс в центре ячейки; 0.3 = 30% отступ с каждой стороны)
+   */
+  isWalkableSoft(x, y, shrinkFactor) {
     if (!this.dungeon) return true;
+    if (x < 0 || y < 0 || x >= this.mapW || y >= this.mapH) return false;
+    const cs = this.dungeon.cellSize;
+    const i = Math.floor(x / cs), j = Math.floor(y / cs);
+    if (i < 0 || j < 0 || i >= this.dungeon.gridW || j >= this.dungeon.gridH) return false;
+    // Если ячейка проходима — ok
+    if (this.dungeon.grid[j * this.dungeon.gridW + i] === 1) return true;
+    // Ячейка — стена. Проверяем, попадает ли точка в уменьшенный хитбокс.
+    // shrinkFactor определяет отступ от краёв ячейки (в долях от размера).
+    const sf = shrinkFactor || 0.25; // по умолчанию 25% отступ = 50% хитбокс
+    const cellX = i * cs;
+    const cellY = j * cs;
+    const insetX = cs * sf;
+    const insetY = cs * sf;
+    // Уменьшенный хитбокс стены — центральная часть ячейки
+    if (x >= cellX + insetX && x <= cellX + cs - insetX &&
+        y >= cellY + insetY && y <= cellY + cs - insetY) {
+      return false; // внутри жёсткого ядра стены
+    }
+    // На «мягком» краю — проходимо (игрок может заходить за визуальный край)
+    return true;
+  },
+
+  /** Проверка, что прямоугольник (cx-rad..cx+rad) полностью на полу.
+   *  Используется для движения сущностей. rad — половина ширины квадрата.
+   *  @param {number} shrinkFactor — отступ стены для «мягкой» коллизии (опц.) */
+  rectIsWalkable(cx, cy, rad, shrinkFactor) {
+    if (!this.dungeon) return true;
+    // Если передан shrinkFactor — используем мягкую проверку
+    if (shrinkFactor !== undefined && shrinkFactor > 0) {
+      return this.isWalkableSoft(cx - rad, cy - rad, shrinkFactor) &&
+             this.isWalkableSoft(cx + rad, cy - rad, shrinkFactor) &&
+             this.isWalkableSoft(cx - rad, cy + rad, shrinkFactor) &&
+             this.isWalkableSoft(cx + rad, cy + rad, shrinkFactor) &&
+             this.isWalkableSoft(cx, cy, shrinkFactor);
+    }
     return this.isWalkable(cx - rad, cy - rad) &&
            this.isWalkable(cx + rad, cy - rad) &&
            this.isWalkable(cx - rad, cy + rad) &&
@@ -1354,26 +1779,29 @@ const GameMap = {
   /**
    * Двинуть сущность по (dx, dy) с раздельной проверкой осей.
    * Если упёрлись — позволяет скользить вдоль стен.
-   * Bug fix #2: добавлен отступ 2px для предотвращения застревания в текстурах.
+   * Новая система: использует «мягкие» хитбоксы стен.
+   * @param {number} shrinkFactor — 0.25 для игрока (50% хитбокс),
+   *   0.15 для врагов (70% хитбокс). По умолчанию 0.25.
    * Возвращает { x, y, blockedX, blockedY }.
    */
-  moveWithCollision(x, y, dx, dy, rad) {
+  moveWithCollision(x, y, dx, dy, rad, shrinkFactor) {
     if (!this.dungeon) return { x: x + dx, y: y + dy, blockedX: false, blockedY: false };
-    // Bug fix #2: используем чуть увеличенный радиус для проверки, чтобы не застрять
-    const checkRad = rad + 2;
+    const sf = (shrinkFactor !== undefined) ? shrinkFactor : 0.25;
+    // Мягкий отступ для проверки (предотвращает застревание в текстурах)
+    const checkRad = rad + 1;
     let nx = x, ny = y;
     let blockedX = false, blockedY = false;
     if (dx !== 0) {
       const tryX = x + dx;
-      if (this.rectIsWalkable(tryX, y, checkRad)) nx = tryX;
+      if (this.rectIsWalkable(tryX, y, checkRad, sf)) nx = tryX;
       else {
-        // Попробуем доехать до стены маленькими шагами
+        // Доехать до стены маленькими шагами
         const sign = Math.sign(dx);
         let stepped = 0;
         const stepSize = 1;
         while (Math.abs(stepped) < Math.abs(dx)) {
           const next = stepped + sign * stepSize;
-          if (this.rectIsWalkable(x + next, y, checkRad)) stepped = next;
+          if (this.rectIsWalkable(x + next, y, checkRad, sf)) stepped = next;
           else break;
         }
         nx = x + stepped;
@@ -1382,29 +1810,29 @@ const GameMap = {
     }
     if (dy !== 0) {
       const tryY = ny + dy;
-      if (this.rectIsWalkable(nx, tryY, checkRad)) ny = tryY;
+      if (this.rectIsWalkable(nx, tryY, checkRad, sf)) ny = tryY;
       else {
         const sign = Math.sign(dy);
         let stepped = 0;
         const stepSize = 1;
         while (Math.abs(stepped) < Math.abs(dy)) {
           const next = stepped + sign * stepSize;
-          if (this.rectIsWalkable(nx, ny + next, checkRad)) stepped = next;
+          if (this.rectIsWalkable(nx, ny + next, checkRad, sf)) stepped = next;
           else break;
         }
         ny = ny + stepped;
         blockedY = true;
       }
     }
-    // Bug fix #2: финальная проверка — если всё ещё застрял, вытолкнуть
-    if (!this.rectIsWalkable(nx, ny, rad)) {
-      // Попробовать найти ближайшую проходимую точку
+    // Финальная проверка — если застрял, вытолкнуть
+    if (!this.rectIsWalkable(nx, ny, rad, sf)) {
       const offsets = [
         {dx: 0, dy: -2}, {dx: 0, dy: 2}, {dx: -2, dy: 0}, {dx: 2, dy: 0},
         {dx: -2, dy: -2}, {dx: 2, dy: -2}, {dx: -2, dy: 2}, {dx: 2, dy: 2},
+        {dx: 0, dy: -4}, {dx: 0, dy: 4}, {dx: -4, dy: 0}, {dx: 4, dy: 0},
       ];
       for (const off of offsets) {
-        if (this.rectIsWalkable(nx + off.dx, ny + off.dy, rad)) {
+        if (this.rectIsWalkable(nx + off.dx, ny + off.dy, rad, sf)) {
           nx += off.dx;
           ny += off.dy;
           break;
@@ -1443,6 +1871,126 @@ const GameMap = {
     // fallback — любая проходимая точка в случайной комнате
     const r = rooms[Math.floor(this.rng() * rooms.length)];
     return this.randomPointInRoom(r, 16);
+  },
+
+
+  /* ============================================================
+     attractToWalkable — притяжение объектов к проходимой зоне.
+     Сундуки, кристаллы опыта, враги не должны застревать в стенах.
+     ============================================================ */
+
+  /**
+   * Найти ближайшую проходимую точку к (x, y).
+   * Проверяет 8 направлений с шагом step, в радиусе до maxDist.
+   * Возвращает { x, y } или null если не нашлось.
+   */
+  findNearestWalkable(x, y, step, maxDist) {
+    if (!this.dungeon) return { x, y };
+    if (this.isWalkable(x, y)) return { x, y };
+    step = step || 10;
+    maxDist = maxDist || 200;
+    const dirs = [
+      { dx: 0, dy: -1 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 }, { dx: 1, dy: 0 },
+      { dx: -1, dy: -1 }, { dx: 1, dy: -1 }, { dx: -1, dy: 1 }, { dx: 1, dy: 1 },
+    ];
+    let bestDist = Infinity;
+    let best = null;
+    for (let dist = step; dist <= maxDist; dist += step) {
+      for (const d of dirs) {
+        const tx = x + d.dx * dist;
+        const ty = y + d.dy * dist;
+        if (tx < 0 || ty < 0 || tx >= this.mapW || ty >= this.mapH) continue;
+        if (this.isWalkable(tx, ty)) {
+          const dd = dist;
+          if (dd < bestDist) {
+            bestDist = dd;
+            best = { x: tx, y: ty };
+          }
+        }
+      }
+      if (best) return best; // нашли на этом расстоянии — ближе не будет
+    }
+    return best;
+  },
+
+  /**
+   * Притянуть объект к ближайшей проходимой точке.
+   * Вызывается периодически (раз в ~0.5 сек) для каждого застрявшего объекта.
+   * @param {object} obj — объект с полями .x, .y (.active опционально)
+   * @param {number} speed — скорость притяжения px/sec (по умолчанию 60)
+   * @param {number} dt — дельта времени
+   * @returns {boolean} true если объект был в непроходимой зоне и сдвинут
+   */
+  attractToWalkable(obj, speed, dt) {
+    if (!this.dungeon || !obj) return false;
+    if (this.isWalkable(obj.x, obj.y)) return false;
+
+    // Объект в стене — ищем ближайшую проходимую точку
+    const target = this.findNearestWalkable(obj.x, obj.y, 8, 160);
+    if (!target) return false;
+
+    speed = speed || 60;
+    const dx = target.x - obj.x;
+    const dy = target.y - obj.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 2) {
+      obj.x = target.x;
+      obj.y = target.y;
+      return true;
+    }
+    const move = Math.min(speed * dt, dist);
+    obj.x += (dx / dist) * move;
+    obj.y += (dy / dist) * move;
+    return true;
+  },
+
+  /**
+   * Обработка всех «застрявших» объектов за кадр.
+   * Вызывается из Game.update() раз в 0.5 сек.
+   * @param {object} game — объект Game с пулами xpDrops, goldDrops, enemies, chest
+   * @param {number} dt — дельта времени
+   */
+  attractAllStuck(game, dt) {
+    if (!this.dungeon || !game) return;
+
+    // XP кристаллы
+    if (game.xpDrops) {
+      game.xpDrops.forEachActive((xp) => {
+        this.attractToWalkable(xp, 80, dt);
+      });
+    }
+
+    // Золото
+    if (game.goldDrops) {
+      game.goldDrops.forEachActive((g) => {
+        this.attractToWalkable(g, 80, dt);
+      });
+    }
+
+    // Сундук
+    if (game.chest && game.chest.active) {
+      this.attractToWalkable(game.chest, 40, dt);
+    }
+
+    // Враги — если застряли > 2 секунд, телепортировать
+    if (game.enemies) {
+      game.enemies.forEachActive((e) => {
+        if (!this.isWalkable(e.x, e.y)) {
+          if (!e._stuckTimer) e._stuckTimer = 0;
+          e._stuckTimer += dt;
+          if (e._stuckTimer >= 2.0) {
+            // Мгновенная телепортация к проходимой точке
+            const target = this.findNearestWalkable(e.x, e.y, 10, 200);
+            if (target) { e.x = target.x; e.y = target.y; }
+            e._stuckTimer = 0;
+          } else {
+            this.attractToWalkable(e, 60, dt);
+          }
+        } else {
+          e._stuckTimer = 0;
+        }
+      });
+    }
   },
 
 
@@ -1710,6 +2258,9 @@ const GameMap = {
     this._renderPillars(ctx, cam, viewW, viewH);
     this._renderSarcophagi(ctx, cam, viewW, viewH);
 
+    // Богатый биом-декор (D&D стиль)
+    this._renderBiomeDecor(ctx, cam, viewW, viewH);
+
     // Декор: паутина
     this._renderWebs(ctx, cam, viewW, viewH);
 
@@ -1801,8 +2352,170 @@ const GameMap = {
     }
   },
 
-  _renderTorches(/* ctx, cam, vw, vh */) {
-    // Декоративные факелы/огоньки отключены — визуальный мусор.
+  /** Отрисовать богатый декор по биомам — только видимая область. */
+  _renderBiomeDecor(ctx, cam, vw, vh) {
+    if (!this.dungeon || !this.dungeon.decor.biomeDecor) return;
+    const decor = this.dungeon.decor.biomeDecor;
+    const t = this.time;
+    const biome = this.currentBiome;
+    const isFloating = biome && biome.floatingAnimation;
+
+    for (let i = 0; i < decor.length; i++) {
+      const d = decor[i];
+      if (d.x < cam.x - 20 || d.x > cam.x + vw + 20 ||
+          d.y < cam.y - 20 || d.y > cam.y + vh + 20) continue;
+
+      // Смещение парения для Небесного города
+      let yOff = 0;
+      if (isFloating && d.floats) {
+        yOff = Math.sin(t * (biome.floatSpeed || 1.5) + d.x * 0.1) * (biome.floatAmplitude || 2);
+      }
+
+      const dx = d.x, dy = d.y + yOff;
+      const s = d.size || 8;
+
+      // Свечение (для светящихся объектов)
+      if (d.glow) {
+        ctx.globalAlpha = 0.15 + Math.sin(t * 2 + d.x) * 0.05;
+        ctx.fillStyle = d.biome === 'fire_mines' ? '#ff6600' :
+                       d.biome === 'sky_citadel' ? '#ffe080' :
+                       d.biome === 'elven_forest' ? '#60ffa0' : '#ffffff';
+        ctx.beginPath();
+        ctx.arc(dx, dy, s + 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      // Спрайт декора — используем DECOR_SPRITES если доступен
+      const DS = window.DECOR_SPRITES;
+      if (DS && DS[d.type]) {
+        ctx.drawImage(DS[d.type], dx - s / 2, dy - s / 2, s, s);
+      } else {
+        // Фоллбэк: простая геометрия
+        this._renderDecorFallback(ctx, d, dx, dy, s);
+      }
+    }
+  },
+
+  /** Фоллбэк-отрисовка декора простыми фигурами. */
+  _renderDecorFallback(ctx, d, x, y, s) {
+    const hs = s / 2;
+    switch (d.type) {
+      case 'bones': case 'skull': case 'chain_skull':
+        ctx.fillStyle = '#c0b090'; ctx.fillRect(x - hs, y - hs, s, s * 0.6);
+        ctx.fillStyle = '#a09070'; ctx.fillRect(x - 2, y - hs, 4, s);
+        break;
+      case 'broken_column':
+        ctx.fillStyle = '#6a6a6a'; ctx.fillRect(x - hs, y - hs, s, s);
+        ctx.fillStyle = '#4a4a4a'; ctx.fillRect(x - hs + 2, y - hs + 2, s - 4, 3);
+        break;
+      case 'ice_crystal':
+        ctx.fillStyle = '#80c0e0'; ctx.beginPath();
+        ctx.moveTo(x, y - hs); ctx.lineTo(x + hs, y + hs); ctx.lineTo(x - hs, y + hs); ctx.closePath(); ctx.fill();
+        break;
+      case 'stalactite': case 'snow_pile':
+        ctx.fillStyle = d.type === 'stalactite' ? '#7a8a9a' : '#e0e8f0';
+        ctx.beginPath(); ctx.arc(x, y, hs, 0, Math.PI * 2); ctx.fill();
+        break;
+      case 'lava_pool': case 'ember':
+        ctx.fillStyle = '#ff4400'; ctx.globalAlpha = 0.6;
+        ctx.beginPath(); ctx.arc(x, y, hs, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+        break;
+      case 'ore_chunk': case 'rock_pile':
+        ctx.fillStyle = '#8a7a5a'; ctx.fillRect(x - hs, y - hs * 0.6, s, s * 0.6);
+        break;
+      case 'mine_cart':
+        ctx.fillStyle = '#5a4a3a'; ctx.fillRect(x - hs, y - hs * 0.5, s, s * 0.7);
+        ctx.fillStyle = '#3a3a3a'; ctx.beginPath(); ctx.arc(x - 3, y + hs * 0.6, 3, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x + 3, y + hs * 0.6, 3, 0, Math.PI * 2); ctx.fill();
+        break;
+      case 'glowing_mushroom': case 'magic_mushroom':
+        ctx.fillStyle = '#40e0d0'; ctx.beginPath(); ctx.arc(x, y - 2, hs * 0.8, Math.PI, 0); ctx.fill();
+        ctx.fillStyle = '#6a5a4a'; ctx.fillRect(x - 1, y - 1, 2, hs);
+        break;
+      case 'mossy_rock': case 'rune_stone':
+        ctx.fillStyle = '#5a6a4a'; ctx.fillRect(x - hs, y - hs * 0.7, s, s * 0.7);
+        if (d.type === 'rune_stone') { ctx.fillStyle = '#80c0ff'; ctx.fillRect(x - 2, y - 3, 4, 2); }
+        break;
+      case 'tapestry': case 'banner':
+        ctx.fillStyle = '#8b0000'; ctx.fillRect(x - 3, y - hs, 6, s);
+        ctx.fillStyle = '#ffd700'; ctx.fillRect(x - 2, y - hs + 2, 4, 2);
+        break;
+      case 'armor_stand':
+        ctx.fillStyle = '#808080'; ctx.fillRect(x - 3, y - hs, 6, s);
+        ctx.fillStyle = '#a0a0a0'; ctx.fillRect(x - 4, y - hs + 2, 8, 3);
+        break;
+      case 'candelabra': case 'elven_lantern': case 'chain_lantern':
+        ctx.fillStyle = '#c9a84c'; ctx.fillRect(x - 1, y - hs, 2, s * 0.8);
+        ctx.fillStyle = '#ffcc00'; ctx.beginPath(); ctx.arc(x, y - hs, 3, 0, Math.PI * 2); ctx.fill();
+        break;
+      case 'golden_urn':
+        ctx.fillStyle = '#c9a84c'; ctx.beginPath(); ctx.arc(x, y, hs * 0.8, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#a08030'; ctx.fillRect(x - hs * 0.5, y - hs, s * 0.5, 3);
+        break;
+      case 'marble_statue': case 'angel_wing':
+        ctx.fillStyle = '#f0f0f0'; ctx.fillRect(x - hs * 0.5, y - hs, s * 0.5, s);
+        ctx.fillStyle = '#d0d0d0'; ctx.beginPath(); ctx.arc(x, y - hs, hs * 0.4, 0, Math.PI * 2); ctx.fill();
+        break;
+      case 'floating_crystal': case 'light_pillar':
+        ctx.fillStyle = '#ffe080'; ctx.beginPath();
+        ctx.moveTo(x, y - hs); ctx.lineTo(x + hs * 0.6, y); ctx.lineTo(x, y + hs); ctx.lineTo(x - hs * 0.6, y); ctx.closePath(); ctx.fill();
+        break;
+      case 'bloom_bush': case 'flower_bush':
+        ctx.fillStyle = '#3a8a3a'; ctx.beginPath(); ctx.arc(x, y, hs, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ff69b4'; ctx.beginPath(); ctx.arc(x + 2, y - 2, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ffff00'; ctx.beginPath(); ctx.arc(x - 2, y + 1, 1.5, 0, Math.PI * 2); ctx.fill();
+        break;
+      case 'nature_altar':
+        ctx.fillStyle = '#6a8a5a'; ctx.fillRect(x - hs, y - hs * 0.5, s, s * 0.7);
+        ctx.fillStyle = '#80c0ff'; ctx.beginPath(); ctx.arc(x, y - hs * 0.3, 3, 0, Math.PI * 2); ctx.fill();
+        break;
+      case 'barrel': case 'ore_crate':
+        ctx.fillStyle = d.type === 'barrel' ? '#8b6914' : '#6a5a3a';
+        ctx.fillRect(x - hs, y - hs, s, s);
+        ctx.strokeStyle = '#4a3a1a'; ctx.lineWidth = 1; ctx.strokeRect(x - hs, y - hs, s, s);
+        break;
+      case 'pickaxe':
+        ctx.strokeStyle = '#8a8a8a'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(x - hs, y + hs); ctx.lineTo(x + hs, y - hs); ctx.stroke();
+        ctx.fillStyle = '#5a5a5a'; ctx.fillRect(x + hs - 3, y - hs, 4, 4);
+        break;
+      case 'forge_anvil':
+        ctx.fillStyle = '#4a4a4a'; ctx.fillRect(x - hs, y - hs * 0.3, s, s * 0.5);
+        ctx.fillStyle = '#3a3a3a'; ctx.fillRect(x - 2, y + hs * 0.2, 4, hs * 0.5);
+        break;
+      default:
+        ctx.fillStyle = '#6a6a6a'; ctx.fillRect(x - hs * 0.5, y - hs * 0.5, s * 0.5, s * 0.5);
+        break;
+    }
+  },
+
+  _renderTorches(ctx, cam, vw, vh) {
+    // Факелы с пульсирующим свечением (вдоль стен комнат и коридоров)
+    if (!this.dungeon || !this.dungeon.decor.torches) return;
+    const t = this.time;
+    for (const torch of this.dungeon.decor.torches) {
+      if (torch.x < cam.x - 10 || torch.x > cam.x + vw + 10 ||
+          torch.y < cam.y - 10 || torch.y > cam.y + vh + 10) continue;
+      // Основание
+      ctx.fillStyle = '#5a4a3a';
+      ctx.fillRect(torch.x - 2, torch.y - 1, 4, 6);
+      // Пламя (пульсирующее)
+      const flicker = Math.sin(t * 6 + torch.phase) * 0.3 + 0.7;
+      const fSize = 3 + flicker;
+      ctx.fillStyle = `rgba(255, ${150 + Math.floor(flicker * 60)}, 30, ${0.7 + flicker * 0.2})`;
+      ctx.beginPath();
+      ctx.arc(torch.x, torch.y - 3, fSize, 0, Math.PI * 2);
+      ctx.fill();
+      // Свечение (мягкое)
+      ctx.globalAlpha = 0.08 + flicker * 0.04;
+      ctx.fillStyle = '#ffaa00';
+      ctx.beginPath();
+      ctx.arc(torch.x, torch.y, 14 + flicker * 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
   },
 
   _renderTraps(ctx, cam, vw, vh) {

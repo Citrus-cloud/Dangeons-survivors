@@ -183,7 +183,7 @@ const UI = {
     // XP
     const xpPct = Utils.clamp(p.xp / p.xpNext, 0, 1);
     this.xpFill.style.width = (xpPct * 100) + '%';
-    this.xpLabel.textContent = '';
+    this.xpLabel.textContent = `Ур. ${p.level || 1}`;
 
     // Magic Missile cd (встроенная способность) — только если не отключена
     if (p._noBuiltInMissile) {
@@ -431,6 +431,21 @@ const UI = {
           `<div class="card-icon">${c.icon || '★'}</div>` +
           `<div class="card-title">${c.title}</div>` +
           `<div class="card-desc">${c.desc}</div>`;
+        // Применяем пиксельный спрайт (как в showLevelUp)
+        const cardIconEl = el.querySelector('.card-icon');
+        const spriteId = c.weaponId || c.abilityId || c.resultId || c.id;
+        const WS = window.WEAPON_SPRITES;
+        const AS = window.ABILITY_SPRITES;
+        const ES = window.EVOLUTION_SPRITES;
+        const spr = (ES && ES[spriteId]) || (WS && WS[spriteId]) || (AS && AS[spriteId]);
+        if (spr && cardIconEl) {
+          cardIconEl.textContent = '';
+          cardIconEl.style.backgroundImage = 'url(' + spr.toDataURL() + ')';
+          cardIconEl.style.backgroundSize = 'contain';
+          cardIconEl.style.backgroundRepeat = 'no-repeat';
+          cardIconEl.style.backgroundPosition = 'center';
+          cardIconEl.style.imageRendering = 'pixelated';
+        }
         el.addEventListener('click', () => { this.hideAll(); onPick && onPick(c); });
         row.appendChild(el);
       });
@@ -449,16 +464,36 @@ const UI = {
       '<div class="d20-title">ЭВОЛЮЦИЯ!</div>' +
       `<div class="d20-sub">Бросок: <span class="d20-mini crit">${roll}</span></div>` +
       '<div class="evo-row">' +
-        `<div class="evo-card"><div class="evo-icon">${w.icon}</div><div class="evo-name">${w.name}</div><div class="evo-lvl">ур. ${Utils.roman(w.level)}</div></div>` +
+        `<div class="evo-card"><div class="evo-icon" data-sprite-id="${w.id}">${w.icon}</div><div class="evo-name">${w.name}</div><div class="evo-lvl">ур. ${Utils.roman(w.level)}</div></div>` +
         '<div class="evo-plus">+</div>' +
-        `<div class="evo-card"><div class="evo-icon">${a.icon}</div><div class="evo-name">${a.name}</div><div class="evo-lvl">ур. ${Utils.roman(a.level)}</div></div>` +
+        `<div class="evo-card"><div class="evo-icon" data-sprite-id="${a.id}">${a.icon}</div><div class="evo-name">${a.name}</div><div class="evo-lvl">ур. ${Utils.roman(a.level)}</div></div>` +
         '<div class="evo-arrow">→</div>' +
-        `<div class="evo-card evo-result"><div class="evo-icon">${r.resultIcon}</div><div class="evo-name">${r.resultName}</div><div class="evo-desc">${r.desc}</div></div>` +
+        `<div class="evo-card evo-result"><div class="evo-icon" data-sprite-id="${r.resultId || ''}">${r.resultIcon}</div><div class="evo-name">${r.resultName}</div><div class="evo-desc">${r.desc}</div></div>` +
       '</div>' +
       '<div class="evo-buttons">' +
         '<button id="evoAccept" class="btn">Принять</button>' +
         '<button id="evoDecline" class="btn btn-secondary">Отказаться</button>' +
       '</div>';
+    // Применяем спрайты к иконкам эволюции
+    const evoIcons = this.chestPanelEl.querySelectorAll('.evo-icon[data-sprite-id]');
+    for (const iconEl of evoIcons) {
+      const spriteId = iconEl.getAttribute('data-sprite-id');
+      if (!spriteId) continue;
+      const WS = window.WEAPON_SPRITES;
+      const AS = window.ABILITY_SPRITES;
+      const ES = window.EVOLUTION_SPRITES;
+      const spr = (ES && ES[spriteId]) || (WS && WS[spriteId]) || (AS && AS[spriteId]);
+      if (spr) {
+        iconEl.textContent = '';
+        iconEl.style.backgroundImage = 'url(' + spr.toDataURL() + ')';
+        iconEl.style.backgroundSize = 'contain';
+        iconEl.style.backgroundRepeat = 'no-repeat';
+        iconEl.style.backgroundPosition = 'center';
+        iconEl.style.imageRendering = 'pixelated';
+        iconEl.style.width = '32px';
+        iconEl.style.height = '32px';
+      }
+    }
     this.chestOverlay.classList.add('active');
     this.chestPanelEl.querySelector('#evoAccept').addEventListener('click', () => {
       this.hideAll();
