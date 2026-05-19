@@ -2313,6 +2313,9 @@ function initSprites() {
     ENEMY_SPRITES[id] = generateEnemySprite(id);
   }
   console.log(`[Sprites] Сгенерировано ${ids.length} спрайтов врагов`);
+
+  // Шаг 2: генерация спрайтов оружий, пассивок, эволюций, снарядов
+  if (window.initItemSprites) initItemSprites();
 }
 
 // Экспорт в глобальную область

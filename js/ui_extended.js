@@ -235,6 +235,18 @@ const UIExtended = {
           <div class="codex-card-name">${info.name}</div>
           <div class="codex-card-desc">${info.desc || ''}</div>
         `;
+        // Шаг 2: пиксельный спрайт
+        const iconEl = card.querySelector('.codex-card-icon');
+        const WS = window.WEAPON_SPRITES;
+        const spr = WS ? WS[info.id] : null;
+        if (spr && iconEl) {
+          iconEl.textContent = '';
+          iconEl.style.backgroundImage = 'url(' + spr.toDataURL() + ')';
+          iconEl.style.backgroundSize = 'contain';
+          iconEl.style.backgroundRepeat = 'no-repeat';
+          iconEl.style.backgroundPosition = 'center';
+          iconEl.style.imageRendering = 'pixelated';
+        }
       } else {
         card.innerHTML = `
           <div class="codex-card-icon locked-icon">?</div>
@@ -257,6 +269,18 @@ const UIExtended = {
           <div class="codex-card-name">${info.name}</div>
           <div class="codex-card-desc">${info.desc || ''}</div>
         `;
+        // Шаг 2: пиксельный спрайт
+        const iconEl = card.querySelector('.codex-card-icon');
+        const AS = window.ABILITY_SPRITES;
+        const spr = AS ? AS[info.id] : null;
+        if (spr && iconEl) {
+          iconEl.textContent = '';
+          iconEl.style.backgroundImage = 'url(' + spr.toDataURL() + ')';
+          iconEl.style.backgroundSize = 'contain';
+          iconEl.style.backgroundRepeat = 'no-repeat';
+          iconEl.style.backgroundPosition = 'center';
+          iconEl.style.imageRendering = 'pixelated';
+        }
       } else {
         card.innerHTML = `
           <div class="codex-card-icon locked-icon">?</div>
@@ -280,6 +304,18 @@ const UIExtended = {
           <div class="codex-card-name">${evo.resultName}</div>
           <div class="codex-card-desc">${evo.desc || ''}</div>
         `;
+        // Шаг 2: пиксельный спрайт эволюции
+        const iconEl = card.querySelector('.codex-card-icon');
+        const ES = window.EVOLUTION_SPRITES;
+        const spr = ES ? ES[resultId] : null;
+        if (spr && iconEl) {
+          iconEl.textContent = '';
+          iconEl.style.backgroundImage = 'url(' + spr.toDataURL() + ')';
+          iconEl.style.backgroundSize = 'contain';
+          iconEl.style.backgroundRepeat = 'no-repeat';
+          iconEl.style.backgroundPosition = 'center';
+          iconEl.style.imageRendering = 'pixelated';
+        }
       } else {
         card.innerHTML = `
           <div class="codex-card-icon locked-icon">?</div>
