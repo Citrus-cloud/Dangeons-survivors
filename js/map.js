@@ -1789,8 +1789,12 @@ const GameMap = {
     const sf = (shrinkFactor !== undefined) ? shrinkFactor : 0.25;
     // Мягкий отступ для проверки (предотвращает застревание в текстурах)
     const checkRad = rad + 1;
+    // Bug fix #1: уменьшенный радиус для проверки перпендикулярной оси
+    // чтобы позволить скольжение вдоль стен без застревания
+    const slideRad = rad;
     let nx = x, ny = y;
     let blockedX = false, blockedY = false;
+    // --- Ось X ---
     if (dx !== 0) {
       const tryX = x + dx;
       if (this.rectIsWalkable(tryX, y, checkRad, sf)) nx = tryX;
@@ -1808,20 +1812,33 @@ const GameMap = {
         blockedX = true;
       }
     }
+    // --- Ось Y (используем slideRad если X был заблокирован) ---
     if (dy !== 0) {
+      const yRad = blockedX ? slideRad : checkRad;
       const tryY = ny + dy;
-      if (this.rectIsWalkable(nx, tryY, checkRad, sf)) ny = tryY;
+      if (this.rectIsWalkable(nx, tryY, yRad, sf)) ny = tryY;
       else {
-        const sign = Math.sign(dy);
-        let stepped = 0;
-        const stepSize = 1;
-        while (Math.abs(stepped) < Math.abs(dy)) {
-          const next = stepped + sign * stepSize;
-          if (this.rectIsWalkable(nx, ny + next, checkRad, sf)) stepped = next;
-          else break;
+        // Bug fix #1: если Y не проходит из новой X-позиции,
+        // пробуем Y из оригинальной X (для скольжения вдоль стен)
+        if (blockedX && this.rectIsWalkable(x, y + dy, yRad, sf)) {
+          nx = x; // откат X — двигаемся только по Y
+          ny = y + dy;
+          blockedX = false; // X не заблокирован (мы его откатили)
+          blockedY = false;
+        } else {
+          const checkX = blockedX ? x : nx;
+          const sign = Math.sign(dy);
+          let stepped = 0;
+          const stepSize = 1;
+          while (Math.abs(stepped) < Math.abs(dy)) {
+            const next = stepped + sign * stepSize;
+            if (this.rectIsWalkable(checkX, ny + next, yRad, sf)) stepped = next;
+            else break;
+          }
+          if (stepped !== 0 && blockedX) nx = checkX;
+          ny = ny + stepped;
+          blockedY = true;
         }
-        ny = ny + stepped;
-        blockedY = true;
       }
     }
     // Финальная проверка — если застрял, вытолкнуть
@@ -2492,27 +2509,25 @@ const GameMap = {
   },
 
   _renderTorches(ctx, cam, vw, vh) {
-    // Факелы с пульсирующим свечением (вдоль стен комнат и коридоров)
+    // Bug fix #3: факелы со статичным отображением (без пульсации/мерцания)
     if (!this.dungeon || !this.dungeon.decor.torches) return;
-    const t = this.time;
     for (const torch of this.dungeon.decor.torches) {
       if (torch.x < cam.x - 10 || torch.x > cam.x + vw + 10 ||
           torch.y < cam.y - 10 || torch.y > cam.y + vh + 10) continue;
-      // Основание
+      // Основание (статичное)
       ctx.fillStyle = '#5a4a3a';
       ctx.fillRect(torch.x - 2, torch.y - 1, 4, 6);
-      // Пламя (пульсирующее)
-      const flicker = Math.sin(t * 6 + torch.phase) * 0.3 + 0.7;
-      const fSize = 3 + flicker;
-      ctx.fillStyle = `rgba(255, ${150 + Math.floor(flicker * 60)}, 30, ${0.7 + flicker * 0.2})`;
+      // Пламя (статичное, без пульсации)
+      const fSize = 3.7;
+      ctx.fillStyle = 'rgba(255, 180, 30, 0.85)';
       ctx.beginPath();
       ctx.arc(torch.x, torch.y - 3, fSize, 0, Math.PI * 2);
       ctx.fill();
-      // Свечение (мягкое)
-      ctx.globalAlpha = 0.08 + flicker * 0.04;
+      // Свечение (статичное, мягкое)
+      ctx.globalAlpha = 0.10;
       ctx.fillStyle = '#ffaa00';
       ctx.beginPath();
-      ctx.arc(torch.x, torch.y, 14 + flicker * 4, 0, Math.PI * 2);
+      ctx.arc(torch.x, torch.y, 16, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 1;
     }
