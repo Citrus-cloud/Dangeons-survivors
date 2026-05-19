@@ -87,6 +87,9 @@ const Game = {
     // Генерация пиксельных спрайтов врагов
     if (window.initSprites) initSprites();
 
+    // Генерация превью биомов для экрана выбора карты
+    if (window.initBiomePreviews) initBiomePreviews();
+
     // Шаг 15: загрузить мета-прогресс
     if (window.MetaProgress) MetaProgress.load();
 
@@ -150,7 +153,7 @@ const Game = {
   },
 
   /* ----- состояния ----- */
-  startNewGame() {
+  startNewGame(biomeId) {
     this.enemies.clearAll();
     this.projectiles.clearAll();
     this.xpDrops.clearAll();
@@ -167,13 +170,13 @@ const Game = {
     this.mapTime = 0;            // время на текущей карте
     this.portalSpawned = false;  // портал уже появился?
     this.guardianSpawned = false; // страж уже появился?
-    this.lastBiomeId = null;     // для предотвращения повтора биома
+    this.lastBiomeId = biomeId || 'crypt';  // запоминаем выбранный биом
     this.transitioning = false;  // идёт переход?
     this.transitionTimer = 0;
 
-    // Шаг 5: генерируем подземелье ДО создания игрока (Шаг 13: первая карта — склеп)
+    // Шаг 5 (новый): генерируем подземелье в выбранном биоме
     if (window.GameMap && GameMap.generateDungeon) {
-      GameMap.generateDungeon('crypt', 1);
+      GameMap.generateDungeon(this.lastBiomeId, 1);
     }
 
     this.kills = 0;
@@ -211,8 +214,8 @@ const Game = {
 
     UI.hideAll();
     this.state = 'playing';
-    // Шаг 18: запуск музыки биома (первая карта всегда склеп)
-    if (window.GameAudio) GameAudio.playMusic('crypt');
+    // Шаг 18: запуск музыки выбранного биома
+    if (window.GameAudio) GameAudio.playMusic(this.lastBiomeId || 'crypt');
   },
 
   togglePause() {

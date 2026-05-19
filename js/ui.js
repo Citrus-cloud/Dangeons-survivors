@@ -105,6 +105,7 @@ const UI = {
     if (this._dialogueOverlay) this._dialogueOverlay.classList.remove('active');
     if (this._victoryOverlay) this._victoryOverlay.classList.remove('active');
     if (this._settingsOverlay) this._settingsOverlay.classList.remove('active');
+    if (this._mapSelectOverlay) this._mapSelectOverlay.classList.remove('active');
     // Расширенные оверлеи
     const extIds = ['classOverlay', 'bestiaryOverlay', 'codexOverlay', 'runStatsOverlay'];
     for (const id of extIds) {
@@ -670,7 +671,7 @@ const UI = {
     // Bindings
     ov.querySelector('#campStartBtn').addEventListener('click', () => {
       this.hideCamp();
-      if (window.Game) Game.startNewGame();
+      this.showMapSelect();
     });
     ov.querySelector('#campCampaignBtn').addEventListener('click', () => {
       this.hideCamp();
@@ -730,6 +731,141 @@ const UI = {
 
   hideCamp() {
     if (this._campOverlay) this._campOverlay.classList.remove('active');
+  },
+
+  /* ============================================================
+     Шаг 5 (новый): Экран выбора карты (биома)
+     ============================================================ */
+
+  _mapSelectOverlay: null,
+
+  showMapSelect() {
+    this.hideAll();
+    if (!this._mapSelectOverlay) this._buildMapSelectOverlay();
+    this._updateMapSelectHighlight();
+    this._mapSelectOverlay.classList.add('active');
+  },
+
+  hideMapSelect() {
+    if (this._mapSelectOverlay) this._mapSelectOverlay.classList.remove('active');
+  },
+
+  _buildMapSelectOverlay() {
+    // Инициализируем превью если ещё не созданы
+    if (window.initBiomePreviews && (!window.BIOME_PREVIEWS || Object.keys(BIOME_PREVIEWS).length === 0)) {
+      initBiomePreviews();
+    }
+
+    const ov = document.createElement('div');
+    ov.id = 'mapSelectOverlay';
+    ov.className = 'overlay camp-overlay';
+
+    // Описания биомов
+    const BIOME_DESCRIPTIONS = {
+      crypt: 'Тёмные коридоры, полные нежити.',
+      ice_caves: 'Замёрзшие пещеры, где спят древние твари.',
+      fire_mines: 'Огненные шахты, пылающие лавой.',
+      forest_ruins: 'Заросшие руины, пропитанные магией.',
+      castle: 'Мрачный замок с жуткими обитателями.',
+      sky_citadel: 'Небесный город за облаками.',
+      elven_forest: 'Древний лес, хранимый рунами.',
+      mountain_keep: 'Суровые горные крепости и шахты.',
+    };
+
+    // Сложность биомов (1–3 черепа)
+    const BIOME_DIFFICULTY = {
+      crypt: 1,
+      ice_caves: 1,
+      forest_ruins: 1,
+      fire_mines: 2,
+      castle: 2,
+      elven_forest: 2,
+      mountain_keep: 3,
+      sky_citadel: 3,
+    };
+
+    let cardsHTML = '';
+    const biomeList = window.BIOMES || [];
+    for (const biome of biomeList) {
+      const desc = BIOME_DESCRIPTIONS[biome.id] || '';
+      const diff = BIOME_DIFFICULTY[biome.id] || 1;
+      const skulls = '💀'.repeat(diff);
+      cardsHTML += `
+        <div class="map-card" data-biome="${biome.id}">
+          <div class="map-card-preview" data-biome-preview="${biome.id}"></div>
+          <div class="map-card-name">${biome.name}</div>
+          <div class="map-card-desc">${desc}</div>
+          <div class="map-card-diff">${skulls}</div>
+        </div>
+      `;
+    }
+
+    ov.innerHTML = `
+      <div class="camp-bg map-select-bg">
+        <h1 class="camp-title map-select-title">ВЫБЕРИТЕ КАРТУ</h1>
+        <div class="map-grid">${cardsHTML}</div>
+        <div class="map-select-buttons">
+          <button id="mapRandomBtn" class="btn camp-btn">🎲 Случайная карта</button>
+          <button id="mapBackBtn" class="btn camp-btn">↩ Назад</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(ov);
+    this._mapSelectOverlay = ov;
+
+    // Вставляем превью-канвасы
+    const previewEls = ov.querySelectorAll('.map-card-preview');
+    for (const el of previewEls) {
+      const biomeId = el.getAttribute('data-biome-preview');
+      if (window.BIOME_PREVIEWS && BIOME_PREVIEWS[biomeId]) {
+        const img = BIOME_PREVIEWS[biomeId];
+        el.style.backgroundImage = 'url(' + img.toDataURL() + ')';
+        el.style.backgroundSize = 'cover';
+        el.style.imageRendering = 'pixelated';
+      }
+    }
+
+    // Клик по карточке
+    const cards = ov.querySelectorAll('.map-card');
+    for (const card of cards) {
+      card.addEventListener('click', () => {
+        const biomeId = card.getAttribute('data-biome');
+        this.hideMapSelect();
+        if (window.Game) Game.startNewGame(biomeId);
+      });
+    }
+
+    // Случайная карта
+    ov.querySelector('#mapRandomBtn').addEventListener('click', () => {
+      const biomes = window.BIOMES || [];
+      const randomBiome = biomes[Math.floor(Math.random() * biomes.length)];
+      this.hideMapSelect();
+      if (window.Game) Game.startNewGame(randomBiome ? randomBiome.id : 'crypt');
+    });
+
+    // Назад
+    ov.querySelector('#mapBackBtn').addEventListener('click', () => {
+      this.hideMapSelect();
+      this.showCamp();
+    });
+  },
+
+  /** Подсветить последний биом золотой рамкой */
+  _updateMapSelectHighlight() {
+    if (!this._mapSelectOverlay) return;
+    const cards = this._mapSelectOverlay.querySelectorAll('.map-card');
+    // Получаем последний биом из метапрогресса или из Game
+    const lastBiome = (window.GameMap && GameMap.currentBiome)
+      ? GameMap.currentBiome.id
+      : (window.Game && Game.lastBiomeId) || 'crypt';
+    for (const card of cards) {
+      if (card.getAttribute('data-biome') === lastBiome) {
+        card.classList.add('map-card-highlight');
+      } else {
+        card.classList.remove('map-card-highlight');
+      }
+    }
   },
 
   /* ============================================================

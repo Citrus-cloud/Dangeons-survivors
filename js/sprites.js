@@ -3119,3 +3119,354 @@ function _makeDecor16(drawFn) {
 window.DECOR_SPRITES = DECOR_SPRITES;
 window.initDecorSprites = initDecorSprites;
 
+
+
+/* ============================================================
+   BIOME_PREVIEWS — 8 offscreen-канвасов (64×48 px) с пиксельными
+   мини-пейзажами биомов для экрана выбора карты.
+   ============================================================ */
+
+const BIOME_PREVIEWS = {};
+
+function initBiomePreviews() {
+  BIOME_PREVIEWS['crypt']         = _drawCryptPreview();
+  BIOME_PREVIEWS['ice_caves']     = _drawIceCavesPreview();
+  BIOME_PREVIEWS['fire_mines']    = _drawFireMinesPreview();
+  BIOME_PREVIEWS['forest_ruins']  = _drawForestRuinsPreview();
+  BIOME_PREVIEWS['castle']        = _drawCastlePreview();
+  BIOME_PREVIEWS['sky_citadel']   = _drawSkyCitadelPreview();
+  BIOME_PREVIEWS['elven_forest']  = _drawElvenForestPreview();
+  BIOME_PREVIEWS['mountain_keep'] = _drawMountainKeepPreview();
+}
+
+function _createPreviewCanvas() {
+  const c = document.createElement('canvas');
+  c.width = 64;
+  c.height = 48;
+  return c;
+}
+
+/* ---------- Склеп ---------- */
+function _drawCryptPreview() {
+  const c = _createPreviewCanvas();
+  const ctx = c.getContext('2d');
+  // Пол
+  ctx.fillStyle = '#3a3a3a';
+  ctx.fillRect(0, 0, 64, 48);
+  // Стена наверху
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(0, 0, 64, 12);
+  // Трещины на полу
+  ctx.fillStyle = '#2a2a2a';
+  ctx.fillRect(10, 30, 8, 1);
+  ctx.fillRect(40, 35, 12, 1);
+  ctx.fillRect(25, 42, 6, 1);
+  // Саркофаг (центр)
+  ctx.fillStyle = '#6a5a4a';
+  ctx.fillRect(24, 20, 16, 10);
+  ctx.fillStyle = '#8a7a5a';
+  ctx.fillRect(25, 21, 14, 2);
+  ctx.fillStyle = '#5a4a3a';
+  ctx.fillRect(24, 20, 16, 1);
+  ctx.fillRect(24, 29, 16, 1);
+  // Красные глаза в темноте (левый угол)
+  ctx.fillStyle = '#ff2222';
+  ctx.fillRect(8, 6, 2, 2);
+  ctx.fillRect(13, 6, 2, 2);
+  // Факел (правая стена)
+  ctx.fillStyle = '#8b4513';
+  ctx.fillRect(56, 14, 2, 6);
+  ctx.fillStyle = '#ff8800';
+  ctx.fillRect(55, 12, 4, 3);
+  ctx.fillStyle = '#ffcc00';
+  ctx.fillRect(56, 11, 2, 2);
+  // Кости на полу
+  ctx.fillStyle = '#b8b8b8';
+  ctx.fillRect(5, 38, 4, 1);
+  ctx.fillRect(6, 37, 1, 3);
+  ctx.fillRect(50, 40, 3, 1);
+  return c;
+}
+
+/* ---------- Ледяные пещеры ---------- */
+function _drawIceCavesPreview() {
+  const c = _createPreviewCanvas();
+  const ctx = c.getContext('2d');
+  // Пол
+  ctx.fillStyle = '#3a3a4a';
+  ctx.fillRect(0, 0, 64, 48);
+  // Потолок/стена
+  ctx.fillStyle = '#1a1a2a';
+  ctx.fillRect(0, 0, 64, 10);
+  // Сталактиты
+  ctx.fillStyle = '#7a8aaa';
+  ctx.fillRect(12, 10, 2, 6);
+  ctx.fillRect(13, 10, 1, 8);
+  ctx.fillRect(30, 10, 2, 5);
+  ctx.fillRect(50, 10, 2, 7);
+  ctx.fillRect(51, 10, 1, 9);
+  // Ледяной кристалл (центр)
+  ctx.fillStyle = '#88ccff';
+  ctx.fillRect(28, 24, 2, 8);
+  ctx.fillRect(26, 26, 6, 4);
+  ctx.fillStyle = '#aaeeff';
+  ctx.fillRect(27, 25, 4, 2);
+  ctx.fillStyle = '#ccffff';
+  ctx.fillRect(28, 25, 2, 1);
+  // Ледяные блики на полу
+  ctx.fillStyle = '#5566aa';
+  ctx.fillRect(8, 36, 10, 2);
+  ctx.fillRect(44, 40, 8, 2);
+  // Снежные участки
+  ctx.fillStyle = '#cce0f0';
+  ctx.fillRect(3, 42, 5, 3);
+  ctx.fillRect(55, 38, 6, 4);
+  return c;
+}
+
+/* ---------- Огненные шахты ---------- */
+function _drawFireMinesPreview() {
+  const c = _createPreviewCanvas();
+  const ctx = c.getContext('2d');
+  // Пол
+  ctx.fillStyle = '#3a2a2a';
+  ctx.fillRect(0, 0, 64, 48);
+  // Стена
+  ctx.fillStyle = '#2a1a1a';
+  ctx.fillRect(0, 0, 64, 10);
+  // Лавовая лужа
+  ctx.fillStyle = '#ff4400';
+  ctx.fillRect(10, 30, 14, 6);
+  ctx.fillStyle = '#ff8800';
+  ctx.fillRect(12, 31, 10, 4);
+  ctx.fillStyle = '#ffcc00';
+  ctx.fillRect(14, 32, 6, 2);
+  // Руда в стене
+  ctx.fillStyle = '#cc8800';
+  ctx.fillRect(45, 4, 3, 3);
+  ctx.fillRect(52, 6, 2, 2);
+  ctx.fillRect(8, 5, 2, 3);
+  // Камни
+  ctx.fillStyle = '#5a3a2a';
+  ctx.fillRect(40, 22, 8, 6);
+  ctx.fillStyle = '#4a2a1a';
+  ctx.fillRect(40, 22, 8, 1);
+  // Угольки / искры
+  ctx.fillStyle = '#ff6600';
+  ctx.fillRect(30, 40, 1, 1);
+  ctx.fillRect(35, 38, 1, 1);
+  ctx.fillRect(48, 42, 1, 1);
+  ctx.fillStyle = '#ffaa00';
+  ctx.fillRect(20, 44, 1, 1);
+  ctx.fillRect(55, 36, 1, 1);
+  return c;
+}
+
+/* ---------- Лесные руины ---------- */
+function _drawForestRuinsPreview() {
+  const c = _createPreviewCanvas();
+  const ctx = c.getContext('2d');
+  // Пол (мох)
+  ctx.fillStyle = '#3a4a2a';
+  ctx.fillRect(0, 0, 64, 48);
+  // Стена/кусты сверху
+  ctx.fillStyle = '#1a2a1a';
+  ctx.fillRect(0, 0, 64, 8);
+  // Ствол дерева
+  ctx.fillStyle = '#5a3a1a';
+  ctx.fillRect(8, 8, 6, 30);
+  ctx.fillStyle = '#4a2a0a';
+  ctx.fillRect(8, 8, 1, 30);
+  // Крона
+  ctx.fillStyle = '#2a6a1a';
+  ctx.fillRect(2, 4, 18, 8);
+  ctx.fillStyle = '#3a8a2a';
+  ctx.fillRect(4, 2, 14, 6);
+  // Светящийся гриб
+  ctx.fillStyle = '#44dd88';
+  ctx.fillRect(35, 34, 4, 3);
+  ctx.fillStyle = '#22aa66';
+  ctx.fillRect(36, 37, 2, 3);
+  ctx.fillStyle = '#66ffaa';
+  ctx.fillRect(36, 34, 2, 1);
+  // Каменные руины
+  ctx.fillStyle = '#6a6a5a';
+  ctx.fillRect(48, 20, 10, 8);
+  ctx.fillStyle = '#5a5a4a';
+  ctx.fillRect(48, 20, 10, 2);
+  ctx.fillRect(52, 16, 4, 4);
+  // Мох/лианы
+  ctx.fillStyle = '#4a7a3a';
+  ctx.fillRect(48, 22, 2, 6);
+  ctx.fillRect(56, 22, 2, 4);
+  return c;
+}
+
+/* ---------- Замок ---------- */
+function _drawCastlePreview() {
+  const c = _createPreviewCanvas();
+  const ctx = c.getContext('2d');
+  // Пол
+  ctx.fillStyle = '#2a2a3a';
+  ctx.fillRect(0, 0, 64, 48);
+  // Стена
+  ctx.fillStyle = '#1a1a2a';
+  ctx.fillRect(0, 0, 64, 12);
+  // Колонна
+  ctx.fillStyle = '#4a4a5a';
+  ctx.fillRect(14, 12, 6, 28);
+  ctx.fillStyle = '#6a5a4a';
+  ctx.fillRect(13, 12, 8, 3);
+  ctx.fillRect(13, 37, 8, 3);
+  // Гобелен на стене
+  ctx.fillStyle = '#8a2a4a';
+  ctx.fillRect(36, 2, 12, 14);
+  ctx.fillStyle = '#aa3a5a';
+  ctx.fillRect(38, 3, 8, 12);
+  ctx.fillStyle = '#cc9900';
+  ctx.fillRect(40, 5, 4, 4); // геральдика
+  ctx.fillRect(38, 14, 8, 1); // бахрома
+  // Ковровая дорожка
+  ctx.fillStyle = '#6a1a3a';
+  ctx.fillRect(26, 20, 12, 28);
+  ctx.fillStyle = '#8a2a4a';
+  ctx.fillRect(28, 20, 8, 28);
+  // Свечи
+  ctx.fillStyle = '#cc9900';
+  ctx.fillRect(54, 14, 2, 4);
+  ctx.fillStyle = '#ffcc00';
+  ctx.fillRect(54, 12, 2, 2);
+  return c;
+}
+
+/* ---------- Небесный город ---------- */
+function _drawSkyCitadelPreview() {
+  const c = _createPreviewCanvas();
+  const ctx = c.getContext('2d');
+  // Небо / пол (белый мрамор)
+  ctx.fillStyle = '#d8e8f0';
+  ctx.fillRect(0, 0, 64, 48);
+  // Облака (верх)
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(5, 2, 16, 5);
+  ctx.fillRect(8, 0, 10, 3);
+  ctx.fillRect(40, 4, 12, 4);
+  ctx.fillRect(42, 2, 8, 3);
+  // Мраморный пол — узор
+  ctx.fillStyle = '#c0d8e8';
+  ctx.fillRect(0, 36, 64, 1);
+  ctx.fillRect(16, 36, 1, 12);
+  ctx.fillRect(32, 36, 1, 12);
+  ctx.fillRect(48, 36, 1, 12);
+  // Золотая урна
+  ctx.fillStyle = '#c9a84c';
+  ctx.fillRect(28, 20, 8, 10);
+  ctx.fillStyle = '#dabb66';
+  ctx.fillRect(29, 21, 6, 3);
+  ctx.fillStyle = '#aa8833';
+  ctx.fillRect(28, 20, 8, 1);
+  ctx.fillRect(30, 18, 4, 2);
+  // Сияние
+  ctx.fillStyle = 'rgba(255,220,100,0.5)';
+  ctx.fillRect(26, 18, 12, 2);
+  ctx.fillRect(30, 16, 4, 2);
+  // Колонна (белая)
+  ctx.fillStyle = '#f0f0f0';
+  ctx.fillRect(8, 10, 4, 26);
+  ctx.fillStyle = '#c9a84c';
+  ctx.fillRect(7, 10, 6, 2);
+  ctx.fillRect(7, 34, 6, 2);
+  return c;
+}
+
+/* ---------- Эльфийский лес ---------- */
+function _drawElvenForestPreview() {
+  const c = _createPreviewCanvas();
+  const ctx = c.getContext('2d');
+  // Пол (зелёный)
+  ctx.fillStyle = '#4a7a3a';
+  ctx.fillRect(0, 0, 64, 48);
+  // Деревья сверху
+  ctx.fillStyle = '#2a5a1a';
+  ctx.fillRect(0, 0, 64, 6);
+  ctx.fillStyle = '#3a6a2a';
+  ctx.fillRect(4, 0, 8, 10);
+  ctx.fillRect(50, 0, 10, 8);
+  // Рунный камень
+  ctx.fillStyle = '#6a6a6a';
+  ctx.fillRect(26, 18, 10, 14);
+  ctx.fillStyle = '#5a5a5a';
+  ctx.fillRect(26, 18, 10, 2);
+  // Руны (светящиеся)
+  ctx.fillStyle = '#44ddaa';
+  ctx.fillRect(28, 22, 1, 4);
+  ctx.fillRect(30, 21, 2, 1);
+  ctx.fillRect(30, 25, 2, 1);
+  ctx.fillRect(33, 22, 1, 4);
+  ctx.fillRect(29, 28, 4, 1);
+  // Светлячки
+  ctx.fillStyle = '#aaffcc';
+  ctx.fillRect(12, 20, 2, 2);
+  ctx.fillRect(48, 16, 2, 2);
+  ctx.fillRect(42, 30, 2, 2);
+  ctx.fillStyle = '#88ffaa';
+  ctx.fillRect(18, 35, 1, 1);
+  ctx.fillRect(55, 25, 1, 1);
+  // Цветы
+  ctx.fillStyle = '#ff88cc';
+  ctx.fillRect(8, 38, 2, 2);
+  ctx.fillRect(52, 40, 2, 2);
+  ctx.fillStyle = '#ffaadd';
+  ctx.fillRect(9, 38, 1, 1);
+  return c;
+}
+
+/* ---------- Горная местность ---------- */
+function _drawMountainKeepPreview() {
+  const c = _createPreviewCanvas();
+  const ctx = c.getContext('2d');
+  // Пол (каменный)
+  ctx.fillStyle = '#6b5a4a';
+  ctx.fillRect(0, 0, 64, 48);
+  // Стена
+  ctx.fillStyle = '#3a3a3a';
+  ctx.fillRect(0, 0, 64, 10);
+  // Камни/булыжники
+  ctx.fillStyle = '#5a5a5a';
+  ctx.fillRect(4, 4, 6, 4);
+  ctx.fillRect(20, 6, 4, 3);
+  ctx.fillRect(50, 3, 8, 5);
+  // Бочка
+  ctx.fillStyle = '#7a5a3a';
+  ctx.fillRect(10, 22, 8, 10);
+  ctx.fillStyle = '#5a3a1a';
+  ctx.fillRect(10, 22, 8, 1);
+  ctx.fillRect(10, 31, 8, 1);
+  ctx.fillStyle = '#9a7a4a';
+  ctx.fillRect(10, 26, 8, 1);
+  // Обручи бочки
+  ctx.fillStyle = '#4a4a4a';
+  ctx.fillRect(10, 24, 8, 1);
+  ctx.fillRect(10, 29, 8, 1);
+  // Кирка в стене
+  ctx.fillStyle = '#8a6a4a';
+  ctx.fillRect(44, 12, 2, 10);
+  ctx.fillStyle = '#aaaaaa';
+  ctx.fillRect(40, 12, 8, 3);
+  ctx.fillStyle = '#888888';
+  ctx.fillRect(40, 12, 1, 3);
+  ctx.fillRect(47, 12, 1, 3);
+  // Руда
+  ctx.fillStyle = '#cc8800';
+  ctx.fillRect(55, 28, 3, 3);
+  ctx.fillRect(56, 27, 2, 1);
+  // Трещины
+  ctx.fillStyle = '#4a3a2a';
+  ctx.fillRect(28, 38, 8, 1);
+  ctx.fillRect(30, 39, 1, 3);
+  ctx.fillRect(20, 44, 6, 1);
+  return c;
+}
+
+window.BIOME_PREVIEWS = BIOME_PREVIEWS;
+window.initBiomePreviews = initBiomePreviews;
