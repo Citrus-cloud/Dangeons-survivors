@@ -148,6 +148,21 @@ const UI = {
           `<div class="card-icon">${c.icon || '★'}</div>` +
           `<div class="card-title">${c.title}</div>` +
           `<div class="card-desc">${c.desc}</div>`;
+        // Шаг 2: пиксельный спрайт в карте левелапа
+        const cardIconEl = el.querySelector('.card-icon');
+        const spriteId = c.weaponId || c.abilityId || c.resultId || c.id;
+        const WS = window.WEAPON_SPRITES;
+        const AS = window.ABILITY_SPRITES;
+        const ES = window.EVOLUTION_SPRITES;
+        const spr = (ES && ES[spriteId]) || (WS && WS[spriteId]) || (AS && AS[spriteId]);
+        if (spr && cardIconEl) {
+          cardIconEl.textContent = '';
+          cardIconEl.style.backgroundImage = 'url(' + spr.toDataURL() + ')';
+          cardIconEl.style.backgroundSize = 'contain';
+          cardIconEl.style.backgroundRepeat = 'no-repeat';
+          cardIconEl.style.backgroundPosition = 'center';
+          cardIconEl.style.imageRendering = 'pixelated';
+        }
         el.addEventListener('click', () => onPick(c));
         this.cardsEl.appendChild(el);
       });
@@ -228,6 +243,7 @@ const UI = {
     if (!weapon) {
       el.classList.remove('filled', 'exclusive-slot', 'super-evolved-slot');
       iconEl.textContent = '';
+      iconEl.style.backgroundImage = '';
       levelEl.textContent = '';
       cdEl.style.height = '0%';
       return;
@@ -237,7 +253,38 @@ const UI = {
     if (weapon.isSuperEvolved) { el.classList.add('super-evolved-slot'); el.classList.remove('exclusive-slot'); }
     else if (weapon.isExclusive) { el.classList.add('exclusive-slot'); el.classList.remove('super-evolved-slot'); }
     else { el.classList.remove('exclusive-slot', 'super-evolved-slot'); }
-    iconEl.textContent = weapon.icon || '?';
+
+    // Шаг 2: пиксельный спрайт оружия вместо эмодзи
+    const WS = window.WEAPON_SPRITES;
+    const ES = window.EVOLUTION_SPRITES;
+    const sprite = (ES && ES[weapon.id]) || (WS && WS[weapon.id]);
+    if (sprite && !iconEl._spriteSet) {
+      iconEl.textContent = '';
+      iconEl.style.backgroundImage = 'url(' + sprite.toDataURL() + ')';
+      iconEl.style.backgroundSize = 'contain';
+      iconEl.style.backgroundRepeat = 'no-repeat';
+      iconEl.style.backgroundPosition = 'center';
+      iconEl.style.imageRendering = 'pixelated';
+      iconEl._spriteSet = weapon.id;
+    } else if (!sprite) {
+      iconEl.style.backgroundImage = '';
+      iconEl.textContent = weapon.icon || '?';
+      iconEl._spriteSet = null;
+    } else if (iconEl._spriteSet !== weapon.id) {
+      // Weapon changed (evolution) — update sprite
+      iconEl.textContent = '';
+      const newSprite = (ES && ES[weapon.id]) || (WS && WS[weapon.id]);
+      if (newSprite) {
+        iconEl.style.backgroundImage = 'url(' + newSprite.toDataURL() + ')';
+        iconEl.style.imageRendering = 'pixelated';
+        iconEl._spriteSet = weapon.id;
+      } else {
+        iconEl.style.backgroundImage = '';
+        iconEl.textContent = weapon.icon || '?';
+        iconEl._spriteSet = null;
+      }
+    }
+
     levelEl.textContent = Utils.roman(weapon.level);
     // CD-заполнение: растёт от 0% до 100% по мере готовности
     const ready = weapon.readyProgress ? weapon.readyProgress(player) : 1;
@@ -252,12 +299,36 @@ const UI = {
       el.classList.remove('filled');
       el.classList.remove('slot-flash');
       iconEl.textContent = '';
+      iconEl.style.backgroundImage = '';
+      iconEl._spriteSet = null;
       levelEl.textContent = '';
       cdEl.style.height = '0%';
       return;
     }
     el.classList.add('filled');
-    iconEl.textContent = ability.icon || '?';
+
+    // Шаг 2: пиксельный спрайт пассивки вместо эмодзи
+    const AS = window.ABILITY_SPRITES;
+    const sprite = AS ? AS[ability.id] : null;
+    if (sprite && !iconEl._spriteSet) {
+      iconEl.textContent = '';
+      iconEl.style.backgroundImage = 'url(' + sprite.toDataURL() + ')';
+      iconEl.style.backgroundSize = 'contain';
+      iconEl.style.backgroundRepeat = 'no-repeat';
+      iconEl.style.backgroundPosition = 'center';
+      iconEl.style.imageRendering = 'pixelated';
+      iconEl._spriteSet = ability.id;
+    } else if (!sprite) {
+      iconEl.style.backgroundImage = '';
+      iconEl.textContent = ability.icon || '?';
+      iconEl._spriteSet = null;
+    } else if (iconEl._spriteSet !== ability.id) {
+      iconEl.textContent = '';
+      iconEl.style.backgroundImage = 'url(' + sprite.toDataURL() + ')';
+      iconEl.style.imageRendering = 'pixelated';
+      iconEl._spriteSet = ability.id;
+    }
+
     levelEl.textContent = Utils.roman(ability.level);
     cdEl.style.height = '100%'; // пассивки всегда "активны"
 

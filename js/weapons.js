@@ -239,93 +239,34 @@ const Projectiles = {
     }
   },
 
-  /** Отрисовка снарядов. */
+  /** Отрисовка снарядов (Шаг 2: пиксельные спрайты). */
   render(ctx, pool, cam, viewW, viewH) {
     const minX = cam.x, minY = cam.y;
     const maxX = cam.x + viewW, maxY = cam.y + viewH;
     const items = pool.items;
+    const PS = window.PROJECTILE_SPRITES;
+
     for (let i = 0; i < items.length; i++) {
       const m = items[i];
       if (!m.active) continue;
       if (m.x < minX - 30 || m.x > maxX + 30 || m.y < minY - 30 || m.y > maxY + 30) continue;
 
+      // Попробовать отрисовать пиксельный спрайт
+      const sprite = PS ? PS[m.kind] : null;
+      if (sprite) {
+        const drawSize = Math.max(m.radius * 2.5, 16);
+        const half = drawSize / 2;
+        ctx.save();
+        ctx.translate(m.x, m.y);
+        if (m.angle) ctx.rotate(m.angle);
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(sprite, -half, -half, drawSize, drawSize);
+        ctx.restore();
+        continue;
+      }
+
+      // Фолбэк для снарядов без пиксельных спрайтов (boss, arrow_e, magebolt, breath)
       switch (m.kind) {
-        case 'missile': {
-          ctx.shadowColor = 'rgba(220, 180, 255, 0.9)';
-          ctx.shadowBlur = 12;
-          ctx.fillStyle = '#a259ff';
-          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2); ctx.fill();
-          ctx.shadowBlur = 0;
-          ctx.fillStyle = '#ffffff';
-          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius * 0.45, 0, Math.PI * 2); ctx.fill();
-          break;
-        }
-        case 'arrow': {
-          ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.angle);
-          ctx.fillStyle = '#f4d03f'; ctx.fillRect(-10, -2, 20, 4);
-          ctx.fillStyle = '#fff8c4'; ctx.fillRect(-10, -1, 20, 1);
-          ctx.restore(); break;
-        }
-        case 'dagger': {
-          ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.angle);
-          ctx.fillStyle = '#cfd8dc';
-          ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(0, 3); ctx.lineTo(-6, 0); ctx.lineTo(0, -3); ctx.closePath(); ctx.fill();
-          ctx.fillStyle = '#7a5230'; ctx.fillRect(-7, -1.5, 3, 3);
-          ctx.restore(); break;
-        }
-        case 'fireball': {
-          ctx.shadowColor = 'rgba(255, 140, 40, 0.95)'; ctx.shadowBlur = 18;
-          ctx.fillStyle = '#ff7a1a';
-          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2); ctx.fill();
-          ctx.shadowBlur = 0;
-          ctx.fillStyle = '#fff1a8';
-          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius * 0.5, 0, Math.PI * 2); ctx.fill();
-          break;
-        }
-        case 'crossbow_bolt': {
-          ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.angle);
-          ctx.fillStyle = '#ffffff'; ctx.fillRect(-12, -3, 24, 6);
-          ctx.fillStyle = '#cccccc'; ctx.fillRect(-12, -1, 24, 2);
-          // Наконечник
-          ctx.fillStyle = '#aaaaaa';
-          ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(16, -4); ctx.lineTo(16, 4); ctx.closePath(); ctx.fill();
-          ctx.restore(); break;
-        }
-        case 'throwing_axe': {
-          ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.angle);
-          ctx.fillStyle = '#888888';
-          ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(7, 4); ctx.lineTo(-7, 4); ctx.closePath(); ctx.fill();
-          ctx.fillStyle = '#666666';
-          ctx.fillRect(-2, 2, 4, 6);
-          ctx.restore(); break;
-        }
-        case 'dart': {
-          ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.angle);
-          ctx.strokeStyle = '#f4d03f'; ctx.lineWidth = 2;
-          ctx.beginPath(); ctx.moveTo(-8, 0); ctx.lineTo(8, 0); ctx.stroke();
-          ctx.restore(); break;
-        }
-        case 'sling_stone': {
-          ctx.fillStyle = '#8a8070';
-          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2); ctx.fill();
-          ctx.fillStyle = '#b0a090';
-          ctx.beginPath(); ctx.arc(m.x - 1, m.y - 1, m.radius * 0.4, 0, Math.PI * 2); ctx.fill();
-          break;
-        }
-        case 'ice_arrow': {
-          ctx.shadowColor = 'rgba(100, 200, 255, 0.8)'; ctx.shadowBlur = 10;
-          ctx.fillStyle = '#6ec6ff';
-          ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.angle);
-          ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(-4, 5); ctx.lineTo(-2, 0); ctx.lineTo(-4, -5); ctx.closePath(); ctx.fill();
-          ctx.restore(); ctx.shadowBlur = 0;
-          break;
-        }
-        case 'spellbook_proj': {
-          const colors = ['#ff7a1a', '#6ec6ff', '#f4d03f'];
-          ctx.fillStyle = colors[Math.floor(m.angle * 10) % 3] || '#a259ff';
-          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2); ctx.fill();
-          break;
-        }
         case 'arrow_e': {
           ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.angle);
           ctx.fillStyle = '#cfcfcf'; ctx.fillRect(-9, -2, 18, 4);
@@ -378,6 +319,12 @@ const Projectiles = {
           ctx.shadowBlur = 0;
           ctx.fillStyle = '#ffcc00';
           ctx.beginPath(); ctx.arc(m.x, m.y, m.radius * 0.5 * fbPulse, 0, Math.PI * 2); ctx.fill();
+          break;
+        }
+        default: {
+          // Универсальный фолбэк: цветной кружок
+          ctx.fillStyle = '#a259ff';
+          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2); ctx.fill();
           break;
         }
       }

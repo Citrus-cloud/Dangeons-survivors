@@ -258,6 +258,7 @@ const Game = {
         all.push({
           kind: 'weapon',
           icon: info.icon,
+          id: info.id,
           title: `Новое: ${info.name}`,
           desc: info.desc,
           apply(player) {
@@ -278,6 +279,7 @@ const Game = {
       all.push({
         kind: 'weapon',
         icon: w.icon,
+        id: w.id,
         title: `${w.name} ${Utils.roman(w.level)} → ${Utils.roman(next)}`,
         desc: '+15% урона, -5% кулдауна.',
         apply(player) {
@@ -294,6 +296,7 @@ const Game = {
         all.push({
           kind: 'ability',
           icon: info.icon,
+          id: info.id,
           title: `Новая: ${info.name}`,
           desc: info.desc,
           apply(player) {
@@ -314,6 +317,7 @@ const Game = {
       all.push({
         kind: 'ability',
         icon: a.icon,
+        id: a.id,
         title: `${a.name} ${Utils.roman(a.level)} → ${Utils.roman(next)}`,
         desc: a.desc,
         apply(player) {
@@ -1264,6 +1268,7 @@ const Game = {
     return {
       title: `⭐ Легендарное: ${info.name}`,
       desc: info.desc,
+      id: info.id,
       apply(p) {
         const w = EXCLUSIVE_WEAPON_FACTORIES[info.id]();
         Player.addWeapon(p, w);
@@ -1824,6 +1829,7 @@ const Game = {
       choices.push({
         kind: 'weapon',
         icon: r.resultIcon,
+        id: r.resultId,
         title: `Эволюция: ${r.resultName}`,
         desc: r.desc,
         apply(player) { Evolutions.apply(player, r); },
