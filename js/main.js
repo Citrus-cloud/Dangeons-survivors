@@ -139,8 +139,8 @@ const Game = {
     // Экспорт глобально для использования в sprites.js и других модулях
     window.BASE_SCALE = this.baseScale;
 
-    // Камера показывает в 2 раза больше карты (zoom-out x2)
-    this.cameraScale = 0.5; // 1 / 2.0 — показываем 200% области
+    // Камера: приближенный зум (30% ближе к игроку для лучшей видимости персонажа)
+    this.cameraScale = 0.65; // 1 / 1.54 — показываем ~154% области (вместо 200%)
     this.cameraViewW = w / this.cameraScale;
     this.cameraViewH = h / this.cameraScale;
     this.canvas.width = Math.floor(w * this.dpr);
