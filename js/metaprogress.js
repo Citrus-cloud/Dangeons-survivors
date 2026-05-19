@@ -275,19 +275,40 @@ const TALENT_MAP = {};
 for (const t of TALENT_DEFS) TALENT_MAP[t.id] = t;
 
 
-/* ---------- Конфигурация гильдии ---------- */
+/* ---------- Конфигурация гильдии (Шаг 4: переработка) ---------- */
 const GUILD_CONFIG = {
   levels: [
-    { rep: 100,  reward: '+1 слот оружия (всего 7)', type: 'weaponSlot' },
-    { rep: 300,  reward: 'Клинок короля-лича', type: 'unlockExclusive', exclusiveId: 'lich_blade' },
-    { rep: 600,  reward: '+1 слот пассивки (всего 7)', type: 'abilitySlot' },
-    { rep: 1000, reward: 'Старт с мечом +1 ур.', type: 'startBonus' },
-    { rep: 1500, reward: '+5% шанс эксклюзива', type: 'exclusiveChance' },
-    { rep: 2200, reward: '+1 слот оружия (всего 8)', type: 'weaponSlot' },
-    { rep: 3000, reward: 'Посох архимага', type: 'unlockExclusive', exclusiveId: 'archmage_staff' },
-    { rep: 4000, reward: '+1 слот пассивки (всего 8)', type: 'abilitySlot' },
-    { rep: 5500, reward: '+20% XP на 2 мин при старте', type: 'startXpBoost' },
-    { rep: 7500, reward: 'Легенда: +10% ко всем статам', type: 'legendBonus' },
+    { rep: 100,  name: 'Медный',      reward: '+1 слот оружия (всего 7)', type: 'weaponSlot' },
+    { rep: 300,  name: 'Железный',    reward: 'Клинок короля-лича', type: 'unlockExclusive', exclusiveId: 'lich_blade' },
+    { rep: 600,  name: 'Бронзовый',   reward: '+1 слот пассивки (всего 7)', type: 'abilitySlot' },
+    { rep: 1000, name: 'Серебряный',  reward: 'Старт с мечом +1 ур.', type: 'startBonus' },
+    { rep: 1500, name: 'Золотой',     reward: '+5% шанс эксклюзива', type: 'exclusiveChance' },
+    { rep: 2200, name: 'Платиновый',  reward: '+1 слот оружия (всего 8)', type: 'weaponSlot' },
+    { rep: 3000, name: 'Адамантовый', reward: 'Посох архимага', type: 'unlockExclusive', exclusiveId: 'archmage_staff' },
+    { rep: 4000, name: 'Мифриловый',  reward: '+1 слот пассивки (всего 8)', type: 'abilitySlot' },
+    { rep: 5500, name: 'Легендарный', reward: '+20% XP на 2 мин при старте', type: 'startXpBoost' },
+    { rep: 7500, name: 'Мифический',  reward: '+10% ко всем статам, золотая рамка', type: 'legendBonus' },
+  ],
+};
+
+/* ---------- Пул заданий гильдии ---------- */
+const GUILD_QUEST_POOL = {
+  daily: [
+    { id: 'kill_500',       desc: 'Убей 500 врагов',         target: 500,  stat: 'kills',     repReward: 50 },
+    { id: 'kill_skeletons', desc: 'Убей 200 скелетов',       target: 200,  stat: 'killType',  typeFilter: 'skeleton', repReward: 40 },
+    { id: 'kill_200',       desc: 'Убей 200 врагов',         target: 200,  stat: 'kills',     repReward: 30 },
+    { id: 'survive_5min',   desc: 'Продержись 5 минут',      target: 300,  stat: 'surviveTime', repReward: 35 },
+    { id: 'collect_xp',     desc: 'Собери 2000 опыта',       target: 2000, stat: 'xpCollected', repReward: 40 },
+    { id: 'open_chests',    desc: 'Открой 3 сундука',        target: 3,    stat: 'chestsOpened', repReward: 45 },
+    { id: 'reach_wave5',    desc: 'Дойди до 5 волны',        target: 5,    stat: 'waveReached', repReward: 30 },
+    { id: 'kill_elites',    desc: 'Убей 50 элитных врагов',  target: 50,   stat: 'eliteKills', repReward: 50 },
+  ],
+  weekly: [
+    { id: 'kill_3_bosses',  desc: 'Убей 3 боссов',           target: 3,    stat: 'bossKills', repReward: 200 },
+    { id: 'kill_5000',      desc: 'Убей 5000 врагов',        target: 5000, stat: 'kills',     repReward: 250 },
+    { id: 'survive_15min',  desc: 'Продержись 15 минут',     target: 900,  stat: 'surviveTime', repReward: 180 },
+    { id: 'complete_3_runs',desc: 'Заверши 3 забега',        target: 3,    stat: 'runsCompleted', repReward: 150 },
+    { id: 'reach_wave10',   desc: 'Дойди до 10 волны',       target: 10,   stat: 'waveReached', repReward: 200 },
   ],
 };
 
@@ -304,6 +325,7 @@ const MetaProgress = {
       talents: talents,
       reputation: 0,
       totalKills: 0,
+      totalBossKills: 0,
       totalRuns: 0,
       bestTime: 0,
       bestKills: 0,
@@ -312,6 +334,18 @@ const MetaProgress = {
       extraAbilitySlots: 0,
       achievements: [],
       campaignCompleted: false,
+      // Статистика гильдии
+      guildStats: {
+        totalKills: 0,
+        totalBossKills: 0,
+        totalRuns: 0,
+        bestTime: 0,
+        totalEnemiesDiscovered: 0,
+        totalWeaponsDiscovered: 0,
+        bestInfiniteTime: 0,
+      },
+      // Задания гильдии
+      guildQuests: null, // { daily: [...], weekly: [...], lastDailyReset, lastWeeklyReset }
     };
   },
 
@@ -658,11 +692,27 @@ const MetaProgress = {
   },
 
   /** Обновить статистику после забега. */
-  updateStats(kills, runTime) {
+  updateStats(kills, runTime, bossKills) {
     this.data.totalKills += kills;
+    this.data.totalBossKills = (this.data.totalBossKills || 0) + (bossKills || 0);
     this.data.totalRuns += 1;
     if (runTime > this.data.bestTime) this.data.bestTime = runTime;
     if (kills > (this.data.bestKills || 0)) this.data.bestKills = kills;
+    // Обновляем guildStats
+    if (!this.data.guildStats) this.data.guildStats = {};
+    const gs = this.data.guildStats;
+    gs.totalKills = this.data.totalKills;
+    gs.totalBossKills = this.data.totalBossKills || 0;
+    gs.totalRuns = this.data.totalRuns;
+    gs.bestTime = this.data.bestTime;
+    // Обновляем статистику открытых врагов/оружий
+    if (window.Bestiary) {
+      const bStats = Bestiary.getStats();
+      gs.totalEnemiesDiscovered = bStats.unlocked;
+    }
+    if (window.Codex && Codex.getWeaponStats) {
+      gs.totalWeaponsDiscovered = Codex.getWeaponStats().unlocked;
+    }
     this.save();
   },
 
@@ -697,6 +747,114 @@ const MetaProgress = {
     if (!this.data || !this.data.achievements) return false;
     return this.data.achievements.includes(achievementId);
   },
+
+  /* ---------- Задания гильдии ---------- */
+
+  /** Получить текущее название ранга. */
+  getGuildRankName() {
+    const lvl = this.getGuildLevel();
+    if (lvl === 0) return 'Новобранец';
+    return GUILD_CONFIG.levels[lvl - 1].name || 'Ур. ' + lvl;
+  },
+
+  /** Инициализировать или обновить задания гильдии. */
+  initGuildQuests() {
+    if (!this.data) return;
+    const now = Date.now();
+    if (!this.data.guildQuests) {
+      this.data.guildQuests = {
+        daily: [],
+        weekly: [],
+        lastDailyReset: 0,
+        lastWeeklyReset: 0,
+      };
+    }
+    const q = this.data.guildQuests;
+    const dayMs = 24 * 60 * 60 * 1000;
+    const weekMs = 7 * dayMs;
+
+    // Сброс дневных заданий (раз в 24 часа)
+    if (now - (q.lastDailyReset || 0) >= dayMs) {
+      q.daily = this._pickRandomQuests(GUILD_QUEST_POOL.daily, 2);
+      q.lastDailyReset = now;
+    }
+    // Сброс недельных заданий (раз в 7 дней)
+    if (now - (q.lastWeeklyReset || 0) >= weekMs) {
+      q.weekly = this._pickRandomQuests(GUILD_QUEST_POOL.weekly, 1);
+      q.lastWeeklyReset = now;
+    }
+    this.save();
+  },
+
+  /** Выбрать случайные задания из пула. */
+  _pickRandomQuests(pool, count) {
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    const result = [];
+    for (let i = 0; i < Math.min(count, shuffled.length); i++) {
+      result.push({
+        ...shuffled[i],
+        progress: 0,
+        completed: false,
+        claimed: false,
+      });
+    }
+    return result;
+  },
+
+  /** Обновить прогресс заданий (вызывается после забега). */
+  updateQuestProgress(runStats) {
+    if (!this.data || !this.data.guildQuests) return;
+    const allQuests = [...(this.data.guildQuests.daily || []), ...(this.data.guildQuests.weekly || [])];
+    for (const quest of allQuests) {
+      if (quest.completed) continue;
+      let add = 0;
+      switch (quest.stat) {
+        case 'kills':         add = runStats.kills || 0; break;
+        case 'bossKills':     add = runStats.bossKills || 0; break;
+        case 'surviveTime':   add = runStats.runTime || 0; break;
+        case 'chestsOpened':  add = runStats.chestsOpened || 0; break;
+        case 'waveReached':   add = Math.max(0, (runStats.wave || 0) - (quest.progress || 0)); quest.progress = Math.max(quest.progress, runStats.wave || 0); continue;
+        case 'xpCollected':   add = runStats.xpCollected || 0; break;
+        case 'runsCompleted': add = 1; break;
+        case 'eliteKills':    add = runStats.eliteKills || 0; break;
+        case 'killType':      add = runStats.killsByType && runStats.killsByType[quest.typeFilter] || 0; break;
+        default: break;
+      }
+      if (quest.stat !== 'waveReached') {
+        quest.progress = (quest.progress || 0) + add;
+      }
+      if (quest.progress >= quest.target) {
+        quest.completed = true;
+        quest.progress = quest.target;
+      }
+    }
+    this.save();
+  },
+
+  /** Забрать награду за задание. Возвращает true если успешно. */
+  claimQuestReward(questId) {
+    if (!this.data || !this.data.guildQuests) return false;
+    const allQuests = [...(this.data.guildQuests.daily || []), ...(this.data.guildQuests.weekly || [])];
+    for (const quest of allQuests) {
+      if (quest.id === questId && quest.completed && !quest.claimed) {
+        quest.claimed = true;
+        this.addReputation(quest.repReward || 0);
+        this.save();
+        return true;
+      }
+    }
+    return false;
+  },
+
+  /** Получить все активные задания для UI. */
+  getActiveQuests() {
+    if (!this.data || !this.data.guildQuests) return { daily: [], weekly: [] };
+    this.initGuildQuests(); // проверить сброс
+    return {
+      daily: this.data.guildQuests.daily || [],
+      weekly: this.data.guildQuests.weekly || [],
+    };
+  },
 };
 
 // Экспорт
@@ -704,3 +862,4 @@ window.MetaProgress = MetaProgress;
 window.TALENT_DEFS = TALENT_DEFS;
 window.TALENT_MAP = TALENT_MAP;
 window.GUILD_CONFIG = GUILD_CONFIG;
+window.GUILD_QUEST_POOL = GUILD_QUEST_POOL;

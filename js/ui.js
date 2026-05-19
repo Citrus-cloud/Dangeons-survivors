@@ -821,7 +821,7 @@ const UI = {
   },
 
   /* ============================================================
-     Шаг 15: Гильдия (Guild screen)
+     Шаг 4: Гильдия (полная переработка) — ранги, статистика, задания
      ============================================================ */
 
   showGuild() {
@@ -835,25 +835,51 @@ const UI = {
     ov.id = 'guildOverlay';
     ov.className = 'overlay guild-overlay';
     ov.innerHTML = `
-      <div class="guild-panel">
-        <h1 class="guild-title">⚜ ГИЛЬДИЯ ИСКАТЕЛЕЙ ⚜</h1>
-        <div class="guild-rep-bar-container">
-          <div class="guild-rep-info"><span id="guildRepCur">0</span> / <span id="guildRepNext">100</span></div>
-          <div class="guild-rep-bar"><div class="guild-rep-fill" id="guildRepFill"></div></div>
-          <div id="guildLevelLabel" class="guild-level-label">Уровень 0</div>
+      <div class="guild-panel-v2">
+        <div class="guild-header-v2">
+          <div class="guild-emblem">⚜</div>
+          <h1 class="guild-title-v2">Гильдия искателей приключений</h1>
         </div>
-        <div id="guildRewards" class="guild-rewards"></div>
-        <div class="guild-footer">
-          <button id="guildBackBtn" class="btn">↩ Назад</button>
+
+        <div class="guild-rank-section">
+          <div class="guild-rank-current">
+            <span class="guild-rank-icon">🛡</span>
+            <span id="guildRankName" class="guild-rank-name">Новобранец</span>
+          </div>
+          <div class="guild-rep-bar-v2">
+            <div class="guild-rep-fill-v2" id="guildRepFillV2"></div>
+            <div class="guild-rep-text-v2" id="guildRepTextV2">0 / 100</div>
+          </div>
+        </div>
+
+        <div class="guild-tabs">
+          <button class="guild-tab active" data-tab="ranks">Ранги</button>
+          <button class="guild-tab" data-tab="stats">Статистика</button>
+          <button class="guild-tab" data-tab="quests">Задания</button>
+        </div>
+
+        <div class="guild-content" id="guildContent"></div>
+
+        <div class="guild-footer-v2">
+          <button id="guildBackBtnV2" class="btn">↩ Назад</button>
         </div>
       </div>
     `;
     document.body.appendChild(ov);
     this._guildOverlay = ov;
 
-    ov.querySelector('#guildBackBtn').addEventListener('click', () => {
+    ov.querySelector('#guildBackBtnV2').addEventListener('click', () => {
       this._guildOverlay.classList.remove('active');
       this.showCamp();
+    });
+
+    // Табы
+    ov.querySelectorAll('.guild-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        ov.querySelectorAll('.guild-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        this._renderGuildTab(tab.dataset.tab);
+      });
     });
   },
 
@@ -863,37 +889,157 @@ const UI = {
     const rep = MetaProgress.data.reputation;
     const lvl = MetaProgress.getGuildLevel();
     const nextRep = MetaProgress.getNextLevelRep();
+    const rankName = MetaProgress.getGuildRankName();
 
-    ov.querySelector('#guildRepCur').textContent = rep;
-    ov.querySelector('#guildRepNext').textContent = nextRep || 'МАКС';
-    ov.querySelector('#guildLevelLabel').textContent = `Уровень ${lvl}`;
+    ov.querySelector('#guildRankName').textContent = rankName + ' (Ур. ' + lvl + ')';
 
     // Прогресс-бар
     let pct = 0;
+    let repText = '';
     if (nextRep) {
       const prevRep = lvl > 0 ? GUILD_CONFIG.levels[lvl - 1].rep : 0;
       pct = Math.min(100, ((rep - prevRep) / (nextRep - prevRep)) * 100);
+      repText = `${rep} / ${nextRep}`;
     } else {
       pct = 100;
+      repText = `${rep} — МАКС`;
     }
-    ov.querySelector('#guildRepFill').style.width = pct + '%';
+    ov.querySelector('#guildRepFillV2').style.width = pct + '%';
+    ov.querySelector('#guildRepTextV2').textContent = repText;
 
-    // Список наград
-    const container = ov.querySelector('#guildRewards');
-    container.innerHTML = '';
+    // Рендер активной вкладки
+    const activeTab = ov.querySelector('.guild-tab.active');
+    this._renderGuildTab(activeTab ? activeTab.dataset.tab : 'ranks');
+  },
+
+  _renderGuildTab(tab) {
+    const content = this._guildOverlay.querySelector('#guildContent');
+    if (tab === 'ranks') this._renderGuildRanks(content);
+    else if (tab === 'stats') this._renderGuildStats(content);
+    else if (tab === 'quests') this._renderGuildQuests(content);
+  },
+
+  /** Вкладка «Ранги» — прокручиваемый список рангов с наградами. */
+  _renderGuildRanks(container) {
+    if (!window.MetaProgress) return;
+    const lvl = MetaProgress.getGuildLevel();
+    let html = '<div class="guild-ranks-list">';
     for (let i = 0; i < GUILD_CONFIG.levels.length; i++) {
       const r = GUILD_CONFIG.levels[i];
-      const unlocked = i < lvl;
-      const row = document.createElement('div');
-      row.className = 'guild-reward-row ' + (unlocked ? 'unlocked' : 'locked');
-      row.innerHTML = `
-        <span class="guild-reward-lvl">Ур. ${i + 1}</span>
-        <span class="guild-reward-rep">${r.rep} реп.</span>
-        <span class="guild-reward-desc">${r.reward}</span>
-        <span class="guild-reward-check">${unlocked ? '✓' : '🔒'}</span>
-      `;
-      container.appendChild(row);
+      const reached = i < lvl;
+      const current = i === lvl - 1;
+      let cls = 'guild-rank-row';
+      if (reached) cls += ' reached';
+      if (current) cls += ' current';
+      html += `<div class="${cls}">
+        <div class="guild-rank-row-left">
+          <span class="guild-rank-num">${i + 1}</span>
+          <span class="guild-rank-row-name">${r.name}</span>
+          <span class="guild-rank-row-rep">(${r.rep} реп.)</span>
+        </div>
+        <div class="guild-rank-row-right">
+          <span class="guild-rank-row-reward">${r.reward}</span>
+          <span class="guild-rank-row-check">${reached ? '✓' : '🔒'}</span>
+        </div>
+      </div>`;
     }
+    html += '</div>';
+    container.innerHTML = html;
+  },
+
+  /** Вкладка «Статистика» — общая статистика гильдии. */
+  _renderGuildStats(container) {
+    if (!window.MetaProgress || !MetaProgress.data) return;
+    const d = MetaProgress.data;
+    const gs = d.guildStats || {};
+    const bestiaryStats = window.Bestiary ? Bestiary.getStats() : { unlocked: 0, total: 0 };
+    const totalEnemyTypes = Object.keys(window.ENEMY_TYPES || {}).length;
+
+    const stats = [
+      { label: 'Всего убито врагов', value: d.totalKills || 0 },
+      { label: 'Всего убито боссов', value: d.totalBossKills || 0 },
+      { label: 'Открыто врагов в бестиарии', value: `${bestiaryStats.unlocked} / ${totalEnemyTypes}` },
+      { label: 'Всего забегов', value: d.totalRuns || 0 },
+      { label: 'Лучшее время', value: Utils.formatTime(d.bestTime || 0) },
+      { label: 'Лучший результат (убийств)', value: d.bestKills || 0 },
+      { label: 'Текущая репутация', value: d.reputation || 0 },
+    ];
+
+    let html = '<div class="guild-stats-list">';
+    for (const s of stats) {
+      html += `<div class="guild-stats-row">
+        <span class="guild-stats-label">${s.label}</span>
+        <span class="guild-stats-value">${s.value}</span>
+      </div>`;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+  },
+
+  /** Вкладка «Задания» — ежедневные и еженедельные задания. */
+  _renderGuildQuests(container) {
+    if (!window.MetaProgress || !MetaProgress.data) {
+      container.innerHTML = '<div class="guild-quests-empty">Загрузка...</div>';
+      return;
+    }
+
+    // Инициализировать задания если нужно
+    MetaProgress.initGuildQuests();
+    const quests = MetaProgress.getActiveQuests();
+
+    let html = '<div class="guild-quests-section">';
+
+    // Дневные
+    html += '<div class="guild-quests-group-title">📋 Ежедневные задания</div>';
+    if (quests.daily.length === 0) {
+      html += '<div class="guild-quest-empty">Нет активных заданий</div>';
+    } else {
+      for (const q of quests.daily) {
+        html += this._renderQuestRow(q);
+      }
+    }
+
+    // Недельные
+    html += '<div class="guild-quests-group-title" style="margin-top:12px;">📜 Еженедельные задания</div>';
+    if (quests.weekly.length === 0) {
+      html += '<div class="guild-quest-empty">Нет активных заданий</div>';
+    } else {
+      for (const q of quests.weekly) {
+        html += this._renderQuestRow(q);
+      }
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+
+    // Привязка кнопок «Забрать»
+    container.querySelectorAll('.guild-quest-claim-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const qId = btn.dataset.questId;
+        if (MetaProgress.claimQuestReward(qId)) {
+          this._updateGuildData();
+        }
+      });
+    });
+  },
+
+  /** Рендер строки задания. */
+  _renderQuestRow(q) {
+    const pct = Math.min(100, Math.round((q.progress / q.target) * 100));
+    let statusHtml = '';
+    if (q.claimed) {
+      statusHtml = '<span class="guild-quest-done">✓ Выполнено</span>';
+    } else if (q.completed) {
+      statusHtml = `<button class="btn guild-quest-claim-btn" data-quest-id="${q.id}">Забрать (+${q.repReward} реп.)</button>`;
+    } else {
+      statusHtml = `<span class="guild-quest-progress-text">${q.progress}/${q.target}</span>`;
+    }
+
+    return `<div class="guild-quest-row ${q.completed ? 'completed' : ''} ${q.claimed ? 'claimed' : ''}">
+      <div class="guild-quest-desc">${q.desc}</div>
+      <div class="guild-quest-bar"><div class="guild-quest-bar-fill" style="width:${pct}%"></div></div>
+      <div class="guild-quest-status">${statusHtml}</div>
+    </div>`;
   },
 
   /* ============================================================
