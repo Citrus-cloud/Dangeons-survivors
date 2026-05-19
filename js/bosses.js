@@ -239,6 +239,20 @@ const Bosses = {
     boss.hp -= dmg;
     boss.flash = 0.1;
 
+    // Шаг 3 (анимации): 2-3 пылевые частицы при уроне боссу
+    if (window.Particles) {
+      const bossColor = (boss.cfg && boss.cfg.color) || '#c00';
+      for (let i = 0; i < 3; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Utils.rand(20, 50);
+        Particles.dust(
+          boss.x + Utils.rand(-8, 8), boss.y + Utils.rand(-8, 8),
+          Math.cos(angle) * speed, Math.sin(angle) * speed,
+          Utils.rand(0.15, 0.3), bossColor, 25
+        );
+      }
+    }
+
     // Лич: телепортация при уроне
     if (boss.id === 'boss_lich' && boss.teleportCd <= 0) {
       this._lichTeleport(boss);
@@ -323,13 +337,10 @@ const Bosses = {
         this._summonMinions(boss, 'shadow', 3);
       }
 
-      // Визуал перехода фазы
+      // Визуал перехода фазы — Шаг 3: золотая вспышка + 10-15 пылевых частиц
       if (window.Particles) {
-        Particles.ring(boss.x, boss.y, 60, 0.35, 'rgba(255, 50, 50, 0.8)', 3);
-        Particles.burst(boss.x, boss.y, 10, {
-          color: '#ff4444', speedMin: 60, speedMax: 150,
-          lifeMin: 0.3, lifeMax: 0.6, sizeMin: 2, sizeMax: 4,
-        });
+        Particles.ring(boss.x, boss.y, 60, 0.35, 'rgba(255, 215, 0, 0.9)', 4);
+        Particles.bossDust(boss.x, boss.y, '#ffd700');
       }
     }
   },
@@ -371,14 +382,10 @@ const Bosses = {
       }
     }
 
-    // Визуальные эффекты смерти
+    // Визуальные эффекты смерти — Шаг 3: dusting + вспышка
     const deathColor = cfg.color || '#fff';
     if (window.Particles) {
-      Particles.ring(boss.x, boss.y, 100, 0.4, deathColor, 5);
-      Particles.burst(boss.x, boss.y, 25, {
-        color: deathColor, speedMin: 80, speedMax: 250,
-        lifeMin: 0.5, lifeMax: 1.0, sizeMin: 3, sizeMax: 6,
-      });
+      Particles.bossDust(boss.x, boss.y, deathColor);
       Particles.text(boss.x, boss.y - 30, 'БОСС ПОВЕРЖЕН!', 2.0, '#ffd700', 20);
     }
 
@@ -1439,8 +1446,6 @@ const Bosses = {
     const spriteSize = (window.getSpriteDisplaySize ? getSpriteDisplaySize(boss.id) : Math.max(drawW, drawH)) * scale;
 
     if (sprite) {
-      ctx.imageSmoothingEnabled = false;
-
       if (boss.flash > 0) {
         // Рисуем спрайт + белая вспышка
         ctx.drawImage(sprite, boss.x - spriteSize / 2, boss.y - spriteSize / 2, spriteSize, spriteSize);
@@ -1452,47 +1457,11 @@ const Bosses = {
       } else {
         ctx.drawImage(sprite, boss.x - spriteSize / 2, boss.y - spriteSize / 2, spriteSize, spriteSize);
       }
-
-      ctx.imageSmoothingEnabled = true;
     } else {
-      // Fallback: старая геометрическая отрисовка
-      const fillColor = boss.flash > 0 ? '#ffffff' : cfg.color;
-      const strokeColor = cfg.stroke || '#ffffff';
+      // Fallback: минимальный цветной квадрат (все боссы должны иметь спрайты)
+      const fillColor = boss.flash > 0 ? '#ffffff' : (cfg.color || '#c00');
       ctx.fillStyle = fillColor;
-      ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = 2;
-
-      switch (cfg.shape) {
-        case 'rect':
-          ctx.fillRect(boss.x - drawW / 2, boss.y - drawH / 2, drawW, drawH);
-          ctx.strokeRect(boss.x - drawW / 2, boss.y - drawH / 2, drawW, drawH);
-          break;
-        case 'circle':
-          ctx.beginPath();
-          ctx.arc(boss.x, boss.y, drawW / 2, 0, Math.PI * 2);
-          ctx.fill(); ctx.stroke();
-          break;
-        case 'oval':
-          ctx.beginPath();
-          ctx.ellipse(boss.x, boss.y, drawW / 2, drawH / 2, 0, 0, Math.PI * 2);
-          ctx.fill(); ctx.stroke();
-          break;
-        case 'diamond':
-          ctx.beginPath();
-          ctx.moveTo(boss.x, boss.y - drawH / 2);
-          ctx.lineTo(boss.x + drawW / 2, boss.y);
-          ctx.lineTo(boss.x, boss.y + drawH / 2);
-          ctx.lineTo(boss.x - drawW / 2, boss.y);
-          ctx.closePath();
-          ctx.fill(); ctx.stroke();
-          break;
-      }
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold ' + Math.max(12, Math.floor(drawW * 0.4)) + 'px ui-monospace, monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(cfg.letter, boss.x, boss.y + 1);
+      ctx.fillRect(boss.x - drawW / 2, boss.y - drawH / 2, drawW, drawH);
     }
 
     ctx.shadowBlur = 0;
