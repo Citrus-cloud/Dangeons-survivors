@@ -237,7 +237,6 @@ const Bosses = {
     if (boss.spawnAnim > 0) return;
 
     boss.hp -= dmg;
-    boss.flash = 0.1;
 
     // Шаг 3 (анимации): 2-3 пылевые частицы при уроне боссу
     if (window.Particles) {
@@ -566,7 +565,6 @@ const Bosses = {
     }
 
     // Таймеры
-    boss.flash = Math.max(0, boss.flash - dt);
     boss.slashAnim = Math.max(0, boss.slashAnim - dt);
     boss.whirlwindAnim = Math.max(0, boss.whirlwindAnim - dt);
     boss.darkExplosionAnim = Math.max(0, boss.darkExplosionAnim - dt);
@@ -1446,20 +1444,10 @@ const Bosses = {
     const spriteSize = (window.getSpriteDisplaySize ? getSpriteDisplaySize(boss.id) : Math.max(drawW, drawH)) * scale;
 
     if (sprite) {
-      if (boss.flash > 0) {
-        // Рисуем спрайт + белая вспышка
-        ctx.drawImage(sprite, boss.x - spriteSize / 2, boss.y - spriteSize / 2, spriteSize, spriteSize);
-        const prevA = ctx.globalAlpha;
-        ctx.globalAlpha = 0.7;
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(boss.x - spriteSize / 2, boss.y - spriteSize / 2, spriteSize, spriteSize);
-        ctx.globalAlpha = prevA;
-      } else {
-        ctx.drawImage(sprite, boss.x - spriteSize / 2, boss.y - spriteSize / 2, spriteSize, spriteSize);
-      }
+      ctx.drawImage(sprite, boss.x - spriteSize / 2, boss.y - spriteSize / 2, spriteSize, spriteSize);
     } else {
       // Fallback: минимальный цветной квадрат (все боссы должны иметь спрайты)
-      const fillColor = boss.flash > 0 ? '#ffffff' : (cfg.color || '#c00');
+      const fillColor = cfg.color || '#c00';
       ctx.fillStyle = fillColor;
       ctx.fillRect(boss.x - drawW / 2, boss.y - drawH / 2, drawW, drawH);
     }

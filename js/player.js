@@ -305,8 +305,21 @@ const Player = {
       player.facing.x = move.x / ml;
       player.facing.y = move.y / ml;
 
+      // Анимация ходьбы
+      if (!player._walkAnimTimer) player._walkAnimTimer = 0;
+      if (!player._walkFrame) player._walkFrame = 0;
+      player._walkAnimTimer += dt;
+      if (player._walkAnimTimer >= 0.25) {
+        player._walkAnimTimer = 0;
+        player._walkFrame = player._walkFrame === 0 ? 1 : 0;
+      }
+
       // Трейл-частицы героя отключены (визуальный мусор).
       player.trailTimer = 0;
+    } else {
+      // Стоит — сброс анимации
+      player._walkFrame = 0;
+      player._walkAnimTimer = 0;
     }
 
     // Взаимодействие с рычагами по касанию
@@ -400,24 +413,51 @@ const Player = {
       ctx.restore();
     }
 
-    // Цвет и буква зависят от класса
-    const classColor = player._classColor || '#2980d9';
-    const classLetter = player._classLetter || 'K';
-    ctx.fillStyle = classColor;
-    // Шаг 19: мерцание при i-frames (неуязвимость после удара)
-    if (player._iFrameTimer && player._iFrameTimer > 0) {
-      ctx.globalAlpha = 0.4 + Math.sin(player._iFrameTimer * 30) * 0.3;
+    // Анимация ходьбы (2 кадра, управляется из update)
+    const classId = player._classId || 'warrior';
+    const walkSprites = window.PLAYER_WALK_SPRITES ? PLAYER_WALK_SPRITES[classId] : null;
+
+    // Направление поворота: facing.x < 0 → смотрит влево (flipX)
+    const flipX = player.facing.x < 0;
+
+    if (walkSprites && walkSprites.length === 2) {
+      const sprite = walkSprites[player._walkFrame];
+      const drawSize = ps; // совпадает с размером игрока
+
+      ctx.save();
+      // Шаг 19: мерцание при i-frames (неуязвимость после удара)
+      if (player._iFrameTimer && player._iFrameTimer > 0) {
+        ctx.globalAlpha = 0.4 + Math.sin(player._iFrameTimer * 30) * 0.3;
+      }
+      ctx.imageSmoothingEnabled = false;
+
+      if (flipX) {
+        ctx.translate(player.x, player.y);
+        ctx.scale(-1, 1);
+        ctx.drawImage(sprite, -drawSize / 2, -drawSize / 2, drawSize, drawSize);
+      } else {
+        ctx.drawImage(sprite, player.x - drawSize / 2, player.y - drawSize / 2, drawSize, drawSize);
+      }
+      ctx.restore();
+    } else {
+      // Fallback: старый рендер (цветной квадрат с буквой)
+      const classColor = player._classColor || '#2980d9';
+      const classLetter = player._classLetter || 'K';
+      ctx.fillStyle = classColor;
+      if (player._iFrameTimer && player._iFrameTimer > 0) {
+        ctx.globalAlpha = 0.4 + Math.sin(player._iFrameTimer * 30) * 0.3;
+      }
+      ctx.fillRect(player.x - ps / 2, player.y - ps / 2, ps, ps);
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(player.x - ps / 2 + 1, player.y - ps / 2 + 1, ps - 2, ps - 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 18px ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(classLetter, player.x, player.y + 1);
     }
-    ctx.fillRect(player.x - ps / 2, player.y - ps / 2, ps, ps);
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(player.x - ps / 2 + 1, player.y - ps / 2 + 1, ps - 2, ps - 2);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 18px ui-monospace, monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(classLetter, player.x, player.y + 1);
 
     // Радиус подбора (тонкий ободок)
     const pickupR = CONFIG.PLAYER.PICKUP_RADIUS * player.pickupMul;

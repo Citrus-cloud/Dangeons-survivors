@@ -48,8 +48,18 @@ const UIExtended = {
       const isActive = (id === selected);
       const card = document.createElement('div');
       card.className = 'class-card' + (isActive ? ' class-card-active' : '');
+
+      // Используем CLASS_SPRITES если доступны (32×32 пиксельная иконка)
+      const sprite = window.CLASS_SPRITES ? CLASS_SPRITES[id] : null;
+      let iconHtml;
+      if (sprite) {
+        iconHtml = `<div class="class-card-icon" style="background:${def.color};background-image:url(${sprite.toDataURL()});background-size:contain;background-repeat:no-repeat;background-position:center;image-rendering:pixelated;"></div>`;
+      } else {
+        iconHtml = `<div class="class-card-icon" style="background:${def.color};">${def.icon}</div>`;
+      }
+
       card.innerHTML = `
-        <div class="class-card-icon" style="background:${def.color};">${def.icon}</div>
+        ${iconHtml}
         <div class="class-card-name">${def.name}</div>
         <div class="class-card-desc">${def.desc}</div>
         <div class="class-card-passive">${def.passiveDesc}</div>

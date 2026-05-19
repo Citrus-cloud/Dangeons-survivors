@@ -689,7 +689,6 @@ const Enemies = {
       if (!e.active || !e.cfg) continue;
       e.lifeTime += dt;
       e.bobPhase += dt * (3.5 + (i % 5) * 0.4); // slight speed variation per enemy
-      e.flash = Math.max(0, e.flash - dt);
       e.attackPunch = Math.max(0, e.attackPunch - dt);
       // Шаг 7: тик таймера замедления от оружий
       if (e._slowTimer > 0) e._slowTimer -= dt;
@@ -888,19 +887,8 @@ const Enemies = {
           ctx.fill();
         }
 
-        // Мерцание при попадании — белый оверлей
-        if (e.flash > 0) {
-          ctx.drawImage(sprite, renderX - spriteSize / 2, renderY - spriteSize / 2, spriteSize, spriteSize);
-          // Белая вспышка: рисуем белый прямоугольник с пониженной непрозрачностью
-          const prevA = ctx.globalAlpha;
-          ctx.globalAlpha = 0.7;
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(renderX - spriteSize / 2, renderY - spriteSize / 2, spriteSize, spriteSize);
-          ctx.globalAlpha = prevA;
-        } else {
-          // Обычная отрисовка спрайта
-          ctx.drawImage(sprite, renderX - spriteSize / 2, renderY - spriteSize / 2, spriteSize, spriteSize);
-        }
+        // Обычная отрисовка спрайта
+        ctx.drawImage(sprite, renderX - spriteSize / 2, renderY - spriteSize / 2, spriteSize, spriteSize);
 
         // Золотая обводка для элитных (captainBuffed)
         if (e.captainBuffed) {
@@ -912,7 +900,7 @@ const Enemies = {
       } else {
         // Fallback: минимальный цветной квадрат (если спрайта нет — не должно происходить)
         const drawW = w * punch, drawH = h * punch;
-        const fillColor = e.flash > 0 ? '#ffffff' : (cfg.color || '#888');
+        const fillColor = cfg.color || '#888';
         ctx.fillStyle = fillColor;
         ctx.fillRect(renderX - drawW / 2, renderY - drawH / 2, drawW, drawH);
       }
