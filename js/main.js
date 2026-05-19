@@ -1015,11 +1015,14 @@ const Game = {
         this.openChest();
       }
     } else {
-      // Сундука нет — копится таймер
-      this.chestTimer -= dt;
-      if (this.chestTimer <= 0) {
-        this.chest = Chest.spawnNear(this.player);
-        this.chestTimer = CONFIG.CHEST.INTERVAL;
+      // Сундука нет — копится таймер (только после 5-й волны)
+      const waveIndex = this.waveIndex || 0;
+      if (waveIndex >= CONFIG.CHEST.MIN_WAVE) {
+        this.chestTimer -= dt;
+        if (this.chestTimer <= 0) {
+          this.chest = Chest.spawnNear(this.player);
+          this.chestTimer = CONFIG.CHEST.INTERVAL;
+        }
       }
     }
     // Шаг 5: секретный сундук (за решёткой) — отдельная логика подбора
@@ -1489,8 +1492,10 @@ const Game = {
       Loot.tryDropGold(this.goldDrops, e);
     }
 
-    // Feature #5: 7% шанс выпадения сундука из обычных мобов
-    if (Math.random() < 0.07 && !this.chest) {
+    // Шанс выпадения сундука с обычных мобов (3%, только после 5-й волны, не элитные/боссы)
+    const waveIdx = this.waveIndex || 0;
+    const isElite = e.cfg && (e.cfg.tier >= 4);
+    if (waveIdx >= CONFIG.CHEST.MIN_WAVE && !isElite && Math.random() < CONFIG.CHEST.DROP_CHANCE && !this.chest) {
       const mobChest = Chest.spawnAt(e.x, e.y);
       if (mobChest) {
         this.chest = mobChest;

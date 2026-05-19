@@ -47,7 +47,9 @@ function createProjectile() {
 }
 
 const Projectiles = {
-  /** Найти ближайшего активного врага в радиусе. */
+  /** Найти ближайшего активного врага в радиусе.
+   *  Bug fix: также проверяет боссов (Bosses.current / Bosses.guardian),
+   *  чтобы оружия стреляли в боссов когда те ближайшая цель. */
   findNearestEnemy(enemies, x, y, maxRadius) {
     let best = null;
     let bestD2 = (maxRadius === Infinity ? Infinity : maxRadius * maxRadius);
@@ -59,10 +61,20 @@ const Projectiles = {
       const d2 = dx * dx + dy * dy;
       if (d2 < bestD2) { bestD2 = d2; best = e; }
     }
+    // Bug fix #2: включаем боссов в поиск ближайшего врага
+    if (window.Bosses) {
+      const bossList = [Bosses.current, Bosses.guardian];
+      for (const boss of bossList) {
+        if (!boss || boss.hp <= 0) continue;
+        const dx = boss.x - x, dy = boss.y - y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < bestD2) { bestD2 = d2; best = boss; }
+      }
+    }
     return best;
   },
 
-  /** Найти N ближайших врагов. */
+  /** Найти N ближайших врагов (включая боссов). */
   findNearestEnemies(enemies, x, y, maxRadius, count) {
     const r2 = maxRadius * maxRadius;
     const found = [];
@@ -73,6 +85,16 @@ const Projectiles = {
       const dx = e.x - x, dy = e.y - y;
       const d2 = dx * dx + dy * dy;
       if (d2 < r2) found.push({ e, d2 });
+    }
+    // Bug fix #2: включаем боссов в поиск множественных целей
+    if (window.Bosses) {
+      const bossList = [Bosses.current, Bosses.guardian];
+      for (const boss of bossList) {
+        if (!boss || boss.hp <= 0) continue;
+        const dx = boss.x - x, dy = boss.y - y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < r2) found.push({ e: boss, d2 });
+      }
     }
     found.sort((a, b) => a.d2 - b.d2);
     return found.slice(0, count).map(f => f.e);

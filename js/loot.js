@@ -28,49 +28,51 @@ const GOLD_CONFIG = {
 
 const Loot = {
   /**
-   * Бросить кристалл опыта в точке (x, y).
-   * Шаг 6: опыт увеличен в 5 раз. Начиная с 3-й волны —
-   * 15% шанс красного кристалла (даёт опыт в 20 раз больше базового).
-   * Feature #8: начиная с 11-й волны — 30% шанс синего кристалла (100x опыт).
-   */
+ * Бросить кристалл опыта в точке (x, y).
+ * Шаг 2 (обновлено): новая система из 4 типов кристаллов,
+ * привязанная к волнам с каскадной проверкой от высшего к низшему.
+ *
+ * Тип        | Цвет    | Множитель | С волны | Шанс
+ * Жёлтый     | Жёлтый  | ×1000     | 20      | 10%
+ * Синий       | Синий   | ×100      | 10      | 20%
+ * Красный     | Красный | ×10       | 5       | 30%
+ * Обычный     | Зелёный | ×1        | 1       | 100% (по умолчанию)
+ */
   dropXP(pool, x, y, value) {
     const xp = pool.spawn();
     if (!xp) return null;
     xp.x = x; xp.y = y;
     xp.pulse = 0;
 
-    // Шаг 6: базовый опыт ×5
-    let finalValue = value * 5;
-
     const waveIndex = (window.Game && Game.waveIndex) || 0;
 
-    // Жёлтый кристалл (10% шанс начиная с 21-й волны, 1000x опыт)
-    if (waveIndex >= 21 && Math.random() < 0.10) {
+    // Каскадная проверка: от высшего типа к низшему
+    if (waveIndex >= 20 && Math.random() < 0.10) {
+      // Жёлтый кристалл (×1000, 10% с 20-й волны)
       xp.red = false;
       xp.blue = false;
       xp.yellow = true;
-      finalValue = value * 1000;
-    }
-    // Feature #8: синий кристалл (30% шанс начиная с 11-й волны, 100x опыт)
-    else if (waveIndex >= 11 && Math.random() < 0.30) {
+      xp.value = value * 1000;
+    } else if (waveIndex >= 10 && Math.random() < 0.20) {
+      // Синий кристалл (×100, 20% с 10-й волны)
       xp.red = false;
       xp.blue = true;
       xp.yellow = false;
-      finalValue = value * 100; // 100x от оригинального значения
-    }
-    // Шаг 6: красный кристалл (15% шанс начиная с 3-й волны)
-    else if (waveIndex >= 3 && Math.random() < 0.15) {
+      xp.value = value * 100;
+    } else if (waveIndex >= 5 && Math.random() < 0.30) {
+      // Красный кристалл (×10, 30% с 5-й волны)
       xp.red = true;
       xp.blue = false;
       xp.yellow = false;
-      finalValue = value * 20;  // 20x от оригинального значения
+      xp.value = value * 10;
     } else {
+      // Обычный зелёный кристалл (×1)
       xp.red = false;
       xp.blue = false;
       xp.yellow = false;
+      xp.value = value;
     }
 
-    xp.value = finalValue;
     return xp;
   },
 
