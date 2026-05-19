@@ -2330,6 +2330,9 @@ function initSprites() {
   // Иконки классов 32×32 и кадры ходьбы 16×16
   initClassSprites();
   initPlayerWalkSprites();
+
+  // Декоративные спрайты биомов
+  if (window.initDecorSprites) initDecorSprites();
 }
 
 /* ============================================================
@@ -2779,4 +2782,340 @@ window.getEnemySprite = getEnemySprite;
 window.getSpriteDisplaySize = getSpriteDisplaySize;
 window.generateEnemySprite = generateEnemySprite;
 window.SPRITE_DISPLAY_SIZES = SPRITE_DISPLAY_SIZES;
+
+
+/* ============================================================
+   DECOR_SPRITES — Пиксельные спрайты декоративных объектов (8×8, 16×16).
+   Генерируются программно для всех биомов.
+   ============================================================ */
+const DECOR_SPRITES = {};
+
+/** Инициализация декоративных спрайтов — вызывается из initSprites(). */
+function initDecorSprites() {
+  // === Склеп (crypt) ===
+  DECOR_SPRITES['bones'] = _makeDecor8(function(ctx) {
+    _rect(ctx, 1, 3, 6, 1, '#c0b090');
+    _rect(ctx, 2, 5, 4, 1, '#a09070');
+    _px(ctx, 1, 4, '#a09070'); _px(ctx, 6, 4, '#a09070');
+  });
+  DECOR_SPRITES['skull'] = _makeDecor8(function(ctx) {
+    _rect(ctx, 2, 1, 4, 4, '#e8dcc8');
+    _px(ctx, 3, 2, '#1a1a1a'); _px(ctx, 5, 2, '#1a1a1a');
+    _rect(ctx, 3, 4, 2, 1, '#a09070');
+    _rect(ctx, 3, 5, 2, 2, '#c0b090');
+  });
+  DECOR_SPRITES['broken_column'] = _makeDecor16(function(ctx) {
+    _rect(ctx, 4, 2, 8, 12, '#6a6a6a');
+    _rect(ctx, 3, 1, 10, 2, '#7a7a7a');
+    _rect(ctx, 5, 3, 2, 10, '#5a5a5a');
+    _rect(ctx, 9, 5, 2, 6, '#5a5a5a');
+    // Сколы
+    _px(ctx, 5, 2, '#4a4a4a'); _px(ctx, 10, 3, '#4a4a4a');
+  });
+  DECOR_SPRITES['chain_skull'] = _makeDecor8(function(ctx) {
+    _vline(ctx, 4, 0, 3, '#6a6a6a');
+    _rect(ctx, 2, 3, 4, 3, '#e8dcc8');
+    _px(ctx, 3, 4, '#1a1a1a'); _px(ctx, 5, 4, '#1a1a1a');
+  });
+  DECOR_SPRITES['cobweb_floor'] = _makeDecor8(function(ctx) {
+    ctx.strokeStyle = 'rgba(200,200,200,0.4)'; ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(7,7); ctx.moveTo(7,0); ctx.lineTo(0,7);
+    ctx.moveTo(4,0); ctx.lineTo(4,7); ctx.stroke();
+  });
+  DECOR_SPRITES['cracked_tile'] = _makeDecor8(function(ctx) {
+    ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(2,1); ctx.lineTo(4,4); ctx.lineTo(6,3); ctx.lineTo(7,6); ctx.stroke();
+  });
+
+  // === Ледяные пещеры (ice_caves) ===
+  DECOR_SPRITES['ice_crystal'] = _makeDecor12(function(ctx) {
+    ctx.fillStyle = '#80d0f0'; ctx.beginPath();
+    ctx.moveTo(6, 0); ctx.lineTo(10, 5); ctx.lineTo(8, 11); ctx.lineTo(4, 11); ctx.lineTo(2, 5);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#a0e8ff'; _rect(ctx, 5, 2, 2, 4, '#a0e8ff');
+  });
+  DECOR_SPRITES['stalactite'] = _makeDecor8(function(ctx) {
+    _rect(ctx, 3, 0, 2, 2, '#7a8a9a');
+    _rect(ctx, 2, 2, 4, 2, '#6a7a8a');
+    _px(ctx, 4, 4, '#5a6a7a'); _px(ctx, 3, 5, '#5a6a7a');
+    _px(ctx, 4, 6, '#4a5a6a');
+  });
+  DECOR_SPRITES['frozen_corpse'] = _makeDecor8(function(ctx) {
+    _rect(ctx, 2, 1, 4, 5, '#6090b0');
+    _rect(ctx, 3, 2, 2, 1, '#80b0d0');
+    _px(ctx, 3, 3, '#405060'); _px(ctx, 5, 3, '#405060');
+  });
+  DECOR_SPRITES['snow_pile'] = _makeDecor8(function(ctx) {
+    _rect(ctx, 1, 4, 6, 3, '#e0e8f0');
+    _rect(ctx, 2, 3, 4, 1, '#d0d8e8');
+    _px(ctx, 3, 2, '#c8d0e0');
+  });
+  DECOR_SPRITES['ice_crack'] = _makeDecor8(function(ctx) {
+    ctx.strokeStyle = '#4080a0'; ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(1,2); ctx.lineTo(3,4); ctx.lineTo(5,3); ctx.lineTo(7,6); ctx.stroke();
+  });
+
+  // === Огненные шахты (fire_mines) ===
+  DECOR_SPRITES['lava_pool'] = _makeDecor8(function(ctx) {
+    _rect(ctx, 1, 2, 6, 4, '#cc3300');
+    _rect(ctx, 2, 3, 4, 2, '#ff6600');
+    _px(ctx, 3, 3, '#ffaa00'); _px(ctx, 5, 4, '#ffcc00');
+  });
+  DECOR_SPRITES['ore_chunk'] = _makeDecor8(function(ctx) {
+    _rect(ctx, 1, 3, 6, 4, '#5a4a3a');
+    _px(ctx, 2, 4, '#c0a000'); _px(ctx, 5, 5, '#c0a000');
+    _px(ctx, 4, 3, '#e0c000');
+  });
+  DECOR_SPRITES['mine_cart'] = _makeDecor16(function(ctx) {
+    _rect(ctx, 2, 4, 12, 7, '#5a4a3a');
+    _rect(ctx, 3, 5, 10, 5, '#6a5a4a');
+    ctx.fillStyle = '#3a3a3a';
+    ctx.beginPath(); ctx.arc(5, 12, 2, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(11, 12, 2, 0, Math.PI*2); ctx.fill();
+  });
+  DECOR_SPRITES['chain'] = _makeDecor8(function(ctx) {
+    for (let y = 0; y < 8; y += 2) { _rect(ctx, 3, y, 2, 1, '#6a6a6a'); }
+    _px(ctx, 3, 1, '#5a5a5a'); _px(ctx, 4, 3, '#5a5a5a');
+  });
+  DECOR_SPRITES['bellows'] = _makeDecor8(function(ctx) {
+    _rect(ctx, 1, 3, 6, 3, '#8b6914');
+    _rect(ctx, 2, 2, 4, 1, '#6a5010');
+    _px(ctx, 6, 4, '#4a4a4a');
+  });
+  DECOR_SPRITES['ember'] = _makeDecor8(function(ctx) {
+    _px(ctx, 3, 3, '#ff4400'); _px(ctx, 4, 4, '#ff6600');
+    _px(ctx, 5, 3, '#ffaa00'); _px(ctx, 3, 5, '#ff2200');
+    _px(ctx, 4, 2, '#cc2200');
+  });
+
+  // === Лесные руины (forest_ruins) ===
+  DECOR_SPRITES['glowing_mushroom'] = _makeDecor8(function(ctx) {
+    _rect(ctx, 3, 5, 2, 3, '#6a5a4a');
+    ctx.fillStyle = '#40e0d0';
+    ctx.beginPath(); ctx.arc(4, 4, 3, Math.PI, 0); ctx.fill();
+    _px(ctx, 3, 3, '#60ffd0');
+  });
+  DECOR_SPRITES['vine'] = _makeDecor8(function(ctx) {
+    ctx.strokeStyle = '#2a5a1a'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(1,0); ctx.quadraticCurveTo(4,4,7,7); ctx.stroke();
+    _px(ctx, 2, 2, '#3a7a2a'); _px(ctx, 5, 5, '#3a7a2a');
+  });
+  DECOR_SPRITES['broken_statue'] = _makeDecor8(function(ctx) {
+    _rect(ctx, 2, 3, 4, 5, '#8a8a8a');
+    _rect(ctx, 3, 1, 2, 3, '#7a7a7a');
+    _px(ctx, 5, 4, '#6a6a6a');
+  });
+  DECOR_SPRITES['mossy_rock'] = _makeDecor8(function(ctx) {
+    _rect(ctx, 1, 3, 6, 4, '#5a5a4a');
+    _rect(ctx, 2, 2, 4, 2, '#4a6a3a');
+    _px(ctx, 3, 2, '#5a8a4a');
+  });
+  DECOR_SPRITES['fallen_tree'] = _makeDecor16(function(ctx) {
+    _rect(ctx, 0, 6, 16, 4, '#5a3a1a');
+    _rect(ctx, 1, 7, 14, 2, '#6a4a2a');
+    _px(ctx, 14, 5, '#3a6a2a'); _px(ctx, 15, 4, '#3a6a2a');
+    _px(ctx, 0, 7, '#4a2a0a');
+  });
+  DECOR_SPRITES['flower_bush'] = _makeDecor8(function(ctx) {
+    ctx.fillStyle = '#3a8a3a';
+    ctx.beginPath(); ctx.arc(4, 5, 3, 0, Math.PI*2); ctx.fill();
+    _px(ctx, 3, 3, '#ff69b4'); _px(ctx, 5, 4, '#ffff00');
+    _px(ctx, 2, 4, '#add8e6');
+  });
+
+  // === Замок (castle) ===
+  DECOR_SPRITES['tapestry'] = _makeDecor8(function(ctx) {
+    _rect(ctx, 2, 0, 4, 7, '#8b0000');
+    _rect(ctx, 1, 0, 6, 1, '#6a5a3a');
+    _rect(ctx, 3, 2, 2, 1, '#ffd700');
+    _rect(ctx, 3, 5, 2, 1, '#ffd700');
+  });
+  DECOR_SPRITES['armor_stand'] = _makeDecor8(function(ctx) {
+    _vline(ctx, 4, 2, 5, '#4a4a4a');
+    _rect(ctx, 2, 0, 4, 3, '#808080');
+    _hline(ctx, 1, 2, 6, '#6a6a6a');
+    _px(ctx, 3, 1, '#a0a0a0'); _px(ctx, 5, 1, '#a0a0a0');
+  });
+  DECOR_SPRITES['candelabra'] = _makeDecor8(function(ctx) {
+    _vline(ctx, 4, 3, 4, '#c9a84c');
+    _hline(ctx, 2, 3, 4, '#c9a84c');
+    _px(ctx, 2, 2, '#ffcc00'); _px(ctx, 4, 2, '#ffcc00'); _px(ctx, 6, 2, '#ffcc00');
+  });
+  DECOR_SPRITES['bookshelf'] = _makeDecor16(function(ctx) {
+    _rect(ctx, 1, 1, 14, 14, '#5a3a1a');
+    _rect(ctx, 2, 2, 5, 3, '#8b0000'); _rect(ctx, 8, 2, 5, 3, '#003080');
+    _rect(ctx, 2, 6, 4, 3, '#006030'); _rect(ctx, 7, 6, 6, 3, '#4a2a0a');
+    _rect(ctx, 2, 10, 6, 3, '#660066'); _rect(ctx, 9, 10, 4, 3, '#8b6914');
+  });
+  DECOR_SPRITES['throne'] = _makeDecor16(function(ctx) {
+    _rect(ctx, 4, 2, 8, 12, '#6a1a1a');
+    _rect(ctx, 3, 0, 10, 3, '#8b0000');
+    _rect(ctx, 5, 8, 6, 4, '#5a1010');
+    _px(ctx, 5, 1, '#ffd700'); _px(ctx, 11, 1, '#ffd700');
+    _px(ctx, 8, 1, '#ffd700');
+  });
+  DECOR_SPRITES['cage'] = _makeDecor8(function(ctx) {
+    _rect(ctx, 1, 1, 6, 6, '#1a1a1a');
+    for (let x = 2; x <= 6; x += 2) _vline(ctx, x, 1, 6, '#5a5a5a');
+    _hline(ctx, 1, 1, 6, '#5a5a5a'); _hline(ctx, 1, 6, 6, '#5a5a5a');
+  });
+  DECOR_SPRITES['banner'] = _makeDecor8(function(ctx) {
+    _rect(ctx, 3, 0, 2, 7, '#003080');
+    _hline(ctx, 2, 0, 4, '#c9a84c');
+    _px(ctx, 4, 3, '#ffd700');
+  });
+
+  // === Небесный город (sky_citadel) ===
+  DECOR_SPRITES['golden_urn'] = _makeDecor8(function(ctx) {
+    _rect(ctx, 2, 2, 4, 5, '#c9a84c');
+    _rect(ctx, 3, 1, 2, 1, '#a08030');
+    _rect(ctx, 1, 3, 6, 1, '#e0c060');
+    _px(ctx, 3, 4, '#ffd700');
+  });
+  DECOR_SPRITES['marble_statue'] = _makeDecor16(function(ctx) {
+    _rect(ctx, 5, 2, 6, 12, '#f0f0f0');
+    _rect(ctx, 6, 0, 4, 3, '#e8e8e8');
+    _rect(ctx, 4, 13, 8, 2, '#d0d0d0');
+    _px(ctx, 7, 1, '#808080'); _px(ctx, 9, 1, '#808080');
+    // Крылья
+    _rect(ctx, 2, 4, 3, 4, '#e0e0e0');
+    _rect(ctx, 11, 4, 3, 4, '#e0e0e0');
+  });
+  DECOR_SPRITES['floating_crystal'] = _makeDecor8(function(ctx) {
+    ctx.fillStyle = '#ffe080'; ctx.beginPath();
+    ctx.moveTo(4, 0); ctx.lineTo(7, 4); ctx.lineTo(4, 7); ctx.lineTo(1, 4);
+    ctx.closePath(); ctx.fill();
+    _px(ctx, 4, 3, '#ffffff');
+  });
+  DECOR_SPRITES['cloud_fountain'] = _makeDecor16(function(ctx) {
+    _rect(ctx, 3, 8, 10, 6, '#d0d8e0');
+    _rect(ctx, 5, 4, 6, 5, '#e0e8f0');
+    ctx.fillStyle = '#80c0ff'; ctx.beginPath();
+    ctx.arc(8, 6, 2, 0, Math.PI*2); ctx.fill();
+    _rect(ctx, 4, 12, 8, 2, '#b0b8c0');
+  });
+  DECOR_SPRITES['light_pillar'] = _makeDecor8(function(ctx) {
+    _rect(ctx, 3, 0, 2, 8, '#ffe080');
+    _px(ctx, 2, 1, '#fff0a0'); _px(ctx, 5, 2, '#fff0a0');
+    _px(ctx, 4, 4, '#ffffff');
+  });
+  DECOR_SPRITES['angel_wing'] = _makeDecor8(function(ctx) {
+    _rect(ctx, 1, 2, 2, 4, '#f0f0f0');
+    _rect(ctx, 5, 2, 2, 4, '#f0f0f0');
+    _px(ctx, 0, 3, '#e0e0e0'); _px(ctx, 7, 3, '#e0e0e0');
+    _px(ctx, 3, 4, '#d0d0d0'); _px(ctx, 4, 4, '#d0d0d0');
+  });
+
+  // === Эльфийский лес (elven_forest) ===
+  DECOR_SPRITES['rune_stone'] = _makeDecor8(function(ctx) {
+    _rect(ctx, 1, 2, 6, 5, '#5a6a4a');
+    _rect(ctx, 2, 1, 4, 2, '#4a5a3a');
+    _px(ctx, 3, 3, '#80c0ff'); _px(ctx, 5, 4, '#80c0ff');
+    _px(ctx, 4, 5, '#60a0e0');
+  });
+  DECOR_SPRITES['elven_lantern'] = _makeDecor8(function(ctx) {
+    _vline(ctx, 4, 0, 3, '#8a7a5a');
+    _rect(ctx, 2, 3, 4, 3, '#c9a84c');
+    ctx.fillStyle = '#60ffa0'; ctx.beginPath();
+    ctx.arc(4, 5, 1.5, 0, Math.PI*2); ctx.fill();
+  });
+  DECOR_SPRITES['bloom_bush'] = _makeDecor8(function(ctx) {
+    ctx.fillStyle = '#3a8a3a'; ctx.beginPath();
+    ctx.arc(4, 5, 3, 0, Math.PI*2); ctx.fill();
+    _px(ctx, 2, 3, '#ff69b4'); _px(ctx, 5, 4, '#dda0dd');
+    _px(ctx, 4, 2, '#ffff00');
+  });
+  DECOR_SPRITES['magic_mushroom'] = _makeDecor8(function(ctx) {
+    _rect(ctx, 3, 5, 2, 3, '#8a7a5a');
+    ctx.fillStyle = '#8040c0'; ctx.beginPath();
+    ctx.arc(4, 4, 3, Math.PI, 0); ctx.fill();
+    _px(ctx, 3, 3, '#c080ff'); _px(ctx, 5, 3, '#c080ff');
+  });
+  DECOR_SPRITES['nature_altar'] = _makeDecor16(function(ctx) {
+    _rect(ctx, 2, 8, 12, 6, '#5a7a4a');
+    _rect(ctx, 4, 5, 8, 4, '#4a6a3a');
+    ctx.fillStyle = '#80c0ff'; ctx.beginPath();
+    ctx.arc(8, 6, 2, 0, Math.PI*2); ctx.fill();
+    _px(ctx, 6, 4, '#3a8a3a'); _px(ctx, 10, 4, '#3a8a3a');
+  });
+  DECOR_SPRITES['fairy_circle'] = _makeDecor8(function(ctx) {
+    ctx.strokeStyle = '#60ffa0'; ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.arc(4, 4, 3, 0, Math.PI*2); ctx.stroke();
+    _px(ctx, 2, 2, '#ffff80'); _px(ctx, 6, 5, '#ffff80');
+  });
+
+  // === Горная крепость (mountain_keep) ===
+  DECOR_SPRITES['barrel'] = _makeDecor12(function(ctx) {
+    _rect(ctx, 2, 1, 8, 10, '#8b6914');
+    _rect(ctx, 1, 2, 10, 1, '#5a4a10');
+    _rect(ctx, 1, 8, 10, 1, '#5a4a10');
+    _rect(ctx, 3, 3, 6, 6, '#a07a20');
+  });
+  DECOR_SPRITES['ore_crate'] = _makeDecor12(function(ctx) {
+    _rect(ctx, 1, 2, 10, 8, '#6a5a3a');
+    _rect(ctx, 2, 3, 8, 6, '#5a4a2a');
+    _hline(ctx, 1, 5, 10, '#4a3a1a');
+    _vline(ctx, 6, 2, 8, '#4a3a1a');
+    _px(ctx, 4, 4, '#c0a000'); _px(ctx, 8, 7, '#c0a000');
+  });
+  DECOR_SPRITES['pickaxe'] = _makeDecor8(function(ctx) {
+    ctx.strokeStyle = '#8a7a5a'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(1, 7); ctx.lineTo(6, 2); ctx.stroke();
+    _rect(ctx, 5, 0, 3, 3, '#6a6a6a');
+    _px(ctx, 7, 0, '#5a5a5a');
+  });
+  DECOR_SPRITES['chain_lantern'] = _makeDecor8(function(ctx) {
+    _vline(ctx, 4, 0, 2, '#5a5a5a');
+    _rect(ctx, 2, 2, 4, 4, '#6a5a3a');
+    ctx.fillStyle = '#ffaa00'; ctx.beginPath();
+    ctx.arc(4, 4, 1.5, 0, Math.PI*2); ctx.fill();
+  });
+  DECOR_SPRITES['forge_anvil'] = _makeDecor16(function(ctx) {
+    _rect(ctx, 3, 6, 10, 4, '#4a4a4a');
+    _rect(ctx, 1, 5, 14, 2, '#5a5a5a');
+    _rect(ctx, 5, 10, 6, 4, '#3a3a3a');
+    _px(ctx, 7, 5, '#6a6a6a'); _px(ctx, 9, 5, '#6a6a6a');
+  });
+  DECOR_SPRITES['stone_bridge'] = _makeDecor16(function(ctx) {
+    _rect(ctx, 0, 5, 16, 6, '#6a6a5a');
+    _rect(ctx, 1, 6, 14, 4, '#5a5a4a');
+    _hline(ctx, 0, 5, 16, '#7a7a6a');
+    _hline(ctx, 0, 10, 16, '#4a4a3a');
+  });
+  DECOR_SPRITES['rock_pile'] = _makeDecor8(function(ctx) {
+    _rect(ctx, 1, 4, 6, 3, '#6a6a5a');
+    _rect(ctx, 2, 3, 4, 2, '#5a5a4a');
+    _px(ctx, 4, 2, '#7a7a6a');
+    _px(ctx, 2, 5, '#4a4a3a');
+  });
+
+  console.log(`[Sprites] Сгенерировано ${Object.keys(DECOR_SPRITES).length} спрайтов декора`);
+}
+
+/** Создать 8×8 спрайт. */
+function _makeDecor8(drawFn) {
+  const c = _createSpriteCanvas(8);
+  const ctx = c.getContext('2d');
+  drawFn(ctx);
+  return c;
+}
+
+/** Создать 12×12 спрайт. */
+function _makeDecor12(drawFn) {
+  const c = _createSpriteCanvas(12);
+  const ctx = c.getContext('2d');
+  drawFn(ctx);
+  return c;
+}
+
+/** Создать 16×16 спрайт. */
+function _makeDecor16(drawFn) {
+  const c = _createSpriteCanvas(16);
+  const ctx = c.getContext('2d');
+  drawFn(ctx);
+  return c;
+}
+
+window.DECOR_SPRITES = DECOR_SPRITES;
+window.initDecorSprites = initDecorSprites;
 

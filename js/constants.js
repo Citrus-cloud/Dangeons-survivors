@@ -1510,6 +1510,82 @@ const BIOMES = [
     guardianBoss: 'boss_dark_knight', // Шаг 14: fallback
     mosaicColor: 'rgba(140, 100, 180, 0.3)',
   },
+  /* ===== Биом 6: Небесный город (Sky Citadel) ===== */
+  {
+    id: 'sky_citadel',
+    name: 'Небесный город',
+    floorColor: '#d8e8f0',
+    floorGridColor: '#c0d8e8',
+    wallColor: '#e8e8e8',
+    corridorColor: '#c8d8e0',
+    secretFloorColor: '#e0e8f0',
+    secretGridColor: '#d0d8e8',
+    pillarColor: '#f0f0f0',
+    pillarCapColor: '#c9a84c',
+    decorTypes: ['golden_urns', 'angel_statues', 'light_crystals', 'cloud_fountains', 'floating_lanterns'],
+    trapTypes: ['magic_rune', 'spike'],
+    enemyTypes: [
+      'skeleton', 'cave_bat', 'ghost', 'mold',
+      'harpy', 'gasspore', 'archer', 'gnoll',
+      'mage', 'bat', 'water_elem', 'beholder_spore',
+      'illithid', 'drow', 'shadow', 'chimera',
+      'observer', 'death_knight', 'young_dragon', 'archlich',
+    ],
+    guardianBoss: 'boss_lich',
+    mosaicColor: 'rgba(201, 168, 76, 0.3)',
+    // Спец-свойство: анимация парения
+    floatingAnimation: true,
+    floatAmplitude: 2,    // ±2px
+    floatSpeed: 1.5,      // скорость синусоиды
+  },
+  /* ===== Биом 7: Эльфийский лес (Elven Forest) ===== */
+  {
+    id: 'elven_forest',
+    name: 'Эльфийский лес',
+    floorColor: '#4a7a3a',
+    floorGridColor: '#5a8a4a',
+    wallColor: '#3a2a1a',
+    corridorColor: '#5a6a3a',
+    secretFloorColor: '#4a6a40',
+    secretGridColor: '#5a7a50',
+    pillarColor: '#6b4a2a',
+    pillarCapColor: '#3a7a3a',
+    decorTypes: ['rune_stones', 'elven_lanterns', 'blooming_bushes', 'glowing_mushrooms', 'nature_altars'],
+    trapTypes: ['poison_plant', 'root_grab', 'magic_rune'],
+    enemyTypes: [
+      'goblin', 'giant_rat', 'acid_slug', 'cave_bat', 'mold',
+      'spider', 'harpy', 'ooze', 'cave_crab', 'ghost',
+      'basilisk', 'medusa', 'water_elem', 'earth_elem', 'spider',
+      'drow', 'chimera', 'shadow', 'cultist',
+      'hydra_small', 'young_dragon', 'observer', 'eldritch_horror',
+    ],
+    guardianBoss: 'boss_ancient_ent',
+    mosaicColor: 'rgba(80, 180, 80, 0.25)',
+  },
+  /* ===== Биом 8: Горная местность (Mountain Keep) ===== */
+  {
+    id: 'mountain_keep',
+    name: 'Горная крепость',
+    floorColor: '#6b5a4a',
+    floorGridColor: '#7a6a5a',
+    wallColor: '#3a3a3a',
+    corridorColor: '#5a4a3a',
+    secretFloorColor: '#5a5040',
+    secretGridColor: '#6a6050',
+    pillarColor: '#5a5a5a',
+    pillarCapColor: '#7a6a4a',
+    decorTypes: ['barrels', 'ore_crates', 'pickaxes', 'chain_lanterns', 'forge_anvils', 'stone_bridges'],
+    trapTypes: ['rockfall', 'fire_geyser', 'spike'],
+    enemyTypes: [
+      'skeleton', 'goblin', 'giant_rat', 'mold', 'ratcatcher',
+      'gnoll', 'kobold', 'cave_crab', 'dung_beetle', 'ooze',
+      'minotaur', 'earth_elem', 'fire_elem', 'hell_hound', 'beholder_spore',
+      'stone_golem', 'dragonid', 'demon_berserker', 'rust_monster', 'captain',
+      'rotgolem', 'bone_colossus', 'young_dragon', 'death_knight',
+    ],
+    guardianBoss: 'boss_fire_lord',
+    mosaicColor: 'rgba(120, 100, 70, 0.3)',
+  },
 ];
 
 /* ============================================================

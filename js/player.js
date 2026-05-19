@@ -293,9 +293,10 @@ const Player = {
       const dx = move.x * speed * dt;
       const dy = move.y * speed * dt;
       // Движение с коллизиями (стены/колонны/закрытые двери)
-      const rad = player.size * 0.4;
+      // Новая система: половинный хитбокс (shrinkFactor 0.25 = 50% ядро стены)
+      const rad = player.size * 0.35;
       if (window.GameMap && GameMap.dungeon) {
-        const r = GameMap.moveWithCollision(player.x, player.y, dx, dy, rad);
+        const r = GameMap.moveWithCollision(player.x, player.y, dx, dy, rad, 0.25);
         player.x = r.x;
         player.y = r.y;
       } else {

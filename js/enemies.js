@@ -174,10 +174,10 @@ function _moveTowards(e, tx, ty, dt, sign) {
   e.vy = n.y * s;
   let dx = e.vx * dt;
   let dy = e.vy * dt;
-  const rad = Math.max(e.cfg.w, e.cfg.h) * 0.4;
-  // Движение с учётом стен/колонн (если подземелье сгенерировано)
+  const rad = Math.max(e.cfg.w, e.cfg.h) * 0.35;
+  // Движение с учётом стен/колонн (половинный хитбокс — shrinkFactor 0.15 для врагов)
   if (window.GameMap && GameMap.dungeon) {
-    const res = GameMap.moveWithCollision(e.x, e.y, dx, dy, rad);
+    const res = GameMap.moveWithCollision(e.x, e.y, dx, dy, rad, 0.15);
     // Обход препятствия: если упёрлись в одну ось, сместимся вдоль другой
     let blockedAny = res.blockedX || res.blockedY;
     if (blockedAny && (Math.abs(res.x - e.x) < Math.abs(dx) * 0.2) &&
@@ -187,7 +187,7 @@ function _moveTowards(e, tx, ty, dt, sign) {
       const slide = (e._slideSign = e._slideSign || 1);
       const sx = perpX * Math.abs(s) * dt * slide;
       const sy = perpY * Math.abs(s) * dt * slide;
-      const res2 = GameMap.moveWithCollision(e.x, e.y, sx, sy, rad);
+      const res2 = GameMap.moveWithCollision(e.x, e.y, sx, sy, rad, 0.15);
       e.x = res2.x; e.y = res2.y;
       // Если и тут не получилось — поменяем знак
       if (res2.blockedX && res2.blockedY) e._slideSign = -slide;
@@ -395,9 +395,9 @@ const Behaviors = {
     e.vx = n.x * s + perpX * lateral * 0.05;
     e.vy = n.y * s + perpY * lateral * 0.05;
     let mx = e.vx * dt, my = e.vy * dt;
-    const rad = Math.max(e.cfg.w, e.cfg.h) * 0.4;
+    const rad = Math.max(e.cfg.w, e.cfg.h) * 0.35;
     if (window.GameMap && GameMap.dungeon) {
-      const r = GameMap.moveWithCollision(e.x, e.y, mx, my, rad);
+      const r = GameMap.moveWithCollision(e.x, e.y, mx, my, rad, 0.15);
       e.x = r.x; e.y = r.y;
     } else {
       e.x += mx; e.y += my;
