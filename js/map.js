@@ -1064,8 +1064,16 @@ const GameMap = {
     const biomeId = biome ? biome.id : 'crypt';
 
     // 1) Заполняем стены (тёмный фон) с текстурой
-    ctx.fillStyle = wallColor;
-    ctx.fillRect(0, 0, this.mapW, this.mapH);
+    // Для Небесного города: стены полупрозрачные, чтобы небо просвечивало в проёмах
+    if (biomeId === 'sky_citadel') {
+      // Не заливаем фон целиком — оставляем прозрачным для неба
+      // Стены будут нарисованы текстурой в _renderWallTexture
+      ctx.fillStyle = 'rgba(232, 232, 232, 0.85)';
+      ctx.fillRect(0, 0, this.mapW, this.mapH);
+    } else {
+      ctx.fillStyle = wallColor;
+      ctx.fillRect(0, 0, this.mapW, this.mapH);
+    }
 
     // Текстура стен (кирпичная кладка/обводка по биому)
     this._renderWallTexture(ctx, dungeon, biomeId);
@@ -1140,6 +1148,14 @@ const GameMap = {
     this._renderCorridorNarrowTiles(ctx, dungeon, biomeId);
 
     this._floorCache = off;
+
+    // Небесный город: сгенерировать кеш фона неба
+    if (biomeId === 'sky_citadel') {
+      this._buildSkyBackground();
+    } else {
+      this._skyBgCache = null;
+      this._skyClouds = null;
+    }
   },
 
   /** Рисует дверные проёмы на стыках коридоров и комнат. */
@@ -1257,137 +1273,350 @@ const GameMap = {
     ctx.globalAlpha = 1.0;
   },
 
-  /** Текстура стен по биому (рисуется за пределами комнат). */
+  /** Текстура стен по биому — богатые узоры для непроходимых блоков (D&D стиль).
+   *  Рисуется поверх wallColor фона, только в ячейках стен. */
   _renderWallTexture(ctx, dungeon, biomeId) {
-    ctx.globalAlpha = 0.15;
     const cellSize = dungeon.cellSize;
     const gridW = dungeon.gridW, gridH = dungeon.gridH;
     const rng = this.rng || Math.random;
 
-    for (let j = 0; j < gridH; j += 2) {
-      for (let i = 0; i < gridW; i += 2) {
-        if (dungeon.grid[j * gridW + i] !== 0) continue; // только стены
-        const wx = i * cellSize, wy = j * cellSize;
-
-        switch (biomeId) {
-          case 'crypt': {
-            // Каменная кладка — горизонтальные линии швов
-            ctx.strokeStyle = '#2a2a2a';
-            ctx.lineWidth = 1;
-            if ((j % 4) === 0) {
-              ctx.beginPath();
-              ctx.moveTo(wx, wy + cellSize);
-              ctx.lineTo(wx + cellSize * 2, wy + cellSize);
-              ctx.stroke();
-            }
-            if ((i % 3) === 0) {
-              ctx.beginPath();
-              ctx.moveTo(wx + cellSize, wy);
-              ctx.lineTo(wx + cellSize, wy + cellSize * 2);
-              ctx.stroke();
-            }
-            break;
-          }
-          case 'ice_caves': {
-            // Замёрзший камень — голубые прожилки
-            ctx.strokeStyle = '#3a5a7a';
-            ctx.lineWidth = 0.8;
-            ctx.beginPath();
-            ctx.moveTo(wx + rng() * cellSize * 2, wy);
-            ctx.lineTo(wx + rng() * cellSize * 2, wy + cellSize * 2);
-            ctx.stroke();
-            break;
-          }
-          case 'fire_mines': {
-            // Обсидиан с рудными жилами
-            ctx.strokeStyle = '#5a2a0a';
-            ctx.lineWidth = 1;
-            if (rng() < 0.3) {
-              ctx.beginPath();
-              ctx.arc(wx + rng() * cellSize * 2, wy + rng() * cellSize * 2, 3, 0, Math.PI * 2);
-              ctx.stroke();
-            }
-            break;
-          }
-          case 'forest_ruins': {
-            // Лианы и корни
-            ctx.strokeStyle = '#2a4a2a';
-            ctx.lineWidth = 1.2;
-            if (rng() < 0.25) {
-              ctx.beginPath();
-              ctx.moveTo(wx, wy + rng() * cellSize * 2);
-              ctx.quadraticCurveTo(wx + cellSize, wy + rng() * cellSize * 2, wx + cellSize * 2, wy + rng() * cellSize * 2);
-              ctx.stroke();
-            }
-            break;
-          }
-          case 'castle': {
-            // Каменная кладка с гербами
-            ctx.strokeStyle = '#3a3a3a';
-            ctx.lineWidth = 1;
-            if ((j % 4) === 0) {
-              ctx.beginPath();
-              ctx.moveTo(wx, wy + cellSize);
-              ctx.lineTo(wx + cellSize * 2, wy + cellSize);
-              ctx.stroke();
-            }
-            break;
-          }
-          case 'sky_citadel': {
-            // Облачная текстура — мягкие белые волны
-            ctx.strokeStyle = '#d0d8e0';
-            ctx.lineWidth = 1.5;
-            if (rng() < 0.3) {
-              ctx.beginPath();
-              const cx = wx + rng() * cellSize * 2;
-              const cy = wy + rng() * cellSize * 2;
-              ctx.arc(cx, cy, 4 + rng() * 6, 0, Math.PI, false);
-              ctx.stroke();
-            }
-            break;
-          }
-          case 'elven_forest': {
-            // Кора деревьев — вертикальные линии с изгибами
-            ctx.strokeStyle = '#4a3a1a';
-            ctx.lineWidth = 1.2;
-            if (rng() < 0.35) {
-              ctx.beginPath();
-              const sx = wx + rng() * cellSize * 2;
-              ctx.moveTo(sx, wy);
-              ctx.quadraticCurveTo(sx + rng() * 8 - 4, wy + cellSize, sx + rng() * 6 - 3, wy + cellSize * 2);
-              ctx.stroke();
-            }
-            // Листья
-            if (rng() < 0.15) {
-              ctx.fillStyle = '#3a6a2a';
-              ctx.beginPath();
-              ctx.arc(wx + rng() * cellSize * 2, wy + rng() * cellSize * 2, 2, 0, Math.PI * 2);
-              ctx.fill();
-            }
-            break;
-          }
-          case 'mountain_keep': {
-            // Трещины и грубый камень
-            ctx.strokeStyle = '#4a4a4a';
-            ctx.lineWidth = 1;
-            if ((j % 3) === 0) {
-              ctx.beginPath();
-              ctx.moveTo(wx, wy + cellSize);
-              ctx.lineTo(wx + cellSize * 2, wy + cellSize + rng() * 4 - 2);
-              ctx.stroke();
-            }
-            if (rng() < 0.2) {
-              ctx.beginPath();
-              ctx.moveTo(wx + rng() * cellSize * 2, wy);
-              ctx.lineTo(wx + rng() * cellSize * 2, wy + cellSize * 2);
-              ctx.stroke();
-            }
-            break;
-          }
+    // Используем кешированную тайловую текстуру 32x32 если доступна
+    const tile = this._getWallTile(biomeId);
+    if (tile) {
+      // Покрываем все стены тайлом (pattern fill)
+      const pattern = ctx.createPattern(tile, 'repeat');
+      ctx.fillStyle = pattern;
+      for (let j = 0; j < gridH; j++) {
+        for (let i = 0; i < gridW; i++) {
+          if (dungeon.grid[j * gridW + i] !== 0) continue;
+          ctx.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
         }
       }
+      return;
     }
+    // Фоллбэк если тайл не создан
+    ctx.globalAlpha = 0.15;
     ctx.globalAlpha = 1.0;
+  },
+
+  /** Кеш тайловых текстур стен (по биомам). */
+  _wallTileCache: {},
+
+  /** Получить или сгенерировать тайл текстуры стены 32×32 для биома. */
+  _getWallTile(biomeId) {
+    if (this._wallTileCache[biomeId]) return this._wallTileCache[biomeId];
+    const tile = this._generateWallTile(biomeId);
+    if (tile) this._wallTileCache[biomeId] = tile;
+    return tile;
+  },
+
+  /** Генерация пиксельной тайловой текстуры 32×32 для стен по биому. */
+  _generateWallTile(biomeId) {
+    const size = 32;
+    const off = document.createElement('canvas');
+    off.width = size;
+    off.height = size;
+    const ctx = off.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+
+    const rng = this.rng || Math.random;
+
+    switch (biomeId) {
+      case 'crypt': {
+        // Каменная кладка из серых кирпичей с тёмными швами и трещинами
+        ctx.fillStyle = '#2a2a2a';
+        ctx.fillRect(0, 0, size, size);
+        // Кирпичи (8x4 каждый, со смещением)
+        const brickH = 8, brickW = 16;
+        ctx.strokeStyle = '#0e0e0e';
+        ctx.lineWidth = 1;
+        for (let row = 0; row < size / brickH; row++) {
+          const offset = (row % 2) * (brickW / 2);
+          for (let col = -1; col < size / brickW + 1; col++) {
+            const bx = col * brickW + offset;
+            const by = row * brickH;
+            // Разные оттенки серого для вариации
+            const shade = 30 + Math.floor(rng() * 20);
+            ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade + 5})`;
+            ctx.fillRect(bx + 1, by + 1, brickW - 2, brickH - 2);
+            ctx.strokeRect(bx + 0.5, by + 0.5, brickW, brickH);
+          }
+        }
+        // Трещины (2-3 штуки)
+        ctx.strokeStyle = '#0a0a0a';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 2; i++) {
+          ctx.beginPath();
+          const sx = Math.floor(rng() * size);
+          const sy = Math.floor(rng() * size);
+          ctx.moveTo(sx, sy);
+          ctx.lineTo(sx + (rng() * 8 - 4), sy + rng() * 10);
+          ctx.lineTo(sx + (rng() * 6 - 3), sy + rng() * 14);
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'ice_caves': {
+        // Лёд с голубоватыми прожилками и вкраплениями
+        ctx.fillStyle = '#1a2a3a';
+        ctx.fillRect(0, 0, size, size);
+        // Геометрические трещины льда
+        ctx.strokeStyle = '#4080a0';
+        ctx.lineWidth = 1;
+        // Вертикальные и диагональные прожилки
+        for (let i = 0; i < 5; i++) {
+          ctx.beginPath();
+          const sx = Math.floor(rng() * size);
+          const sy = Math.floor(rng() * size);
+          ctx.moveTo(sx, sy);
+          const angle = rng() * Math.PI;
+          const len = 8 + rng() * 16;
+          ctx.lineTo(sx + Math.cos(angle) * len, sy + Math.sin(angle) * len);
+          ctx.stroke();
+        }
+        // Вкрапления (блёстки)
+        ctx.fillStyle = '#80c0e0';
+        for (let i = 0; i < 6; i++) {
+          ctx.fillRect(Math.floor(rng() * size), Math.floor(rng() * size), 1, 1);
+        }
+        // Тёмные зоны глубины
+        ctx.fillStyle = 'rgba(0, 20, 40, 0.3)';
+        ctx.beginPath();
+        ctx.arc(8 + rng() * 16, 8 + rng() * 16, 4 + rng() * 4, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      }
+      case 'fire_mines': {
+        // Обсидиан с красными рудными жилами, потрескавшаяся лава
+        ctx.fillStyle = '#1a1018';
+        ctx.fillRect(0, 0, size, size);
+        // Тёмный обсидиан — вкрапления
+        for (let i = 0; i < 8; i++) {
+          const shade = 20 + Math.floor(rng() * 15);
+          ctx.fillStyle = `rgb(${shade + 5}, ${shade - 5}, ${shade + 10})`;
+          ctx.fillRect(Math.floor(rng() * size), Math.floor(rng() * size), 3 + Math.floor(rng() * 5), 3 + Math.floor(rng() * 5));
+        }
+        // Красные рудные жилы
+        ctx.strokeStyle = '#8a2010';
+        ctx.lineWidth = 1.5;
+        for (let i = 0; i < 3; i++) {
+          ctx.beginPath();
+          const sx = rng() * size, sy = rng() * size;
+          ctx.moveTo(sx, sy);
+          ctx.quadraticCurveTo(sx + rng() * 10, sy + rng() * 10, sx + rng() * 20, sy + rng() * 20);
+          ctx.stroke();
+        }
+        // Яркие точки лавы
+        ctx.fillStyle = '#ff4400';
+        ctx.globalAlpha = 0.6;
+        for (let i = 0; i < 3; i++) {
+          ctx.fillRect(Math.floor(rng() * size), Math.floor(rng() * size), 2, 2);
+        }
+        ctx.globalAlpha = 1;
+        break;
+      }
+      case 'forest_ruins': {
+        // Замшелый камень (серо-зелёный), обвитый пиксельными лианами
+        ctx.fillStyle = '#2a3028';
+        ctx.fillRect(0, 0, size, size);
+        // Каменная основа с вариациями
+        for (let i = 0; i < 6; i++) {
+          const shade = 35 + Math.floor(rng() * 20);
+          ctx.fillStyle = `rgb(${shade - 5}, ${shade + 10}, ${shade - 5})`;
+          ctx.fillRect(Math.floor(rng() * size), Math.floor(rng() * size), 5 + Math.floor(rng() * 8), 5 + Math.floor(rng() * 8));
+        }
+        // Мох (зелёные пятна)
+        ctx.fillStyle = '#3a6a2a';
+        ctx.globalAlpha = 0.5;
+        for (let i = 0; i < 4; i++) {
+          ctx.beginPath();
+          ctx.arc(rng() * size, rng() * size, 2 + rng() * 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        // Лианы (вертикальные волнистые линии)
+        ctx.strokeStyle = '#2a5a1a';
+        ctx.lineWidth = 1.5;
+        for (let i = 0; i < 2; i++) {
+          ctx.beginPath();
+          const sx = rng() * size;
+          ctx.moveTo(sx, 0);
+          ctx.quadraticCurveTo(sx + rng() * 6 - 3, size * 0.5, sx + rng() * 4 - 2, size);
+          ctx.stroke();
+          // Листочки
+          ctx.fillStyle = '#4a8a2a';
+          ctx.fillRect(sx + (rng() * 4 - 2), size * 0.3 + rng() * 10, 3, 2);
+          ctx.fillRect(sx + (rng() * 4 - 2), size * 0.6 + rng() * 10, 3, 2);
+        }
+        break;
+      }
+      case 'castle': {
+        // Тёмная каменная кладка с золотыми гербами/рунами
+        ctx.fillStyle = '#1a1a20';
+        ctx.fillRect(0, 0, size, size);
+        // Кладка — большие блоки
+        const blockH = 16, blockW = 16;
+        ctx.strokeStyle = '#0a0a0a';
+        ctx.lineWidth = 1;
+        for (let row = 0; row < size / blockH; row++) {
+          const offset = (row % 2) * (blockW / 2);
+          for (let col = -1; col < size / blockW + 1; col++) {
+            const bx = col * blockW + offset;
+            const by = row * blockH;
+            const shade = 22 + Math.floor(rng() * 12);
+            ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade + 8})`;
+            ctx.fillRect(bx + 1, by + 1, blockW - 2, blockH - 2);
+            ctx.strokeRect(bx + 0.5, by + 0.5, blockW, blockH);
+          }
+        }
+        // Золотой герб/руна в центре (появляется раз в 2 тайла)
+        if (rng() < 0.5) {
+          ctx.fillStyle = '#c9a84c';
+          ctx.globalAlpha = 0.7;
+          // Ромб-герб
+          ctx.beginPath();
+          ctx.moveTo(16, 6);
+          ctx.lineTo(22, 16);
+          ctx.lineTo(16, 26);
+          ctx.lineTo(10, 16);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = '#8a6a2c';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+        break;
+      }
+      case 'sky_citadel': {
+        // Белый мрамор с золотыми прожилками, греческий меандр
+        ctx.fillStyle = '#e8e8e8';
+        ctx.fillRect(0, 0, size, size);
+        // Мраморные вариации (светлые/тёмные пятна)
+        for (let i = 0; i < 5; i++) {
+          const shade = 210 + Math.floor(rng() * 40);
+          ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade + 5})`;
+          ctx.fillRect(Math.floor(rng() * size), Math.floor(rng() * size), 6 + Math.floor(rng() * 10), 6 + Math.floor(rng() * 10));
+        }
+        // Золотые прожилки
+        ctx.strokeStyle = '#c9a84c';
+        ctx.lineWidth = 0.8;
+        ctx.globalAlpha = 0.6;
+        for (let i = 0; i < 3; i++) {
+          ctx.beginPath();
+          const sx = rng() * size, sy = rng() * size;
+          ctx.moveTo(sx, sy);
+          ctx.lineTo(sx + rng() * 15 - 7, sy + rng() * 15 - 7);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+        // Греческий меандр (ключевой узор) — по верхнему и нижнему краю
+        ctx.strokeStyle = '#c9a84c';
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.5;
+        // Упрощённый меандр: ступенчатый рисунок
+        const step = 4;
+        ctx.beginPath();
+        ctx.moveTo(0, 2);
+        for (let x = 0; x < size; x += step * 2) {
+          ctx.lineTo(x + step, 2);
+          ctx.lineTo(x + step, 2 + step);
+          ctx.lineTo(x + step * 2, 2 + step);
+          ctx.lineTo(x + step * 2, 2);
+        }
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, size - 2);
+        for (let x = 0; x < size; x += step * 2) {
+          ctx.lineTo(x + step, size - 2);
+          ctx.lineTo(x + step, size - 2 - step);
+          ctx.lineTo(x + step * 2, size - 2 - step);
+          ctx.lineTo(x + step * 2, size - 2);
+        }
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        break;
+      }
+      case 'elven_forest': {
+        // Кора дерева (коричневая с вертикальными полосами), светящиеся руны
+        ctx.fillStyle = '#3a2a18';
+        ctx.fillRect(0, 0, size, size);
+        // Вертикальные полосы коры
+        ctx.strokeStyle = '#2a1a08';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 5; i++) {
+          const x = 3 + Math.floor(rng() * (size - 6));
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.quadraticCurveTo(x + rng() * 4 - 2, size * 0.5, x + rng() * 3 - 1, size);
+          ctx.stroke();
+        }
+        // Более светлые участки коры
+        ctx.fillStyle = '#4a3a20';
+        for (let i = 0; i < 4; i++) {
+          ctx.fillRect(Math.floor(rng() * size), Math.floor(rng() * size), 2 + Math.floor(rng() * 4), 4 + Math.floor(rng() * 8));
+        }
+        // Светящаяся руна (зелёная)
+        if (rng() < 0.4) {
+          ctx.fillStyle = '#60ff80';
+          ctx.globalAlpha = 0.6;
+          const rx = 8 + Math.floor(rng() * 16);
+          const ry = 8 + Math.floor(rng() * 16);
+          // Простая руна — крест + точки
+          ctx.fillRect(rx - 1, ry - 4, 2, 8);
+          ctx.fillRect(rx - 3, ry - 1, 6, 2);
+          ctx.fillRect(rx - 2, ry - 3, 1, 1);
+          ctx.fillRect(rx + 2, ry + 2, 1, 1);
+          ctx.globalAlpha = 1;
+        }
+        break;
+      }
+      case 'mountain_keep': {
+        // Серый гранит с тёмными вкраплениями, деревянные балки
+        ctx.fillStyle = '#3a3a38';
+        ctx.fillRect(0, 0, size, size);
+        // Гранит — неровные пятна разных оттенков
+        for (let i = 0; i < 10; i++) {
+          const shade = 45 + Math.floor(rng() * 25);
+          ctx.fillStyle = `rgb(${shade}, ${shade - 2}, ${shade - 5})`;
+          ctx.fillRect(Math.floor(rng() * size), Math.floor(rng() * size), 3 + Math.floor(rng() * 6), 3 + Math.floor(rng() * 6));
+        }
+        // Тёмные вкрапления (слюда/минералы)
+        ctx.fillStyle = '#1a1a18';
+        for (let i = 0; i < 5; i++) {
+          ctx.fillRect(Math.floor(rng() * size), Math.floor(rng() * size), 1 + Math.floor(rng() * 2), 1 + Math.floor(rng() * 2));
+        }
+        // Деревянная балка (горизонтальная, ~20% шанс)
+        if (rng() < 0.3) {
+          ctx.fillStyle = '#5a4020';
+          ctx.fillRect(0, 12, size, 6);
+          ctx.strokeStyle = '#3a2a10';
+          ctx.lineWidth = 0.5;
+          ctx.strokeRect(0, 12, size, 6);
+          // Зернистость дерева
+          ctx.strokeStyle = '#4a3018';
+          ctx.lineWidth = 0.5;
+          for (let x = 2; x < size; x += 5 + Math.floor(rng() * 4)) {
+            ctx.beginPath();
+            ctx.moveTo(x, 13);
+            ctx.lineTo(x + rng() * 3, 17);
+            ctx.stroke();
+          }
+        }
+        break;
+      }
+      default: {
+        // Базовая тёмная текстура
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(0, 0, size, size);
+        ctx.strokeStyle = '#2a2a2a';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(4, 4, size - 8, size - 8);
+        break;
+      }
+    }
+
+    return off;
   },
 
   /** Текстура пола коридора по биому. */
@@ -2222,9 +2451,14 @@ const GameMap = {
 
   /** Отрисовать пол + декор. ctx уже сдвинут на -cam. */
   render(ctx, cam, viewW, viewH) {
-    // Фон карты — почти чёрный (стены)
-    ctx.fillStyle = '#0e0e0e';
-    ctx.fillRect(0, 0, this.mapW, this.mapH);
+    // === Небесный город: фоновый слой неба (рисуется ПЕРВЫМ) ===
+    if (this.currentBiome && this.currentBiome.id === 'sky_citadel') {
+      this._renderSkyBackground(ctx, cam, viewW, viewH);
+    } else {
+      // Фон карты — почти чёрный (стены)
+      ctx.fillStyle = '#0e0e0e';
+      ctx.fillRect(0, 0, this.mapW, this.mapH);
+    }
 
     // Кешированный пол
     if (this._floorCache) {
@@ -2287,39 +2521,208 @@ const GameMap = {
     this.renderPortal(ctx, cam, viewW, viewH);
   },
 
+  /* ============================================================
+     Небесный город: фоновый слой неба с облаками и солнцем.
+     Создаёт ощущение, что город парит в небесах.
+     ============================================================ */
+
+  /** Кеш фона неба (offscreen canvas). Генерируется один раз. */
+  _skyBgCache: null,
+  _skyClouds: null, // массив облаков с позициями для анимации
+
+  /** Сгенерировать кеш фона неба (вызывается при генерации карты sky_citadel). */
+  _buildSkyBackground() {
+    const w = this.mapW;
+    const h = this.mapH;
+    const off = document.createElement('canvas');
+    off.width = w;
+    off.height = h;
+    const ctx = off.getContext('2d');
+
+    // 1) Градиент неба: светло-голубой сверху → ещё светлее снизу
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, '#87CEEB');
+    grad.addColorStop(0.4, '#a8ddf0');
+    grad.addColorStop(1, '#c8e8f8');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+    // 2) Солнце в верхнем правом углу (статичное)
+    const sunX = w * 0.82;
+    const sunY = h * 0.12;
+    const sunRadius = 40;
+    // Мягкое свечение (3 слоя)
+    ctx.globalAlpha = 0.15;
+    ctx.fillStyle = '#fffde0';
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, sunRadius * 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = '#fff8b0';
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, sunRadius * 1.8, 0, Math.PI * 2);
+    ctx.fill();
+    // Ядро солнца (яркое, пиксельное)
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#fffde0';
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, sunRadius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, sunRadius * 0.6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 3) Статичные облака (крупные, полупрозрачные, пиксельные формы)
+    const rng = this.rng || Math.random;
+    const clouds = [];
+    const cloudCount = 12 + Math.floor(rng() * 6);
+    for (let i = 0; i < cloudCount; i++) {
+      const cx = rng() * w;
+      const cy = rng() * h;
+      const cw = 80 + rng() * 200;
+      const ch = 30 + rng() * 60;
+      const alpha = 0.2 + rng() * 0.3;
+      clouds.push({ x: cx, y: cy, w: cw, h: ch, alpha, speed: 0.3 + rng() * 0.4 });
+
+      // Рисуем облако из пиксельных «бамп» (несколько кругов)
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#ffffff';
+      const bumps = 4 + Math.floor(rng() * 4);
+      for (let b = 0; b < bumps; b++) {
+        const bx = cx + (b / bumps) * cw - cw * 0.3;
+        const by = cy + (rng() - 0.5) * ch * 0.5;
+        const br = ch * 0.3 + rng() * ch * 0.4;
+        ctx.beginPath();
+        ctx.arc(bx, by, br, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    this._skyBgCache = off;
+    this._skyClouds = clouds;
+  },
+
+  /** Рендер фона неба (вызывается каждый кадр для sky_citadel). */
+  _renderSkyBackground(ctx, cam, viewW, viewH) {
+    // Рисуем кешированный фон (статичное небо + солнце)
+    if (this._skyBgCache) {
+      const sx = cam.x, sy = cam.y;
+      const sw = Math.min(viewW, this.mapW - sx);
+      const sh = Math.min(viewH, this.mapH - sy);
+      if (sw > 0 && sh > 0) {
+        ctx.drawImage(this._skyBgCache, sx, sy, sw, sh, sx, sy, sw, sh);
+      }
+    } else {
+      // Фоллбэк: градиент прямо на canvas
+      ctx.fillStyle = '#87CEEB';
+      ctx.fillRect(0, 0, this.mapW, this.mapH);
+    }
+
+    // Анимация облаков: лёгкое покачивание (сдвиг по X на 0.5px/сек)
+    if (this._skyClouds) {
+      const t = this.time;
+      ctx.fillStyle = '#ffffff';
+      for (const cloud of this._skyClouds) {
+        // Облако дрейфует по X с покачиванием по Y
+        const offsetX = Math.sin(t * cloud.speed * 0.3 + cloud.x * 0.01) * 8;
+        const offsetY = Math.cos(t * cloud.speed * 0.2 + cloud.y * 0.02) * 3;
+        const cx = cloud.x + offsetX;
+        const cy = cloud.y + offsetY;
+
+        // Проверка видимости
+        if (cx + cloud.w < cam.x - 50 || cx - cloud.w > cam.x + viewW + 50 ||
+            cy + cloud.h < cam.y - 50 || cy - cloud.h > cam.y + viewH + 50) continue;
+
+        ctx.globalAlpha = cloud.alpha * 0.6;
+        const bumps = 4;
+        for (let b = 0; b < bumps; b++) {
+          const bx = cx + (b / bumps) * cloud.w - cloud.w * 0.3;
+          const by = cy + Math.sin(b * 1.5) * cloud.h * 0.2;
+          const br = cloud.h * 0.3 + (b % 2) * cloud.h * 0.2;
+          ctx.beginPath();
+          ctx.arc(bx, by, br, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // Полупрозрачный затемняющий слой, чтобы стены читались поверх
+    // (стены уже в _floorCache поверх фона)
+  },
+
   _isOnScreen(x, y, w, h, cam, vw, vh) {
     return !(x + w < cam.x || x > cam.x + vw || y + h < cam.y || y > cam.y + vh);
   },
 
   _renderPillars(ctx, cam, vw, vh) {
     const biome = this.currentBiome;
-    ctx.fillStyle = biome ? biome.pillarColor : '#4a4a4a';
-    ctx.strokeStyle = '#1a1a1a';
-    ctx.lineWidth = 2;
+    const biomeId = biome ? biome.id : 'crypt';
+    const baseColor = biome ? biome.pillarColor : '#4a4a4a';
     const capColor = biome ? biome.pillarCapColor : '#5a5a5a';
+
+    // Получаем тайл текстуры для колонн (тот же что и для стен)
+    const tile = this._getWallTile(biomeId);
+
     for (const p of this.dungeon.pillars) {
       if (!this._isOnScreen(p.x, p.y, p.w, p.h, cam, vw, vh)) continue;
-      ctx.fillRect(p.x, p.y, p.w, p.h);
+
+      // Тело колонны с текстурой
+      if (tile) {
+        ctx.drawImage(tile, 0, 0, 32, 32, p.x, p.y, p.w, p.h);
+      } else {
+        ctx.fillStyle = baseColor;
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+      }
+
+      // Обводка
+      ctx.strokeStyle = '#0e0e0e';
+      ctx.lineWidth = 2;
       ctx.strokeRect(p.x + 0.5, p.y + 0.5, p.w - 1, p.h - 1);
+
       // Светлая верхушка (имитация капители)
       ctx.fillStyle = capColor;
       ctx.fillRect(p.x - 2, p.y, p.w + 4, 4);
-      ctx.fillStyle = biome ? biome.pillarColor : '#4a4a4a';
+      // Нижняя база
+      ctx.fillRect(p.x - 1, p.y + p.h - 3, p.w + 2, 3);
     }
   },
 
   _renderSarcophagi(ctx, cam, vw, vh) {
+    const biome = this.currentBiome;
+    const biomeId = biome ? biome.id : 'crypt';
+    const tile = this._getWallTile(biomeId);
+
     for (const s of this.dungeon.sarcophagi) {
       if (!this._isOnScreen(s.x, s.y, s.w, s.h, cam, vw, vh)) continue;
-      ctx.fillStyle = '#5a4a3a';
-      ctx.fillRect(s.x, s.y, s.w, s.h);
-      ctx.strokeStyle = '#1a1a1a';
+
+      // Тело саркофага с текстурой биома
+      if (tile) {
+        // Повторяем тайл по ширине саркофага
+        const pattern = ctx.createPattern(tile, 'repeat');
+        ctx.fillStyle = pattern;
+        ctx.fillRect(s.x, s.y, s.w, s.h);
+      } else {
+        ctx.fillStyle = '#5a4a3a';
+        ctx.fillRect(s.x, s.y, s.w, s.h);
+      }
+
+      // Обводка
+      ctx.strokeStyle = '#0e0e0e';
       ctx.lineWidth = 2;
       ctx.strokeRect(s.x + 0.5, s.y + 0.5, s.w - 1, s.h - 1);
-      // Крест
-      ctx.fillStyle = '#3a2a1a';
+
+      // Крест / символ по биому
+      ctx.fillStyle = biomeId === 'sky_citadel' ? '#c9a84c' :
+                     biomeId === 'castle' ? '#8a6a2c' :
+                     biomeId === 'elven_forest' ? '#60ff80' :
+                     '#3a2a1a';
+      ctx.globalAlpha = 0.7;
       ctx.fillRect(s.x + s.w / 2 - 2, s.y + 4, 4, s.h - 8);
       ctx.fillRect(s.x + s.w / 2 - 8, s.y + s.h / 2 - 2, 16, 4);
+      ctx.globalAlpha = 1;
     }
   },
 

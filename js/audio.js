@@ -116,34 +116,54 @@ const GameAudio = {
 
   init() {
     this._loadSettings();
-    const activate = () => {
+    // Bug fix: используем единую функцию и удаляем слушатели после создания контекста
+    this._activateHandler = () => {
       if (!this.ctx) {
         this._createContext();
       } else if (this.ctx.state === 'suspended') {
-        this.ctx.resume();
+        this.ctx.resume().catch(() => {});
       }
-      document.removeEventListener('click', activate);
-      document.removeEventListener('touchstart', activate);
-      document.removeEventListener('pointerdown', activate);
+      // После успешного создания контекста убираем слушатели
+      if (this.ctx && this.ctx.state === 'running') {
+        this._removeActivateListeners();
+      }
     };
-    document.addEventListener('click', activate, { once: false });
-    document.addEventListener('touchstart', activate, { once: false });
-    document.addEventListener('pointerdown', activate, { once: false });
+    document.addEventListener('click', this._activateHandler);
+    document.addEventListener('touchstart', this._activateHandler);
+    document.addEventListener('pointerdown', this._activateHandler);
 
     document.addEventListener('visibilitychange', () => {
       if (!this.ctx) return;
-      if (document.hidden) {
-        if (this.ctx.state === 'running') this.ctx.suspend();
-      } else {
-        if (this.ctx.state === 'suspended') this.ctx.resume();
-      }
+      try {
+        if (document.hidden) {
+          if (this.ctx.state === 'running') this.ctx.suspend().catch(() => {});
+        } else {
+          if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+        }
+      } catch (e) { /* безопасно игнорируем */ }
     });
+  },
+
+  /** Bug fix: удалить слушатели активации после создания AudioContext */
+  _removeActivateListeners() {
+    if (this._activateHandler) {
+      document.removeEventListener('click', this._activateHandler);
+      document.removeEventListener('touchstart', this._activateHandler);
+      document.removeEventListener('pointerdown', this._activateHandler);
+      this._activateHandler = null;
+    }
   },
 
 
   _createContext() {
     try {
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+      // Bug fix: на мобильных контекст может создаться в suspended,
+      // явно вызываем resume()
+      if (this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
 
       // Компрессор на мастере (предотвращает клиппинг)
       this.compressor = this.ctx.createDynamicsCompressor();
@@ -174,6 +194,7 @@ const GameAudio = {
 
       this.initialized = true;
     } catch (e) {
+      console.warn('[GameAudio] Не удалось создать AudioContext:', e.message);
       this.initialized = false;
     }
   },
@@ -249,8 +270,13 @@ const GameAudio = {
      ============================================================ */
 
   _canPlay() {
-    return this.initialized && this.ctx && this.ctx.state === 'running'
-      && this._activeOscCount < this._maxOsc;
+    if (!this.initialized || !this.ctx) return false;
+    // Bug fix: если контекст suspended (мобильные), пытаемся возобновить
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
+      return false; // в этом кадре пропускаем, в следующем сыграет
+    }
+    return this.ctx.state === 'running' && this._activeOscCount < this._maxOsc;
   },
 
   _trackOsc(osc) {
@@ -982,6 +1008,10 @@ const GameAudio = {
 
   playMusic(biomeId) {
     if (!this.initialized || !this.ctx) return;
+    // Bug fix: пытаемся возобновить контекст если suspended
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
+    }
     if (this._musicBiome === biomeId && this._musicPlaying) return;
     this.stopMusic();
 
@@ -1052,66 +1082,72 @@ const GameAudio = {
 
 
   _scheduleNote(cfg) {
-    if (!this._musicPlaying) return;
+    if (!this._musicPlaying || !this.ctx) return;
 
     const [minI, maxI] = cfg.noteInterval;
     const delay = minI + Math.random() * (maxI - minI);
 
     this._musicNoteTimer = setTimeout(() => {
-      if (!this._musicPlaying || !this.ctx || this.ctx.state !== 'running') {
-        if (this._musicPlaying) this._scheduleNote(cfg);
+      if (!this._musicPlaying || !this.ctx) return;
+      // Bug fix: если контекст suspended, перепланируем без воспроизведения
+      if (this.ctx.state !== 'running') {
+        this._scheduleNote(cfg);
         return;
       }
 
-      const ctx = this.ctx;
-      const t = ctx.currentTime;
-      const freq = cfg.notes[Math.floor(Math.random() * cfg.notes.length)];
-      const attack = cfg.noteAttack || 0.1;
-      const decay = cfg.noteDecay || 0.3;
-      const duration = attack + decay + 0.4 + Math.random() * 0.3;
+      try {
+        const ctx = this.ctx;
+        const t = ctx.currentTime;
+        const freq = cfg.notes[Math.floor(Math.random() * cfg.notes.length)];
+        const attack = cfg.noteAttack || 0.1;
+        const decay = cfg.noteDecay || 0.3;
+        const duration = attack + decay + 0.4 + Math.random() * 0.3;
 
-      const osc = ctx.createOscillator();
-      osc.type = cfg.noteWave || 'sine';
-      osc.frequency.value = freq;
+        const osc = ctx.createOscillator();
+        osc.type = cfg.noteWave || 'sine';
+        osc.frequency.value = freq;
 
-      // LFO на ноту (для лесных/эльфийских биомов)
-      if (cfg.lfo) {
-        const lfo = ctx.createOscillator();
-        lfo.frequency.value = cfg.lfoRate || 3;
-        const lG = ctx.createGain();
-        lG.gain.value = cfg.lfoDepth || 5;
-        lfo.connect(lG); lG.connect(osc.frequency);
-        lfo.start(t); lfo.stop(t + duration + 0.1);
+        // LFO на ноту (для лесных/эльфийских биомов)
+        if (cfg.lfo) {
+          const lfo = ctx.createOscillator();
+          lfo.frequency.value = cfg.lfoRate || 3;
+          const lG = ctx.createGain();
+          lG.gain.value = cfg.lfoDepth || 5;
+          lfo.connect(lG); lG.connect(osc.frequency);
+          lfo.start(t); lfo.stop(t + duration + 0.1);
+        }
+
+        const noteGain = ctx.createGain();
+        // ADSR
+        noteGain.gain.setValueAtTime(0.001, t);
+        noteGain.gain.linearRampToValueAtTime(0.1, t + attack);
+        noteGain.gain.setValueAtTime(0.08, t + attack + decay * 0.5);
+        noteGain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+
+        // Distortion для огненных/горных биомов
+        if (cfg.distortion) {
+          const dist = this._createDistortion(15);
+          osc.connect(dist); dist.connect(noteGain);
+        } else {
+          osc.connect(noteGain);
+        }
+
+        noteGain.connect(this.musicGain);
+
+        // Реверберация
+        if (cfg.reverb && this.reverbNode) {
+          const revSend = ctx.createGain();
+          revSend.gain.value = 0.15;
+          noteGain.connect(revSend);
+          revSend.connect(this.reverbNode);
+        }
+
+        osc.start(t);
+        osc.stop(t + duration + 0.1);
+        osc.onended = () => { /* cleanup */ };
+      } catch (e) {
+        // Bug fix: не даём ошибкам в воспроизведении ноты сломать цикл
       }
-
-      const noteGain = ctx.createGain();
-      // ADSR
-      noteGain.gain.setValueAtTime(0.001, t);
-      noteGain.gain.linearRampToValueAtTime(0.1, t + attack);
-      noteGain.gain.setValueAtTime(0.08, t + attack + decay * 0.5);
-      noteGain.gain.exponentialRampToValueAtTime(0.001, t + duration);
-
-      // Distortion для огненных/горных биомов
-      if (cfg.distortion) {
-        const dist = this._createDistortion(15);
-        osc.connect(dist); dist.connect(noteGain);
-      } else {
-        osc.connect(noteGain);
-      }
-
-      noteGain.connect(this.musicGain);
-
-      // Реверберация
-      if (cfg.reverb && this.reverbNode) {
-        const revSend = ctx.createGain();
-        revSend.gain.value = 0.15;
-        noteGain.connect(revSend);
-        revSend.connect(this.reverbNode);
-      }
-
-      osc.start(t);
-      osc.stop(t + duration + 0.1);
-      osc.onended = () => { /* cleanup */ };
 
       this._scheduleNote(cfg);
     }, delay * 1000);
@@ -1126,11 +1162,11 @@ const GameAudio = {
       this._musicNoteTimer = null;
     }
 
-    // Останавливаем дрон
+    // Останавливаем дрон с безопасным fade-out
     if (this._musicDrone) {
       try {
         const ctx = this.ctx;
-        if (ctx && this._musicDroneGain) {
+        if (ctx && this._musicDroneGain && ctx.state === 'running') {
           const t = ctx.currentTime;
           this._musicDroneGain.gain.setValueAtTime(
             this._musicDroneGain.gain.value, t
@@ -1140,7 +1176,7 @@ const GameAudio = {
         } else {
           this._musicDrone.stop();
         }
-      } catch (e) { /* already stopped */ }
+      } catch (e) { /* already stopped or InvalidStateError */ }
       this._musicDrone = null;
       this._musicDroneGain = null;
       this._musicDroneFilter = null;
@@ -1155,13 +1191,13 @@ const GameAudio = {
 
   pauseMusic() {
     if (this.ctx && this.ctx.state === 'running') {
-      this.ctx.suspend();
+      this.ctx.suspend().catch(() => {});
     }
   },
 
   resumeMusic() {
     if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume();
+      this.ctx.resume().catch(() => {});
     }
   },
 };
