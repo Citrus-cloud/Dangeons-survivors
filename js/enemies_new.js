@@ -204,13 +204,7 @@ Behaviors.minotaur = function(e, player, dt) {
         if (Player.takeDamage) Player.takeDamage(player, dmg, e);
         else player.hp -= dmg;
         e.hitCooldown = 1.0;
-        // Отбрасывание
-        const kb = e.cfg.knockback || 60;
-        const kn = _norm(pdx, pdy);
-        if (window.GameMap && GameMap.moveWithCollision) {
-          const r = GameMap.moveWithCollision(player.x, player.y, kn.x * kb, kn.y * kb, player.size * 0.35, 0.25);
-          player.x = r.x; player.y = r.y;
-        } else { player.x += kn.x * kb; player.y += kn.y * kb; }
+        // Отбрасывание игрока удалено — свободное скольжение по стенам
       }
       if (e._chargeTimer <= 0) {
         e._chargeState = 'rest';
@@ -573,12 +567,7 @@ Behaviors.young_dragon = function(e, player, dt) {
       const dmg = ts.damage || 18;
       if (Player.takeDamage) Player.takeDamage(player, dmg, e);
       else player.hp -= dmg;
-      const kn = _norm(pdx, pdy);
-      const _kb = ts.knockback || 50;
-      if (window.GameMap && GameMap.moveWithCollision) {
-        const r = GameMap.moveWithCollision(player.x, player.y, kn.x * _kb, kn.y * _kb, player.size * 0.35, 0.25);
-        player.x = r.x; player.y = r.y;
-      } else { player.x += kn.x * _kb; player.y += kn.y * _kb; }
+      // Отбрасывание игрока удалено — свободное скольжение по стенам
     }
     e._tailCd = ts.cooldown || 8.0;
     if (window.Particles) {

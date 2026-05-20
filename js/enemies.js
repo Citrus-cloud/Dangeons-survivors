@@ -167,45 +167,106 @@ function _currentSpeed(e) {
   return s;
 }
 
-/* Двинуть к/от точке (px-shift в этом кадре). */
+/* Двинуть к/от точке (px-shift в этом кадре). С умным ИИ: A* pathfinding. */
 function _moveTowards(e, tx, ty, dt, sign) {
-  const n = _norm(tx - e.x, ty - e.y);
   const s = _currentSpeed(e) * (sign || 1);
+  const rad = Math.max(e.cfg.w, e.cfg.h) * 0.35;
+
+  // Инициализация полей pathfinding на враге
+  if (!e._pathCache) e._pathCache = null;
+  if (!e._pathRecalcTimer) e._pathRecalcTimer = 0;
+  if (!e._pathIndex) e._pathIndex = 0;
+  if (!e._stuckTimer) e._stuckTimer = 0;
+  if (!e._lastPosX) { e._lastPosX = e.x; e._lastPosY = e.y; }
+
+  // Определяем нужен ли pathfinding (нет прямой видимости ИЛИ враг застрял)
+  const usePath = sign > 0; // pathfinding только при движении К цели
+  let needsPathfinding = false;
+
+  if (usePath && window.Pathfinding) {
+    // Проверяем прямую видимость
+    const hasLOS = Pathfinding.hasLineOfSight(e.x, e.y, tx, ty);
+    if (!hasLOS) {
+      needsPathfinding = true;
+    }
+    // Проверяем застревание: если за 0.5 сек прошли менее 5px
+    e._stuckTimer += dt;
+    if (e._stuckTimer >= 0.5) {
+      const movedDist = Math.hypot(e.x - e._lastPosX, e.y - e._lastPosY);
+      if (movedDist < 5 && Math.hypot(tx - e.x, ty - e.y) > 40) {
+        needsPathfinding = true;
+      }
+      e._stuckTimer = 0;
+      e._lastPosX = e.x;
+      e._lastPosY = e.y;
+    }
+  }
+
+  if (needsPathfinding) {
+    // Пересчитываем путь не чаще чем раз в 0.4 сек
+    e._pathRecalcTimer -= dt;
+    if (!e._pathCache || e._pathRecalcTimer <= 0 || e._pathIndex >= (e._pathCache.length || 0)) {
+      e._pathCache = Pathfinding.findPath(e.x, e.y, tx, ty, 300);
+      e._pathIndex = 0;
+      e._pathRecalcTimer = 0.4 + Math.random() * 0.2; // разброс чтобы не все враги считали одновременно
+    }
+
+    // Следуем по пути
+    if (e._pathCache && e._pathCache.length > 0 && e._pathIndex < e._pathCache.length) {
+      const waypoint = e._pathCache[e._pathIndex];
+      const wpDx = waypoint.x - e.x, wpDy = waypoint.y - e.y;
+      const wpDist = Math.hypot(wpDx, wpDy);
+
+      // Если достигли точки — берём следующую
+      if (wpDist < 12) {
+        e._pathIndex++;
+        if (e._pathIndex >= e._pathCache.length) {
+          // Путь закончен — переключаемся на прямое движение
+          e._pathCache = null;
+        }
+      }
+
+      if (e._pathCache && e._pathIndex < e._pathCache.length) {
+        const wp = e._pathCache[e._pathIndex];
+        const wdx = wp.x - e.x, wdy = wp.y - e.y;
+        const wl = Math.hypot(wdx, wdy) || 1;
+        e.vx = (wdx / wl) * s;
+        e.vy = (wdy / wl) * s;
+        let dx = e.vx * dt;
+        let dy = e.vy * dt;
+        if (window.GameMap && GameMap.dungeon) {
+          const res = GameMap.moveWithCollision(e.x, e.y, dx, dy, rad, 0.15);
+          e.x = res.x;
+          e.y = res.y;
+        } else {
+          e.x += dx;
+          e.y += dy;
+        }
+        // Границы карты
+        const m = Math.max(e.cfg.w, e.cfg.h) * 0.5;
+        const mapW = (window.GameMap ? GameMap.mapW : CONFIG.MAP.W);
+        const mapH = (window.GameMap ? GameMap.mapH : CONFIG.MAP.H);
+        e.x = Utils.clamp(e.x, m, mapW - m);
+        e.y = Utils.clamp(e.y, m, mapH - m);
+        return;
+      }
+    }
+  } else {
+    // Прямая видимость есть — сбрасываем pathfinding
+    e._pathCache = null;
+    e._pathIndex = 0;
+  }
+
+  // Прямое движение к цели (обычный режим)
+  const n = _norm(tx - e.x, ty - e.y);
   e.vx = n.x * s;
   e.vy = n.y * s;
   let dx = e.vx * dt;
   let dy = e.vy * dt;
-  const rad = Math.max(e.cfg.w, e.cfg.h) * 0.35;
-  // Движение с учётом стен/колонн
   if (window.GameMap && GameMap.dungeon) {
     const res = GameMap.moveWithCollision(e.x, e.y, dx, dy, rad, 0.15);
-    const movedX = Math.abs(res.x - e.x);
-    const movedY = Math.abs(res.y - e.y);
-    const wantedMove = Math.abs(dx) + Math.abs(dy);
-    const actualMove = movedX + movedY;
-
-    // Умный обход: если застряли (прошли менее 20% желаемого), пробуем обойти
-    if (wantedMove > 0.5 && actualMove < wantedMove * 0.2) {
-      // Выбираем перпендикулярное направление для обхода
-      const perpX = -n.y, perpY = n.x;
-      if (!e._pathTimer) e._pathTimer = 0;
-      if (!e._pathSign) e._pathSign = (Math.random() < 0.5) ? 1 : -1;
-      e._pathTimer += dt;
-      // Каждые 0.8 сек меняем направление обхода если не помогает
-      if (e._pathTimer > 0.8) {
-        e._pathSign = -e._pathSign;
-        e._pathTimer = 0;
-      }
-      const slideX = perpX * Math.abs(s) * dt * e._pathSign;
-      const slideY = perpY * Math.abs(s) * dt * e._pathSign;
-      const res2 = GameMap.moveWithCollision(e.x, e.y, slideX, slideY, rad, 0.15);
-      e.x = res2.x;
-      e.y = res2.y;
-    } else {
-      e.x = res.x;
-      e.y = res.y;
-      e._pathTimer = 0;
-    }
+    e.x = res.x;
+    e.y = res.y;
   } else {
     e.x += dx;
     e.y += dy;

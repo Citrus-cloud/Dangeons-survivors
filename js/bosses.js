@@ -985,15 +985,7 @@ const Bosses = {
       if (dist <= atk.darkWave.radius) {
         if (Player.takeDamage) Player.takeDamage(player, atk.darkWave.damage, boss);
         else player.hp -= atk.darkWave.damage;
-        if (atk.darkWave.knockback) {
-          const nx = dx / dist, ny = dy / dist;
-          const kbDx = nx * atk.darkWave.knockback;
-          const kbDy = ny * atk.darkWave.knockback;
-          if (window.GameMap && GameMap.moveWithCollision) {
-            const r = GameMap.moveWithCollision(player.x, player.y, kbDx, kbDy, player.size * 0.35, 0.25);
-            player.x = r.x; player.y = r.y;
-          } else { player.x += kbDx; player.y += kbDy; }
-        }
+        // Отбрасывание игрока удалено — свободное скольжение по стенам
       }
       if (window.Particles) Particles.ring(boss.x, boss.y, atk.darkWave.radius, 0.4, 'rgba(180, 0, 0, 0.85)', 4);
     }
@@ -1095,14 +1087,7 @@ const Bosses = {
       if (dist <= atk.tailSweep.radius) {
         if (Player.takeDamage) Player.takeDamage(player, atk.tailSweep.damage, boss);
         else player.hp -= atk.tailSweep.damage;
-        // Отбрасывание
-        const nx = dx / dist, ny = dy / dist;
-        const kbDx = nx * atk.tailSweep.knockback;
-        const kbDy = ny * atk.tailSweep.knockback;
-        if (window.GameMap && GameMap.moveWithCollision) {
-          const r = GameMap.moveWithCollision(player.x, player.y, kbDx, kbDy, player.size * 0.35, 0.25);
-          player.x = r.x; player.y = r.y;
-        } else { player.x += kbDx; player.y += kbDy; }
+        // Отбрасывание игрока удалено — свободное скольжение по стенам
       }
       if (window.Particles) Particles.ring(boss.x, boss.y, atk.tailSweep.radius, 0.3, 'rgba(200, 230, 255, 0.8)', 3);
     }

@@ -279,13 +279,7 @@ Behaviors.air_elem = function(e, player, dt) {
       const dmg = e.cfg.gustDamage || 10;
       if (Player.takeDamage) Player.takeDamage(player, dmg, e);
       else player.hp -= dmg;
-      // Отбрасывание
-      const kn = _norm(dx, dy);
-      const kb = e.cfg.gustKnockback || 60;
-      if (window.GameMap && GameMap.moveWithCollision) {
-        const r = GameMap.moveWithCollision(player.x, player.y, kn.x * kb, kn.y * kb, player.size * 0.35, 0.25);
-        player.x = r.x; player.y = r.y;
-      } else { player.x += kn.x * kb; player.y += kn.y * kb; }
+      // Отбрасывание игрока удалено — свободное скольжение по стенам
     }
     e.specialCooldown = e.cfg.gustCooldown || 3.0;
     e.attackPunch = 0.1;
@@ -518,12 +512,7 @@ Behaviors.adult_dragon = function(e, player, dt) {
       const dmg = ts.damage || 25;
       if (Player.takeDamage) Player.takeDamage(player, dmg, e);
       else player.hp -= dmg;
-      const kn = _norm(pdx, pdy);
-      const _kb2 = ts.knockback || 60;
-      if (window.GameMap && GameMap.moveWithCollision) {
-        const r = GameMap.moveWithCollision(player.x, player.y, kn.x * _kb2, kn.y * _kb2, player.size * 0.35, 0.25);
-        player.x = r.x; player.y = r.y;
-      } else { player.x += kn.x * _kb2; player.y += kn.y * _kb2; }
+      // Отбрасывание игрока удалено — свободное скольжение по стенам
     }
     e._tailCd = ts.cooldown || 7.0;
     if (window.Particles) {
