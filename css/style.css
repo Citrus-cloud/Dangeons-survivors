@@ -1,3 +1,32 @@
+/* === TABLE OF CONTENTS ===
+   1. Variables & Reset
+   2. Title Screen
+   3. Loading Screen
+   4. Game Canvas & HUD
+   5. Slot Columns (Weapons & Abilities)
+   6. Dynamic Joystick
+   7. Overlays (common base)
+   8. Buttons (fantasy styled)
+   9. Level Up Cards
+  10. Chest & D20 / Evolution
+  11. Camp / Tavern
+  12. Talent Grid
+  13. Guild
+  14. Run Results
+  15. Campaign
+  16. Trap Warning
+  17. Settings
+  18. Gold HUD (in-run)
+  19. Responsive / Mobile
+  20. Class Select
+  21. Bestiary
+  22. Codex (Book)
+  23. Run Stats
+  24. Pause Exit Button
+  25. Map Select Screen
+  26. Language Switcher
+   === END TOC === */
+
 /* ============================================================
    Dungeon Survivors: D20 — Final UI/UX (Step 20)
    Dark Fantasy theme: warm blacks, gold accents, parchment text

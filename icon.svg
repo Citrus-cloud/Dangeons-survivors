@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#1a1210"/>
+  <polygon points="256,60 452,370 60,370" fill="none" stroke="#c9a84c" stroke-width="12"/>
+  <polygon points="256,120 400,340 112,340" fill="#2a1f14" stroke="#c9a84c" stroke-width="6"/>
+  <polygon points="256,160 360,310 152,310" fill="none" stroke="rgba(201,168,76,0.3)" stroke-width="4"/>
+  <text x="256" y="290" text-anchor="middle" font-family="'Courier New', monospace" font-size="120" font-weight="bold" fill="#c9a84c">20</text>
+</svg>
