@@ -1990,9 +1990,11 @@ const GameMap = {
   },
 
   /**
-   * Двинуть сущность по (dx, dy) с раздельной проверкой осей + субшаговое скольжение.
-   * Улучшенная система: при блокировке оси пробуем продвинуться частично (binary search),
-   * что даёт плавное скольжение вдоль стен без застревания в углах.
+   * Двинуть сущность по (dx, dy) с раздельной проверкой осей.
+   * Система скольжения: движение разделено на оси X и Y.
+   * Если полное перемещение по оси невозможно, бинарный поиск находит
+   * максимально допустимое расстояние. Это обеспечивает плавное скольжение
+   * вдоль стен без застревания.
    * Возвращает { x, y, blockedX, blockedY }.
    */
   moveWithCollision(x, y, dx, dy, rad, shrinkFactor) {
@@ -2001,17 +2003,17 @@ const GameMap = {
     let nx = x, ny = y;
     let blockedX = false, blockedY = false;
 
-    // --- Ось X с субшагами ---
+    // --- Ось X ---
     if (dx !== 0) {
       const tryX = x + dx;
       if (this.rectIsWalkable(tryX, y, rad, sf)) {
         nx = tryX;
       } else {
         blockedX = true;
-        // Бинарный поиск максимального продвижения по X
+        // Бинарный поиск максимального продвижения по X (8 итераций, порог 0.01px)
         let lo = 0, hi = Math.abs(dx);
         const sign = dx > 0 ? 1 : -1;
-        for (let step = 0; step < 4; step++) {
+        for (let step = 0; step < 8; step++) {
           const mid = (lo + hi) * 0.5;
           if (this.rectIsWalkable(x + sign * mid, y, rad, sf)) {
             lo = mid;
@@ -2019,14 +2021,13 @@ const GameMap = {
             hi = mid;
           }
         }
-        if (lo > 0.5) {
+        if (lo > 0.01) {
           nx = x + sign * lo;
-          blockedX = false;
         }
       }
     }
 
-    // --- Ось Y с субшагами (используем новую X-позицию) ---
+    // --- Ось Y (используем новую X-позицию для корректного скольжения) ---
     if (dy !== 0) {
       const tryY = y + dy;
       if (this.rectIsWalkable(nx, tryY, rad, sf)) {
@@ -2036,7 +2037,7 @@ const GameMap = {
         // Бинарный поиск максимального продвижения по Y
         let lo = 0, hi = Math.abs(dy);
         const sign = dy > 0 ? 1 : -1;
-        for (let step = 0; step < 4; step++) {
+        for (let step = 0; step < 8; step++) {
           const mid = (lo + hi) * 0.5;
           if (this.rectIsWalkable(nx, y + sign * mid, rad, sf)) {
             lo = mid;
@@ -2044,21 +2045,46 @@ const GameMap = {
             hi = mid;
           }
         }
-        if (lo > 0.5) {
+        if (lo > 0.01) {
           ny = y + sign * lo;
-          blockedY = false;
         }
       }
     }
 
-    // --- Если обе оси заблокированы, пробуем каждую отдельно от исходной позиции ---
+    // --- Если ось Y была заблокирована, повторим X с новой Y-позицией ---
+    // Это решает проблему углов: если сначала X не прошёл из-за старой Y,
+    // теперь с обновлённой Y может пройти.
+    if (blockedX && nx === x && dy !== 0) {
+      const tryX2 = x + dx;
+      if (this.rectIsWalkable(tryX2, ny, rad, sf)) {
+        nx = tryX2;
+        blockedX = false;
+      } else {
+        let lo = 0, hi = Math.abs(dx);
+        const sign = dx > 0 ? 1 : -1;
+        for (let step = 0; step < 8; step++) {
+          const mid = (lo + hi) * 0.5;
+          if (this.rectIsWalkable(x + sign * mid, ny, rad, sf)) {
+            lo = mid;
+          } else {
+            hi = mid;
+          }
+        }
+        if (lo > 0.01) {
+          nx = x + sign * lo;
+          blockedX = false;
+        }
+      }
+    }
+
+    // --- Финальная проверка: если обе оси заблокированы, пробуем каждую отдельно ---
     if (blockedX && blockedY) {
-      // Пробуем только X от исходной Y
+      // Пробуем полное X от исходной позиции
       if (dx !== 0 && this.rectIsWalkable(x + dx, y, rad, sf)) {
         nx = x + dx;
         blockedX = false;
       }
-      // Пробуем только Y от исходной X
+      // Пробуем полное Y от исходной позиции
       if (dy !== 0 && this.rectIsWalkable(x, y + dy, rad, sf)) {
         ny = y + dy;
         blockedY = false;
