@@ -120,7 +120,7 @@ const Bosses = {
     const boss = this._createBoss(bossId, player, 'guardian', 0);
     if (boss) {
       this.guardian = boss;
-      this._announcesBoss(boss.cfg.name + ' (Страж)');
+      this._announcesBoss(boss.cfg.name + ' (Guardian)');
     }
   },
 
@@ -309,7 +309,7 @@ const Bosses = {
               color: '#ff0000', speedMin: 80, speedMax: 200,
               lifeMin: 0.4, lifeMax: 0.8, sizeMin: 3, sizeMax: 6,
             });
-            Particles.text(boss.x, boss.y - 40, 'ФАЗА III — ЯРОСТЬ!', 2.0, '#ff0000', 18);
+            Particles.text(boss.x, boss.y - 40, 'PHASE III — RAGE!', 2.0, '#ff0000', 18);
           }
         }
       }
@@ -385,7 +385,7 @@ const Bosses = {
     const deathColor = cfg.color || '#fff';
     if (window.Particles) {
       Particles.bossDust(boss.x, boss.y, deathColor);
-      Particles.text(boss.x, boss.y - 30, 'БОСС ПОВЕРЖЕН!', 2.0, '#ffd700', 20);
+      Particles.text(boss.x, boss.y - 30, 'BOSS DEFEATED!', 2.0, '#ffd700', 20);
     }
 
     this.screenShake = 0.3;
@@ -1266,7 +1266,7 @@ const Bosses = {
       }
       if (window.Particles) {
         Particles.ring(boss.x, boss.y, atk.commandAttack.radius, 0.4, 'rgba(255, 50, 50, 0.7)', 3);
-        Particles.text(boss.x, boss.y - 30, 'АТАКА!', 1.5, '#ff4444', 14);
+        Particles.text(boss.x, boss.y - 30, 'ATTACK!', 1.5, '#ff4444', 14);
       }
     }
   },
@@ -1563,7 +1563,7 @@ const Bosses = {
     ctx.font = 'bold 12px ui-monospace, monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const roleLabel = boss.role === 'guardian' ? ' [Страж]' : '';
+    const roleLabel = boss.role === 'guardian' ? ' [Guardian]' : '';
     ctx.fillText(
       `${cfg.name}${roleLabel}  ${Math.ceil(boss.hp)}/${boss.maxHp}`,
       viewW / 2, barY + barH / 2
@@ -1580,7 +1580,7 @@ const Bosses = {
     ctx.font = 'bold 28px ui-monospace, monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('БОСС ПОВЕРЖЕН!', viewW / 2, viewH / 3);
+    ctx.fillText('BOSS DEFEATED!', viewW / 2, viewH / 3);
     ctx.globalAlpha = 1;
     ctx.restore();
   },
@@ -1694,7 +1694,7 @@ const Bosses = {
         }
         if (window.Particles) {
           Particles.ring(boss.x, boss.y, atk.roar.radius, 0.5, 'rgba(128, 0, 255, 0.8)', 4);
-          Particles.text(boss.x, boss.y - 50, 'КРИК!', 1.0, '#a040ff', 16);
+          Particles.text(boss.x, boss.y - 50, 'SCREAM!', 1.0, '#a040ff', 16);
         }
       }
     }

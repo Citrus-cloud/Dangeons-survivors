@@ -752,7 +752,7 @@ const UI = {
     const ov = this._campOverlay;
     ov.querySelector('#campGoldVal').textContent = d.gold;
     ov.querySelector('#campRepVal').textContent = d.reputation;
-    ov.querySelector('#campGuildLvl').textContent = `(Ур. ${MetaProgress.getGuildLevel()})`;
+    ov.querySelector('#campGuildLvl').textContent = `(${t('level_short')} ${MetaProgress.getGuildLevel()})`;
     ov.querySelector('#campTotalRuns').textContent = d.totalRuns;
     ov.querySelector('#campTotalKills').textContent = d.totalKills;
     ov.querySelector('#campBestTime').textContent = Utils.formatTime(d.bestTime);
@@ -804,14 +804,14 @@ const UI = {
 
     // Описания биомов
     const BIOME_DESCRIPTIONS = {
-      crypt: 'Тёмные коридоры, полные нежити.',
-      ice_caves: 'Замёрзшие пещеры, где спят древние твари.',
-      fire_mines: 'Огненные шахты, пылающие лавой.',
-      forest_ruins: 'Заросшие руины, пропитанные магией.',
-      castle: 'Мрачный замок с жуткими обитателями.',
-      sky_citadel: 'Небесный город за облаками.',
-      elven_forest: 'Древний лес, хранимый рунами.',
-      mountain_keep: 'Суровые горные крепости и шахты.',
+      crypt: t('biome_desc_crypt'),
+      ice_caves: t('biome_desc_ice_caves'),
+      fire_mines: t('biome_desc_fire_mines'),
+      forest_ruins: t('biome_desc_forest_ruins'),
+      castle: t('biome_desc_castle'),
+      sky_citadel: t('biome_desc_sky_citadel'),
+      elven_forest: t('biome_desc_elven_forest'),
+      mountain_keep: t('biome_desc_mountain_keep'),
     };
 
     // Сложность биомов (1–3 черепа)
@@ -1069,7 +1069,7 @@ const UI = {
     const nextRep = MetaProgress.getNextLevelRep();
     const rankName = MetaProgress.getGuildRankName();
 
-    ov.querySelector('#guildRankName').textContent = rankName + ' (Ур. ' + lvl + ')';
+    ov.querySelector('#guildRankName').textContent = rankName + ' (' + t('level_short') + ' ' + lvl + ')';
 
     // Прогресс-бар
     let pct = 0;
@@ -1134,13 +1134,13 @@ const UI = {
     const totalEnemyTypes = Object.keys(window.ENEMY_TYPES || {}).length;
 
     const stats = [
-      { label: 'Всего убито врагов', value: d.totalKills || 0 },
-      { label: 'Всего убито боссов', value: d.totalBossKills || 0 },
-      { label: 'Открыто врагов в бестиарии', value: `${bestiaryStats.unlocked} / ${totalEnemyTypes}` },
-      { label: 'Всего забегов', value: d.totalRuns || 0 },
-      { label: 'Лучшее время', value: Utils.formatTime(d.bestTime || 0) },
-      { label: 'Лучший результат (убийств)', value: d.bestKills || 0 },
-      { label: 'Текущая репутация', value: d.reputation || 0 },
+      { label: t('guild_stat_total_kills'), value: d.totalKills || 0 },
+      { label: t('guild_stat_total_bosses'), value: d.totalBossKills || 0 },
+      { label: t('guild_stat_bestiary'), value: `${bestiaryStats.unlocked} / ${totalEnemyTypes}` },
+      { label: t('guild_stat_runs'), value: d.totalRuns || 0 },
+      { label: t('guild_stat_best_time'), value: Utils.formatTime(d.bestTime || 0) },
+      { label: t('guild_stat_best_kills'), value: d.bestKills || 0 },
+      { label: t('guild_stat_reputation'), value: d.reputation || 0 },
     ];
 
     let html = '<div class="guild-stats-list">';
@@ -1157,7 +1157,7 @@ const UI = {
   /** Вкладка «Задания» — ежедневные и еженедельные задания. */
   _renderGuildQuests(container) {
     if (!window.MetaProgress || !MetaProgress.data) {
-      container.innerHTML = '<div class="guild-quests-empty">Загрузка...</div>';
+      container.innerHTML = '<div class="guild-quests-empty">' + t('loading') + '</div>';
       return;
     }
 
@@ -1168,9 +1168,9 @@ const UI = {
     let html = '<div class="guild-quests-section">';
 
     // Дневные
-    html += '<div class="guild-quests-group-title">📋 Ежедневные задания</div>';
+    html += '<div class="guild-quests-group-title">' + t('guild_daily_title') + '</div>';
     if (quests.daily.length === 0) {
-      html += '<div class="guild-quest-empty">Нет активных заданий</div>';
+      html += '<div class="guild-quest-empty">' + t('guild_no_quests') + '</div>';
     } else {
       for (const q of quests.daily) {
         html += this._renderQuestRow(q);
@@ -1178,9 +1178,9 @@ const UI = {
     }
 
     // Недельные
-    html += '<div class="guild-quests-group-title" style="margin-top:12px;">📜 Еженедельные задания</div>';
+    html += '<div class="guild-quests-group-title" style="margin-top:12px;">' + t('guild_weekly_title') + '</div>';
     if (quests.weekly.length === 0) {
-      html += '<div class="guild-quest-empty">Нет активных заданий</div>';
+      html += '<div class="guild-quest-empty">' + t('guild_no_quests') + '</div>';
     } else {
       for (const q of quests.weekly) {
         html += this._renderQuestRow(q);
@@ -1206,7 +1206,7 @@ const UI = {
     const pct = Math.min(100, Math.round((q.progress / q.target) * 100));
     let statusHtml = '';
     if (q.claimed) {
-      statusHtml = '<span class="guild-quest-done">✓ Выполнено</span>';
+      statusHtml = '<span class="guild-quest-done">' + t('guild_quest_done') + '</span>';
     } else if (q.completed) {
       statusHtml = `<button class="btn guild-quest-claim-btn" data-quest-id="${q.id}">Забрать (+${q.repReward} реп.)</button>`;
     } else {
@@ -1433,7 +1433,7 @@ const UI = {
     let text = '';
 
     if (obj.completed) {
-      text = '✓ Цель выполнена!';
+      text = t('campaign_objective_done');
       this._objectiveEl.className = 'campaign-objective completed';
     } else {
       this._objectiveEl.className = 'campaign-objective';
@@ -1475,7 +1475,7 @@ const UI = {
         const room = puzzle.room;
         if (player.x >= room.x && player.x <= room.x + room.w &&
             player.y >= room.y && player.y <= room.y + room.h) {
-          this._renderPuzzleProgress(ctx, viewW, viewH, puzzle, 'Руны активации');
+          this._renderPuzzleProgress(ctx, viewW, viewH, puzzle, 'Rune Activation');
           break;
         }
       }
@@ -1488,7 +1488,7 @@ const UI = {
         const room = puzzle.room;
         if (player.x >= room.x && player.x <= room.x + room.w &&
             player.y >= room.y && player.y <= room.y + room.h) {
-          this._renderPuzzleProgress(ctx, viewW, viewH, puzzle, 'Шифр');
+          this._renderPuzzleProgress(ctx, viewW, viewH, puzzle, 'Cipher');
           break;
         }
       }
@@ -1556,7 +1556,7 @@ const UI = {
       ctx.font = 'bold 12px ui-monospace, monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillText('Неверно! Сброс...', viewW / 2, by + barH + 12);
+      ctx.fillText('Wrong! Resetting...', viewW / 2, by + barH + 12);
     }
   },
 

@@ -517,7 +517,7 @@ class Weapon {
    ============================================================ */
 class SwordWeapon extends Weapon {
   constructor() {
-    super({ id: 'sword', name: 'Меч', type: 'melee', baseCooldown: 0.9, baseDamage: 18, icon: '⚔', desc: 'Удар по ближайшему врагу в радиусе 60 px.' });
+    super({ id: 'sword', name: t('weapon_sword'), type: 'melee', baseCooldown: 0.9, baseDamage: 18, icon: '⚔', desc: t('weapon_sword_desc') });
     this.radius = 60; this.arc = Math.PI * 0.9; this.swingTime = 0.18;
     this.swing = { active: false, t: 0, angle: 0 };
   }
@@ -564,7 +564,7 @@ class SwordWeapon extends Weapon {
    ============================================================ */
 class BowWeapon extends Weapon {
   constructor() {
-    super({ id: 'bow', name: 'Лук', type: 'ranged', baseCooldown: 1.2, baseDamage: 14, icon: '🏹', desc: 'Стреляет в ближайшего врага.' });
+    super({ id: 'bow', name: t('weapon_bow'), type: 'ranged', baseCooldown: 1.2, baseDamage: 14, icon: '🏹', desc: t('weapon_bow_desc') });
     this.arrowSpeed = 520; this.arrowLife = 1.6; this.range = 520;
   }
   doAttack(player, enemies, projectiles) {
@@ -587,7 +587,7 @@ class BowWeapon extends Weapon {
    ============================================================ */
 class DaggerWeapon extends Weapon {
   constructor() {
-    super({ id: 'daggers', name: 'Кинжалы', type: 'multi', baseCooldown: 1.5, baseDamage: 7, icon: '🗡', desc: 'Бросок 3 кинжалов веером.' });
+    super({ id: 'daggers', name: t('weapon_daggers'), type: 'multi', baseCooldown: 1.5, baseDamage: 7, icon: '🗡', desc: t('weapon_daggers_desc') });
     this.speed = 480; this.life = 1.2; this.spread = (20 * Math.PI) / 180; this.range = 600;
   }
   doAttack(player, enemies, projectiles) {
@@ -627,7 +627,7 @@ class DaggerWeapon extends Weapon {
    ============================================================ */
 class FireballWeapon extends Weapon {
   constructor() {
-    super({ id: 'fireball', name: 'Огненный шар', type: 'aoe', baseCooldown: 2.5, baseDamage: 22, icon: '🔥', desc: 'Снаряд с AoE-взрывом 80 px.' });
+    super({ id: 'fireball', name: t('weapon_fireball'), type: 'aoe', baseCooldown: 2.5, baseDamage: 22, icon: '🔥', desc: t('weapon_fireball_desc') });
     this.flightTime = 0.6; this.explodeRadius = 80; this.range = 700;
   }
   doAttack(player, enemies, projectiles) {
@@ -657,7 +657,7 @@ class FireballWeapon extends Weapon {
    ============================================================ */
 class AxeWeapon extends Weapon {
   constructor() {
-    super({ id: 'axe', name: 'Секира', type: 'melee', baseCooldown: 1.0, baseDamage: 20, icon: '🪓', desc: 'Широкий взмах перед героем (конус 140°).' });
+    super({ id: 'axe', name: t('weapon_axe'), type: 'melee', baseCooldown: 1.0, baseDamage: 20, icon: '🪓', desc: t('weapon_axe_desc') });
     this.radius = 65; this.arc = (140 * Math.PI) / 180; this.swingTime = 0.20;
     this.swing = { active: false, t: 0, angle: 0 };
   }
@@ -704,7 +704,7 @@ class AxeWeapon extends Weapon {
    ============================================================ */
 class SpearWeapon extends Weapon {
   constructor() {
-    super({ id: 'spear', name: 'Копьё', type: 'melee', baseCooldown: 0.9, baseDamage: 18, icon: '🔱', desc: 'Удар вперёд по прямой (100 px).' });
+    super({ id: 'spear', name: t('weapon_spear'), type: 'melee', baseCooldown: 0.9, baseDamage: 18, icon: '🔱', desc: t('weapon_spear_desc') });
     this.range = 100; this.width = 20; this.thrustTime = 0.15;
     this.thrust = { active: false, t: 0, angle: 0 };
   }
@@ -752,7 +752,7 @@ class SpearWeapon extends Weapon {
    ============================================================ */
 class HammerWeapon extends Weapon {
   constructor() {
-    super({ id: 'hammer', name: 'Молот', type: 'melee', baseCooldown: 1.5, baseDamage: 30, icon: '🔨', desc: 'Удар по земле — AoE вокруг героя (70 px).' });
+    super({ id: 'hammer', name: t('weapon_hammer'), type: 'melee', baseCooldown: 1.5, baseDamage: 30, icon: '🔨', desc: t('weapon_hammer_desc') });
     this.radius = 70; this.slamTime = 0.25;
     this.slam = { active: false, t: 0 };
   }
@@ -791,7 +791,7 @@ class HammerWeapon extends Weapon {
    ============================================================ */
 class WhipWeapon extends Weapon {
   constructor() {
-    super({ id: 'whip', name: 'Кнут', type: 'melee', baseCooldown: 0.7, baseDamage: 14, icon: '〰', desc: 'Атака по дальнему врагу в радиусе 120 px.' });
+    super({ id: 'whip', name: t('weapon_whip'), type: 'melee', baseCooldown: 0.7, baseDamage: 14, icon: '〰', desc: t('weapon_whip_desc') });
     this.range = 120; this.whipTime = 0.2;
     this.whipAnim = { active: false, t: 0, tx: 0, ty: 0 };
   }
@@ -835,7 +835,7 @@ class WhipWeapon extends Weapon {
    ============================================================ */
 class CrossbowWeapon extends Weapon {
   constructor() {
-    super({ id: 'crossbow', name: 'Арбалет', type: 'ranged', baseCooldown: 1.8, baseDamage: 28, icon: '⊕', desc: 'Пробивающий выстрел сквозь врагов.' });
+    super({ id: 'crossbow', name: t('weapon_crossbow'), type: 'ranged', baseCooldown: 1.8, baseDamage: 28, icon: '⊕', desc: t('weapon_crossbow_desc') });
     this.speed = 450; this.life = 2.0; this.range = 600;
   }
   doAttack(player, enemies, projectiles) {
@@ -858,7 +858,7 @@ class CrossbowWeapon extends Weapon {
    ============================================================ */
 class ThrowingAxesWeapon extends Weapon {
   constructor() {
-    super({ id: 'throwing_axes', name: 'Мет. топоры', type: 'ranged', baseCooldown: 1.0, baseDamage: 10, icon: '⚒', desc: '2 вращающихся топора веером.' });
+    super({ id: 'throwing_axes', name: t('weapon_throwing_axes'), type: 'ranged', baseCooldown: 1.0, baseDamage: 10, icon: '⚒', desc: t('weapon_throwing_axes_desc') });
     this.speed = 400; this.life = 1.4; this.range = 500;
     this.spreadAngle = (10 * Math.PI) / 180;
   }
@@ -890,7 +890,7 @@ class ThrowingAxesWeapon extends Weapon {
    ============================================================ */
 class DartsWeapon extends Weapon {
   constructor() {
-    super({ id: 'darts', name: 'Дротики', type: 'ranged', baseCooldown: 0.6, baseDamage: 6, icon: '↗', desc: 'Очередь из 3 быстрых дротиков.' });
+    super({ id: 'darts', name: t('weapon_darts'), type: 'ranged', baseCooldown: 0.6, baseDamage: 6, icon: '↗', desc: t('weapon_darts_desc') });
     this.speed = 550; this.life = 1.2; this.range = 500;
     this.burstCount = 3; this.burstInterval = 0.15;
     this._burstLeft = 0; this._burstTimer = 0; this._lastDir = { x: 1, y: 0 };
@@ -934,7 +934,7 @@ class DartsWeapon extends Weapon {
    ============================================================ */
 class SlingWeapon extends Weapon {
   constructor() {
-    super({ id: 'sling', name: 'Праща', type: 'ranged', baseCooldown: 0.9, baseDamage: 14, icon: '●', desc: 'Камень по дуге с AoE 30 px.' });
+    super({ id: 'sling', name: t('weapon_sling'), type: 'ranged', baseCooldown: 0.9, baseDamage: 14, icon: '●', desc: t('weapon_sling_desc') });
     this.speed = 350; this.range = 500; this.aoeRadius = 30;
   }
   doAttack(player, enemies, projectiles) {
@@ -960,7 +960,7 @@ class SlingWeapon extends Weapon {
    ============================================================ */
 class IceArrowWeapon extends Weapon {
   constructor() {
-    super({ id: 'ice_arrow', name: 'Ледяная стрела', type: 'magic', baseCooldown: 1.3, baseDamage: 13, icon: '❄', desc: 'Снаряд, замедляющий врага на 40% (2 сек).' });
+    super({ id: 'ice_arrow', name: t('weapon_ice_arrow'), type: 'magic', baseCooldown: 1.3, baseDamage: 13, icon: '❄', desc: t('weapon_ice_arrow_desc') });
     this.speed = 420; this.life = 1.6; this.range = 500;
   }
   doAttack(player, enemies, projectiles) {
@@ -983,7 +983,7 @@ class IceArrowWeapon extends Weapon {
    ============================================================ */
 class ChainLightningWeapon extends Weapon {
   constructor() {
-    super({ id: 'chain_lightning', name: 'Цеп. молния', type: 'magic', baseCooldown: 1.6, baseDamage: 16, icon: '⚡', desc: 'Бьёт врага, перескакивая на 2 соседних.' });
+    super({ id: 'chain_lightning', name: t('weapon_chain_lightning'), type: 'magic', baseCooldown: 1.6, baseDamage: 16, icon: '⚡', desc: t('weapon_chain_lightning_desc') });
     this.range = 300; this.chainRadius = 70; this.chains = 2;
     this.lightningAnim = { active: false, t: 0, points: [] };
   }
@@ -1047,7 +1047,7 @@ class ChainLightningWeapon extends Weapon {
    ============================================================ */
 class PoisonCloudWeapon extends Weapon {
   constructor() {
-    super({ id: 'poison_cloud', name: 'Яд. облако', type: 'magic', baseCooldown: 2.0, baseDamage: 8, icon: '☠', desc: 'Облако яда (радиус 60, 3 сек, 8 урон/с).' });
+    super({ id: 'poison_cloud', name: t('weapon_poison_cloud'), type: 'magic', baseCooldown: 2.0, baseDamage: 8, icon: '☠', desc: t('weapon_poison_cloud_desc') });
     this.range = 300; this.cloudRadius = 60; this.cloudLife = 3.0;
     this._clouds = []; // Активные облака { x, y, life, dps }
   }
@@ -1107,7 +1107,7 @@ class PoisonCloudWeapon extends Weapon {
    ============================================================ */
 class SpellbookWeapon extends Weapon {
   constructor() {
-    super({ id: 'spellbook', name: 'Книга закл.', type: 'magic', baseCooldown: 0.8, baseDamage: 10, icon: '📖', desc: '2 случайных снаряда в случайных направлениях.' });
+    super({ id: 'spellbook', name: t('weapon_spellbook'), type: 'magic', baseCooldown: 0.8, baseDamage: 10, icon: '📖', desc: t('weapon_spellbook_desc') });
     this.speed = 380; this.life = 1.2;
   }
   doAttack(player, _enemies, projectiles) {
@@ -1133,7 +1133,7 @@ class SpellbookWeapon extends Weapon {
    ============================================================ */
 class FirestormWeapon extends Weapon {
   constructor() {
-    super({ id: 'firestorm', name: 'Огн. шторм', type: 'aoe', baseCooldown: 2.5, baseDamage: 18, icon: '🌋', desc: '4 огненных столба вокруг героя (120 px).' });
+    super({ id: 'firestorm', name: t('weapon_firestorm'), type: 'aoe', baseCooldown: 2.5, baseDamage: 18, icon: '🌋', desc: t('weapon_firestorm_desc') });
     this.spawnRadius = 120; this.aoeRadius = 40; this.pillarLife = 0.6;
     this._pillars = []; // { x, y, life, maxLife, damage, radius }
   }
@@ -1199,7 +1199,7 @@ class FirestormWeapon extends Weapon {
    ============================================================ */
 class HolyAuraWeapon extends Weapon {
   constructor() {
-    super({ id: 'holy_aura', name: 'Св. аура', type: 'aoe', baseCooldown: 0, baseDamage: 4, icon: '✡', desc: 'Постоянное свечение (50 px), урон 4/с (нежити 10/с).' });
+    super({ id: 'holy_aura', name: t('weapon_holy_aura'), type: 'aoe', baseCooldown: 0, baseDamage: 4, icon: '✡', desc: t('weapon_holy_aura_desc') });
     this.radius = 50;
     this.undeadDps = 10;
     this._tickAcc = 0;
@@ -1243,7 +1243,7 @@ class HolyAuraWeapon extends Weapon {
    ============================================================ */
 class SpikeRingWeapon extends Weapon {
   constructor() {
-    super({ id: 'spike_ring', name: 'Кольцо шипов', type: 'aoe', baseCooldown: 0, baseDamage: 14, icon: '✸', desc: '4 вращающихся шипа вокруг героя (60 px).' });
+    super({ id: 'spike_ring', name: t('weapon_spike_ring'), type: 'aoe', baseCooldown: 0, baseDamage: 14, icon: '✸', desc: t('weapon_spike_ring_desc') });
     this.radius = 60; this.spikeCount = 4; this.rotSpeed = Math.PI; // полный оборот за 2 сек
     this._angle = 0; this._hitCooldowns = new Map(); // enemy -> cooldown
   }
@@ -1299,7 +1299,7 @@ class SpikeRingWeapon extends Weapon {
    ============================================================ */
 class EarthquakeWeapon extends Weapon {
   constructor() {
-    super({ id: 'earthquake', name: 'Землетрясение', type: 'aoe', baseCooldown: 3.0, baseDamage: 15, icon: '◉', desc: 'Ударная волна (расширяющееся кольцо, 150 px).' });
+    super({ id: 'earthquake', name: t('weapon_earthquake'), type: 'aoe', baseCooldown: 3.0, baseDamage: 15, icon: '◉', desc: t('weapon_earthquake_desc') });
     this.maxRadius = 150; this.expandTime = 0.5;
     this._waves = []; // { x, y, life, maxLife, radius, maxRadius, damage, hit }
   }
@@ -1373,7 +1373,7 @@ class EvolutionWeapon extends Weapon {
 /* ---------- 1) Вампирский клинок ---------- */
 class VampireBladeWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'vampire_blade', name: 'Вампирский клинок', type: 'melee', baseCooldown: 0.7, baseDamage: 25, icon: '🩸', evolvedFrom: 'sword' });
+    super({ id: 'vampire_blade', name: t('evo_vampire_blade'), type: 'melee', baseCooldown: 0.7, baseDamage: 25, icon: '🩸', evolvedFrom: 'sword' });
     this.radius = 70; this.arc = Math.PI; this.swingTime = 0.18;
     this.swing = { active: false, t: 0, angle: 0 }; this.lifesteal = 3;
   }
@@ -1420,7 +1420,7 @@ class VampireBladeWeapon extends EvolutionWeapon {
 /* ---------- 2) Скорострельный лук ---------- */
 class RapidBowWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'rapid_bow', name: 'Скорострельный лук', type: 'ranged', baseCooldown: 1.4, baseDamage: 15, icon: '🌪', evolvedFrom: 'bow' });
+    super({ id: 'rapid_bow', name: t('evo_rapid_bow'), type: 'ranged', baseCooldown: 1.4, baseDamage: 15, icon: '🌪', evolvedFrom: 'bow' });
     this.arrowSpeed = 580; this.arrowLife = 1.6; this.range = 560;
     this.burstCount = 3; this.burstInterval = 0.10;
     this._burstLeft = 0; this._burstTimer = 0; this._lastDir = { x: 1, y: 0 };
@@ -1456,7 +1456,7 @@ class RapidBowWeapon extends EvolutionWeapon {
 /* ---------- 3) Шквал клинков ---------- */
 class BladeStormWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'blade_storm', name: 'Шквал клинков', type: 'multi', baseCooldown: 1.4, baseDamage: 12, icon: '💥', evolvedFrom: 'daggers' });
+    super({ id: 'blade_storm', name: t('evo_blade_storm'), type: 'multi', baseCooldown: 1.4, baseDamage: 12, icon: '💥', evolvedFrom: 'daggers' });
     this.speed = 520; this.life = 1.2; this.spread = (18 * Math.PI) / 180;
     this.range = 600; this.count = 5; this.critChance = 0.20; this.critMul = 2.0;
   }
@@ -1492,7 +1492,7 @@ class BladeStormWeapon extends EvolutionWeapon {
 /* ---------- 4) Пламя души ---------- */
 class SoulFlameWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'soul_flame', name: 'Пламя души', type: 'aoe', baseCooldown: 2.4, baseDamage: 30, icon: '👻', evolvedFrom: 'fireball' });
+    super({ id: 'soul_flame', name: t('evo_soul_flame'), type: 'aoe', baseCooldown: 2.4, baseDamage: 30, icon: '👻', evolvedFrom: 'fireball' });
     this.flightTime = 0.6; this.explodeRadius = 110; this.range = 720; this.speed = 300;
   }
   doAttack(player, enemies, projectiles) {
@@ -1532,9 +1532,9 @@ const EVOLVED_WEAPON_FACTORIES = {
    ============================================================ */
 class MagicMissileWeapon extends Weapon {
   constructor() {
-    super({ id: 'magic_missile_weapon', name: 'Маг. снаряд', type: 'magic',
+    super({ id: 'magic_missile_weapon', name: t('weapon_spellbook'), type: 'magic',
       baseCooldown: 2.5, baseDamage: 25, icon: '✦',
-      desc: 'Стреляет магическими снарядами во врагов.' });
+      desc: t('weapon_spellbook_desc') });
     this.speed = 380;
     this.life = 3.0;
     this.range = 600;
@@ -1604,26 +1604,26 @@ const WEAPON_FACTORIES = {
 };
 
 const WEAPON_INFO = [
-  { id: 'sword',           name: 'Меч',             icon: '⚔',  desc: 'Удар по ближайшему врагу в радиусе 60 px.' },
-  { id: 'bow',             name: 'Лук',             icon: '🏹', desc: 'Стреляет в ближайшего врага.' },
-  { id: 'daggers',         name: 'Кинжалы',         icon: '🗡',  desc: 'Бросок 3 кинжалов веером.' },
-  { id: 'fireball',        name: 'Огненный шар',    icon: '🔥', desc: 'Снаряд с AoE-взрывом 80 px.' },
-  { id: 'axe',             name: 'Секира',          icon: '🪓', desc: 'Широкий взмах конусом 140°.' },
-  { id: 'spear',           name: 'Копьё',           icon: '🔱', desc: 'Удар вперёд по прямой (100 px).' },
-  { id: 'hammer',          name: 'Молот',           icon: '🔨', desc: 'Удар по земле — AoE 70 px.' },
-  { id: 'whip',            name: 'Кнут',            icon: '〰', desc: 'Атака по дальнему врагу (120 px).' },
-  { id: 'crossbow',        name: 'Арбалет',         icon: '⊕',  desc: 'Пробивающий выстрел сквозь врагов.' },
-  { id: 'throwing_axes',   name: 'Мет. топоры',     icon: '⚒',  desc: '2 вращающихся топора веером.' },
-  { id: 'darts',           name: 'Дротики',         icon: '↗',  desc: 'Очередь из 3 быстрых дротиков.' },
-  { id: 'sling',           name: 'Праща',           icon: '●',  desc: 'Камень по дуге с AoE 30 px.' },
-  { id: 'ice_arrow',       name: 'Ледяная стрела',  icon: '❄',  desc: 'Замедляет врага на 40% (2 сек).' },
-  { id: 'chain_lightning', name: 'Цеп. молния',     icon: '⚡', desc: 'Бьёт врага, перескакивая на 2 соседних.' },
-  { id: 'poison_cloud',    name: 'Яд. облако',      icon: '☠',  desc: 'Облако яда (60 px, 3 сек, 8 дпс).' },
-  { id: 'spellbook',       name: 'Книга закл.',     icon: '📖', desc: '2 случайных снаряда.' },
-  { id: 'firestorm',       name: 'Огн. шторм',      icon: '🌋', desc: '4 огненных столба вокруг героя.' },
-  { id: 'holy_aura',       name: 'Св. аура',        icon: '✡',  desc: 'Постоянный урон вокруг (50 px).' },
-  { id: 'spike_ring',      name: 'Кольцо шипов',    icon: '✸',  desc: '4 вращающихся шипа (60 px).' },
-  { id: 'earthquake',      name: 'Землетрясение',   icon: '◉',  desc: 'Ударная волна (150 px).' },
+  { id: 'sword',           name: t('weapon_sword'),             icon: '⚔',  desc: t('weapon_sword_desc') },
+  { id: 'bow',             name: t('weapon_bow'),             icon: '🏹', desc: t('weapon_bow_desc') },
+  { id: 'daggers',         name: t('weapon_daggers'),         icon: '🗡',  desc: t('weapon_daggers_desc') },
+  { id: 'fireball',        name: t('weapon_fireball'),    icon: '🔥', desc: t('weapon_fireball_desc') },
+  { id: 'axe',             name: t('weapon_axe'),          icon: '🪓', desc: t('weapon_axe_desc') },
+  { id: 'spear',           name: t('weapon_spear'),           icon: '🔱', desc: t('weapon_spear_desc') },
+  { id: 'hammer',          name: t('weapon_hammer'),           icon: '🔨', desc: t('weapon_hammer_desc') },
+  { id: 'whip',            name: t('weapon_whip'),            icon: '〰', desc: t('weapon_whip_desc') },
+  { id: 'crossbow',        name: t('weapon_crossbow'),         icon: '⊕',  desc: t('weapon_crossbow_desc') },
+  { id: 'throwing_axes',   name: t('weapon_throwing_axes'),     icon: '⚒',  desc: t('weapon_throwing_axes_desc') },
+  { id: 'darts',           name: t('weapon_darts'),         icon: '↗',  desc: t('weapon_darts_desc') },
+  { id: 'sling',           name: t('weapon_sling'),           icon: '●',  desc: t('weapon_sling_desc') },
+  { id: 'ice_arrow',       name: t('weapon_ice_arrow'),  icon: '❄',  desc: t('weapon_ice_arrow_desc') },
+  { id: 'chain_lightning', name: t('weapon_chain_lightning'),     icon: '⚡', desc: t('weapon_chain_lightning_desc') },
+  { id: 'poison_cloud',    name: t('weapon_poison_cloud'),      icon: '☠',  desc: t('weapon_poison_cloud_desc') },
+  { id: 'spellbook',       name: t('weapon_spellbook'),     icon: '📖', desc: t('weapon_spellbook_desc') },
+  { id: 'firestorm',       name: t('weapon_firestorm'),      icon: '🌋', desc: t('weapon_firestorm_desc') },
+  { id: 'holy_aura',       name: t('weapon_holy_aura'),        icon: '✡',  desc: t('weapon_holy_aura_desc') },
+  { id: 'spike_ring',      name: t('weapon_spike_ring'),    icon: '✸',  desc: t('weapon_spike_ring_desc') },
+  { id: 'earthquake',      name: t('weapon_earthquake'),   icon: '◉',  desc: t('weapon_earthquake_desc') },
 ];
 
 

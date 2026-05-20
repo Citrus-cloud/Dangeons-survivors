@@ -293,7 +293,7 @@ window.AudioPool = AudioPool;
 
     // Шаг 19: очистка таймеров при смене экрана — уже реализовано в Game.exitToMenu/triggerGameOver
 
-    console.log('[optimize.js] Оптимизации применены');
+    console.log('[optimize.js] Optimizations applied');
   }, 50);
 })();
 
@@ -347,6 +347,6 @@ window.AudioPool = AudioPool;
     `;
     document.head.appendChild(style);
 
-    console.log('[optimize.js] Bug fixes применены');
+    console.log('[optimize.js] Bug fixes applied');
   }, 50);
 })();

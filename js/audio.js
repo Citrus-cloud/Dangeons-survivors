@@ -194,7 +194,7 @@ const GameAudio = {
 
       this.initialized = true;
     } catch (e) {
-      console.warn('[GameAudio] Не удалось создать AudioContext:', e.message);
+      console.warn('[GameAudio] Failed to create AudioContext:', e.message);
       this.initialized = false;
     }
   },

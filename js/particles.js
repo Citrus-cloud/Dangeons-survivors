@@ -171,7 +171,7 @@ const Particles = {
       lifeMin: 0.5, lifeMax: 1.0,
       sizeMin: 3, sizeMax: 6,
     });
-    this.text(x, y - 30, 'БОСС ПОВЕРЖЕН!', 2.0, '#ffd700', 20);
+    this.text(x, y - 30, 'BOSS DEFEATED!', 2.0, '#ffd700', 20);
   },
 
   /* ============================================================

@@ -2056,7 +2056,7 @@ function initClassSprites() {
     _addOutline(ctx, 32, '#000000');
     CLASS_SPRITES[id] = canvas;
   }
-  console.log('[Sprites] Сгенерировано 4 иконки классов (32x32, редизайн)');
+  console.log('[Sprites] Generated 4 class icons (32x32, redesign)');
 }
 
 
@@ -2149,7 +2149,7 @@ function initPlayerWalkSprites() {
     }
     PLAYER_WALK_SPRITES[id] = frames;
   }
-  console.log('[Sprites] Сгенерировано 8 кадров ходьбы (16x16, редизайн)');
+  console.log('[Sprites] Generated 8 walk frames (16x16, redesign)');
 }
 
 
@@ -2395,7 +2395,7 @@ function initDecorSprites() {
     _rect(ctx, 1, 4, 6, 3, '#6a6a5a'); _rect(ctx, 2, 3, 4, 2, '#5a5a4a'); _px(ctx, 3, 2, '#7a7a6a');
   });
 
-  console.log('[Sprites] Сгенерировано декоративных спрайтов: ' + Object.keys(DECOR_SPRITES).length);
+  console.log('[Sprites] Generated decor sprites: ' + Object.keys(DECOR_SPRITES).length);
 }
 
 

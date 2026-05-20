@@ -347,7 +347,7 @@ Bosses._updatePuzzleSphinx = function(boss, player, dt) {
       boss._puzzleCd = atk.puzzleInterval || 15.0;
       if (window.Particles) {
         Particles.ring(boss.x, boss.y, 60, 0.3, 'rgba(0, 255, 100, 0.8)', 3);
-        Particles.text(boss.x, boss.y - 40, 'УЯЗВИМ!', 1.5, '#00ff66', 16);
+        Particles.text(boss.x, boss.y - 40, 'VULNERABLE!', 1.5, '#00ff66', 16);
       }
     } else if (boss._puzzleTimer <= 0) {
       // Время вышло — AoE штраф
@@ -359,7 +359,7 @@ Bosses._updatePuzzleSphinx = function(boss, player, dt) {
       else player.hp -= dmg;
       if (window.Particles) {
         Particles.ring(boss.x, boss.y, 150, 0.5, 'rgba(255, 100, 0, 0.8)', 5);
-        Particles.text(boss.x, boss.y - 40, 'НЕВЕРНО!', 1.5, '#ff3300', 16);
+        Particles.text(boss.x, boss.y - 40, 'WRONG!', 1.5, '#ff3300', 16);
       }
     }
   }
@@ -651,7 +651,7 @@ Bosses._updateMirrorKing = function(boss, player, dt) {
     }
     if (window.Particles) {
       Particles.ring(boss.x, boss.y, 80, 0.5, 'rgba(255, 255, 255, 0.9)', 4);
-      Particles.text(boss.x, boss.y - 40, 'ЗЕРКАЛЬНЫЕ КЛОНЫ!', 1.5, '#ffffff', 14);
+      Particles.text(boss.x, boss.y - 40, 'MIRROR CLONES!', 1.5, '#ffffff', 14);
     }
   }
 
@@ -734,7 +734,7 @@ Bosses._updateMirrorKing = function(boss, player, dt) {
         boss.phase = 3;
         if (window.Particles) {
           Particles.ring(boss.x, boss.y, 80, 0.5, 'rgba(255, 200, 0, 0.9)', 5);
-          Particles.text(boss.x, boss.y - 40, 'ФАЗА III — ЯРОСТЬ!', 2.0, '#ff6600', 18);
+          Particles.text(boss.x, boss.y - 40, 'PHASE III — RAGE!', 2.0, '#ff6600', 18);
         }
         return;
       }
@@ -747,7 +747,7 @@ Bosses._updateMirrorKing = function(boss, player, dt) {
         boss.phase = 3;
         if (window.Particles) {
           Particles.ring(boss.x, boss.y, 80, 0.5, 'rgba(255, 255, 255, 0.9)', 5);
-          Particles.text(boss.x, boss.y - 40, 'РАЗБИТЫЕ ЗЕРКАЛА!', 2.0, '#ffffff', 18);
+          Particles.text(boss.x, boss.y - 40, 'SHATTERED MIRRORS!', 2.0, '#ffffff', 18);
         }
         return;
       }

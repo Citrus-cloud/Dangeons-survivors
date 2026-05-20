@@ -1159,8 +1159,8 @@ const Game = {
     // === 1–5: МИМИК ===
     if (roll <= 5) {
       const reward = {
-        title: 'МИМИК!',
-        desc: 'Сундук превращается в мимика! Убейте его за опыт!',
+        title: t('chest_mimic'),
+        desc: 'The chest turns into a mimic! Kill it for XP!',
       };
       UI.showChestReward(roll, reward, () => {
         // Спавним усиленного мимика (+30% HP и урона)
@@ -1185,7 +1185,7 @@ const Game = {
     if (roll <= 10) {
       const xpAmount = Utils.randInt(1000, 4000);
       const reward = {
-        title: 'Прилив опыта!',
+        title: 'XP Surge!',
         desc: `+${xpAmount} XP`,
       };
       player.xp += xpAmount;
@@ -1382,21 +1382,21 @@ const Game = {
     // Иначе — мощное разовое улучшение (rand один из вариантов)
     const variants = [
       {
-        title: 'Мощное улучшение: HP',
-        desc: 'Макс. HP +30%, лечение полностью.',
+        title: 'Powerful Upgrade: HP',
+        desc: 'Max HP +30%, fully healed.',
         apply(p) {
           p.maxHp = Math.round(p.maxHp * 1.30);
           p.hp = p.maxHp;
         },
       },
       {
-        title: 'Мощное улучшение: Урон',
-        desc: '+20% ко всему урону (стакается).',
+        title: 'Powerful Upgrade: Damage',
+        desc: '+20% all damage (stacks).',
         apply(p) { p.damageMul *= 1.20; },
       },
       {
-        title: 'Мощное улучшение: Скорость',
-        desc: '+15% к скорости передвижения.',
+        title: 'Powerful Upgrade: Speed',
+        desc: '+15% movement speed.',
         apply(p) { p.speedMul *= 1.15; },
       },
     ];
@@ -1428,7 +1428,7 @@ const Game = {
         !e.isBoss && !e.isElite && Math.random() < this.player._instantKillChance) {
       e.hp = 0;
       if (window.Particles && Particles.text) {
-        Particles.text(e.x, e.y - 20, 'КАЗНЬ!', 0.8, '#ff0000', 13);
+        Particles.text(e.x, e.y - 20, 'EXECUTE!', 0.8, '#ff0000', 13);
       }
       this.killEnemy(e);
       return;
@@ -1440,7 +1440,7 @@ const Game = {
       finalDmg *= 2;
       // Визуал крита
       if (window.Particles && Particles.text) {
-        Particles.text(e.x, e.y - 20, 'КРИТ!', 0.6, '#ffff00', 12);
+        Particles.text(e.x, e.y - 20, 'CRIT!', 0.6, '#ffff00', 12);
       }
     }
 

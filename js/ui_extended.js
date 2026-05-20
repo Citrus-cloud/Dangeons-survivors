@@ -225,8 +225,8 @@ const UIExtended = {
     }
 
     // Тир
-    const tierNames = { 0: 'Особый', 1: 'Тир I', 2: 'Тир II', 3: 'Тир III', 4: 'Тир IV', 5: 'Тир V' };
-    const tierLabel = tierNames[cfg.tier] || 'Тир ' + cfg.tier;
+    const tierNames = { 0: 'Special', 1: 'Tier I', 2: 'Tier II', 3: 'Tier III', 4: 'Tier IV', 5: 'Tier V' };
+    const tierLabel = tierNames[cfg.tier] || 'Tier ' + cfg.tier;
 
     let html = `
       <div class="bestiary-detail-card">

@@ -11,7 +11,7 @@
    ============================================================= */
 
 ENEMY_TYPES.plague_rat = {
-  id: 'plague_rat', name: 'Чумная крыса', letter: 'Ч',
+  id: 'plague_rat', name: t('enemy_plague_rat'), letter: 'P',
   shape: 'oval', color: '#4a3a1a', stroke: '#8b6b3a',
   w: 16, h: 10, hp: 8, speed: 110, damage: 4,
   xp: [3, 6], behavior: 'plague_rat', tier: 1, dropChance: 0.35,
@@ -22,7 +22,7 @@ ENEMY_TYPES.plague_rat = {
 
 
 ENEMY_TYPES.mushroom_sprite = {
-  id: 'mushroom_sprite', name: 'Грибной спрайт', letter: 'Г',
+  id: 'mushroom_sprite', name: t('enemy_mushroom_sprite'), letter: 'G',
   shape: 'circle', color: '#7a5a3a', stroke: '#c9a060',
   w: 14, h: 14, hp: 6, speed: 45, damage: 3,
   xp: [2, 5], behavior: 'mushroom_sprite', tier: 1, dropChance: 0.30,
@@ -33,7 +33,7 @@ ENEMY_TYPES.mushroom_sprite = {
 };
 
 ENEMY_TYPES.bone_crawler = {
-  id: 'bone_crawler', name: 'Костяной ползун', letter: 'П',
+  id: 'bone_crawler', name: t('enemy_bone_crawler'), letter: 'C',
   shape: 'oval', color: '#d9d0c0', stroke: '#ffffff',
   w: 20, h: 12, hp: 14, speed: 60, damage: 6,
   xp: [4, 7], behavior: 'bone_crawler', tier: 1, dropChance: 0.40,
@@ -43,7 +43,7 @@ ENEMY_TYPES.bone_crawler = {
 };
 
 ENEMY_TYPES.wisp_minor = {
-  id: 'wisp_minor', name: 'Блуждающий огонёк', letter: 'О',
+  id: 'wisp_minor', name: t('enemy_wisp_minor'), letter: 'W',
   shape: 'circle', color: '#ffdd44', stroke: '#ffffff',
   w: 12, h: 12, hp: 5, speed: 70, damage: 4,
   xp: [3, 5], behavior: 'wisp_minor', tier: 1, dropChance: 0.30,
@@ -54,7 +54,7 @@ ENEMY_TYPES.wisp_minor = {
 
 
 ENEMY_TYPES.carrion_beetle = {
-  id: 'carrion_beetle', name: 'Жук-падальщик', letter: 'Ж',
+  id: 'carrion_beetle', name: t('enemy_carrion_beetle'), letter: 'B',
   shape: 'oval', color: '#2a4a2a', stroke: '#66aa66',
   w: 18, h: 12, hp: 10, speed: 55, damage: 5,
   xp: [3, 6], behavior: 'carrion_beetle', tier: 1, dropChance: 0.35,
@@ -64,7 +64,7 @@ ENEMY_TYPES.carrion_beetle = {
 };
 
 ENEMY_TYPES.mud_imp = {
-  id: 'mud_imp', name: 'Грязевой бесёнок', letter: 'Б',
+  id: 'mud_imp', name: t('enemy_mud_imp'), letter: 'I',
   shape: 'triangle', color: '#6b4a2a', stroke: '#a08060',
   w: 16, h: 16, hp: 10, speed: 80, damage: 5,
   xp: [4, 6], behavior: 'mud_imp', tier: 1, dropChance: 0.35,
@@ -75,7 +75,7 @@ ENEMY_TYPES.mud_imp = {
 };
 
 ENEMY_TYPES.spirit_wisp = {
-  id: 'spirit_wisp', name: 'Дух-искра', letter: 'И',
+  id: 'spirit_wisp', name: t('enemy_spirit_wisp'), letter: 'S',
   shape: 'circle', color: '#aaccff', stroke: '#ffffff',
   w: 14, h: 14, hp: 7, speed: 50, damage: 3,
   xp: [3, 5], behavior: 'spirit_wisp', tier: 1, dropChance: 0.30,
@@ -85,7 +85,7 @@ ENEMY_TYPES.spirit_wisp = {
 };
 
 ENEMY_TYPES.vine_creeper = {
-  id: 'vine_creeper', name: 'Лозолаз', letter: 'Л',
+  id: 'vine_creeper', name: t('enemy_vine_creeper'), letter: 'V',
   shape: 'oval', color: '#2a6b2a', stroke: '#80cc80',
   w: 22, h: 14, hp: 18, speed: 30, damage: 0,
   xp: [4, 7], behavior: 'vine_creeper', tier: 1, dropChance: 0.40,
@@ -100,7 +100,7 @@ ENEMY_TYPES.vine_creeper = {
    ============================================================= */
 
 ENEMY_TYPES.necro_acolyte = {
-  id: 'necro_acolyte', name: 'Некро-аколит', letter: 'Н',
+  id: 'necro_acolyte', name: t('enemy_necro_acolyte'), letter: 'N',
   shape: 'rect', color: '#1a1a2a', stroke: '#8040c0',
   w: 22, h: 22, hp: 14, speed: 40, damage: 6,
   xp: [8, 12], behavior: 'necro_acolyte', tier: 2, dropChance: 0.55,
@@ -110,7 +110,7 @@ ENEMY_TYPES.necro_acolyte = {
 };
 
 ENEMY_TYPES.sand_worm = {
-  id: 'sand_worm', name: 'Песчаный червь', letter: 'Ч',
+  id: 'sand_worm', name: t('enemy_sand_worm'), letter: 'P',
   shape: 'oval', color: '#c9a84c', stroke: '#e8d080',
   w: 26, h: 14, hp: 20, speed: 70, damage: 12,
   xp: [9, 13], behavior: 'sand_worm', tier: 2, dropChance: 0.55,
@@ -120,7 +120,7 @@ ENEMY_TYPES.sand_worm = {
 };
 
 ENEMY_TYPES.toxic_toad = {
-  id: 'toxic_toad', name: 'Ядовитая жаба', letter: 'Я',
+  id: 'toxic_toad', name: t('enemy_toxic_toad'), letter: 'T',
   shape: 'oval', color: '#4a8b4a', stroke: '#88ff88',
   w: 22, h: 16, hp: 18, speed: 35, damage: 8,
   xp: [8, 12], behavior: 'toxic_toad', tier: 2, dropChance: 0.55,
@@ -132,7 +132,7 @@ ENEMY_TYPES.toxic_toad = {
 };
 
 ENEMY_TYPES.chain_phantom = {
-  id: 'chain_phantom', name: 'Цепной фантом', letter: 'Ц',
+  id: 'chain_phantom', name: t('enemy_chain_phantom'), letter: 'P',
   shape: 'diamond', color: '#4a4a6a', stroke: '#8888cc',
   w: 22, h: 22, hp: 16, speed: 50, damage: 10,
   xp: [9, 13], behavior: 'chain_phantom', tier: 2, dropChance: 0.55,
@@ -144,7 +144,7 @@ ENEMY_TYPES.chain_phantom = {
 
 
 ENEMY_TYPES.ember_moth = {
-  id: 'ember_moth', name: 'Угольная моль', letter: 'У',
+  id: 'ember_moth', name: t('enemy_ember_moth'), letter: 'M',
   shape: 'diamond', color: '#cc6600', stroke: '#ffaa00',
   w: 18, h: 12, hp: 12, speed: 90, damage: 6,
   xp: [7, 11], behavior: 'ember_moth', tier: 2, dropChance: 0.50,
@@ -156,7 +156,7 @@ ENEMY_TYPES.ember_moth = {
 };
 
 ENEMY_TYPES.frozen_husk = {
-  id: 'frozen_husk', name: 'Ледяная шелуха', letter: 'Ш',
+  id: 'frozen_husk', name: t('enemy_frozen_husk'), letter: 'F',
   shape: 'rect', color: '#88bbdd', stroke: '#cceeFF',
   w: 26, h: 26, hp: 24, speed: 30, damage: 8,
   xp: [9, 13], behavior: 'chase', tier: 2, dropChance: 0.55,
@@ -166,7 +166,7 @@ ENEMY_TYPES.frozen_husk = {
 };
 
 ENEMY_TYPES.swarm_beetle = {
-  id: 'swarm_beetle', name: 'Жук-роевик', letter: 'Р',
+  id: 'swarm_beetle', name: t('enemy_swarm_beetle'), letter: 'S',
   shape: 'circle', color: '#333333', stroke: '#666666',
   w: 10, h: 10, hp: 3, speed: 80, damage: 3,
   xp: [1, 2], behavior: 'swarm_beetle', tier: 2, dropChance: 0.15,
@@ -177,7 +177,7 @@ ENEMY_TYPES.swarm_beetle = {
 };
 
 ENEMY_TYPES.mirror_wisp = {
-  id: 'mirror_wisp', name: 'Зеркальный дух', letter: 'З',
+  id: 'mirror_wisp', name: t('enemy_mirror_wisp'), letter: 'M',
   shape: 'circle', color: '#eeeeff', stroke: '#aaaaff',
   w: 16, h: 16, hp: 10, speed: 55, damage: 5,
   xp: [8, 12], behavior: 'mirror_wisp', tier: 2, dropChance: 0.50,
@@ -187,7 +187,7 @@ ENEMY_TYPES.mirror_wisp = {
 };
 
 ENEMY_TYPES.root_shambler = {
-  id: 'root_shambler', name: 'Корневой скиталец', letter: 'К',
+  id: 'root_shambler', name: t('enemy_root_shambler'), letter: 'R',
   shape: 'rect', color: '#4a6a3a', stroke: '#80aa60',
   w: 26, h: 26, hp: 22, speed: 35, damage: 10,
   xp: [9, 14], behavior: 'root_shambler', tier: 2, dropChance: 0.55,
@@ -197,7 +197,7 @@ ENEMY_TYPES.root_shambler = {
 };
 
 ENEMY_TYPES.plaguebearer = {
-  id: 'plaguebearer', name: 'Носитель чумы', letter: 'Ч',
+  id: 'plaguebearer', name: t('enemy_plaguebearer'), letter: 'P',
   shape: 'rect', color: '#3a4a2a', stroke: '#88aa66',
   w: 28, h: 28, hp: 28, speed: 35, damage: 8,
   xp: [10, 15], behavior: 'plaguebearer', tier: 2, dropChance: 0.60,
@@ -213,7 +213,7 @@ ENEMY_TYPES.plaguebearer = {
    ============================================================= */
 
 ENEMY_TYPES.clockwork_spider = {
-  id: 'clockwork_spider', name: 'Заводной паук', letter: 'З',
+  id: 'clockwork_spider', name: t('enemy_clockwork_spider'), letter: 'M',
   shape: 'diamond', color: '#8b8b00', stroke: '#cccc44',
   w: 24, h: 24, hp: 22, speed: 0, damage: 12,
   xp: [14, 18], behavior: 'clockwork_spider', tier: 3, dropChance: 0.65,
@@ -224,7 +224,7 @@ ENEMY_TYPES.clockwork_spider = {
 };
 
 ENEMY_TYPES.blood_ooze = {
-  id: 'blood_ooze', name: 'Кровавый слизень', letter: 'К',
+  id: 'blood_ooze', name: t('enemy_blood_ooze'), letter: 'R',
   shape: 'oval', color: '#8b0000', stroke: '#ff4444',
   w: 28, h: 18, hp: 30, speed: 35, damage: 8,
   xp: [15, 19], behavior: 'blood_ooze', tier: 3, dropChance: 0.65,
@@ -236,7 +236,7 @@ ENEMY_TYPES.blood_ooze = {
 };
 
 ENEMY_TYPES.ash_wraith = {
-  id: 'ash_wraith', name: 'Пепельный призрак', letter: 'П',
+  id: 'ash_wraith', name: t('enemy_ash_wraith'), letter: 'C',
   shape: 'oval', color: '#4a4a4a', stroke: '#888888',
   w: 24, h: 24, hp: 20, speed: 65, damage: 10,
   xp: [14, 18], behavior: 'ash_wraith', tier: 3, dropChance: 0.60,
@@ -247,7 +247,7 @@ ENEMY_TYPES.ash_wraith = {
 };
 
 ENEMY_TYPES.crystal_golem = {
-  id: 'crystal_golem', name: 'Кристальный голем', letter: 'К',
+  id: 'crystal_golem', name: t('enemy_crystal_golem'), letter: 'R',
   shape: 'rect', color: '#66aacc', stroke: '#aaddff',
   w: 34, h: 34, hp: 50, speed: 25, damage: 18,
   xp: [18, 24], behavior: 'crystal_golem', tier: 3, dropChance: 0.75,
@@ -259,7 +259,7 @@ ENEMY_TYPES.crystal_golem = {
 
 
 ENEMY_TYPES.nether_hound = {
-  id: 'nether_hound', name: 'Потусторонний пёс', letter: 'П',
+  id: 'nether_hound', name: t('enemy_nether_hound'), letter: 'C',
   shape: 'diamond', color: '#330033', stroke: '#9933ff',
   w: 24, h: 24, hp: 22, speed: 100, damage: 12,
   xp: [14, 18], behavior: 'nether_hound', tier: 3, dropChance: 0.60,
@@ -269,7 +269,7 @@ ENEMY_TYPES.nether_hound = {
 };
 
 ENEMY_TYPES.spore_carrier = {
-  id: 'spore_carrier', name: 'Споровый носитель', letter: 'С',
+  id: 'spore_carrier', name: t('enemy_spore_carrier'), letter: 'S',
   shape: 'oval', color: '#6b4a00', stroke: '#aa8844',
   w: 28, h: 18, hp: 28, speed: 40, damage: 8,
   xp: [15, 19], behavior: 'spore_carrier', tier: 3, dropChance: 0.65,
@@ -280,7 +280,7 @@ ENEMY_TYPES.spore_carrier = {
 };
 
 ENEMY_TYPES.gravity_aberration = {
-  id: 'gravity_aberration', name: 'Гравитационная аномалия', letter: 'Г',
+  id: 'gravity_aberration', name: t('enemy_gravity_aberration'), letter: 'G',
   shape: 'circle', color: '#220044', stroke: '#6600cc',
   w: 30, h: 30, hp: 35, speed: 25, damage: 8,
   xp: [16, 22], behavior: 'gravity_aberration', tier: 3, dropChance: 0.70,
@@ -291,7 +291,7 @@ ENEMY_TYPES.gravity_aberration = {
 };
 
 ENEMY_TYPES.corpse_detonator = {
-  id: 'corpse_detonator', name: 'Трупный подрыватель', letter: 'Т',
+  id: 'corpse_detonator', name: t('enemy_corpse_detonator'), letter: 'T',
   shape: 'triangle', color: '#4a2a2a', stroke: '#aa4444',
   w: 22, h: 22, hp: 18, speed: 80, damage: 8,
   xp: [14, 18], behavior: 'corpse_detonator', tier: 3, dropChance: 0.60,
@@ -302,7 +302,7 @@ ENEMY_TYPES.corpse_detonator = {
 };
 
 ENEMY_TYPES.echo_shade = {
-  id: 'echo_shade', name: 'Эхо-тень', letter: 'Э',
+  id: 'echo_shade', name: t('enemy_echo_shade'), letter: 'E',
   shape: 'rect', color: '#1a1a2a', stroke: '#4444aa',
   w: 22, h: 22, hp: 20, speed: 0, damage: 14,
   xp: [15, 19], behavior: 'echo_shade', tier: 3, dropChance: 0.60,
@@ -312,7 +312,7 @@ ENEMY_TYPES.echo_shade = {
 };
 
 ENEMY_TYPES.magma_crab = {
-  id: 'magma_crab', name: 'Магматический краб', letter: 'М',
+  id: 'magma_crab', name: t('enemy_magma_crab'), letter: 'M',
   shape: 'oval', color: '#cc4400', stroke: '#ff8800',
   w: 30, h: 18, hp: 35, speed: 35, damage: 15,
   xp: [16, 22], behavior: 'magma_crab', tier: 3, dropChance: 0.70,
@@ -329,7 +329,7 @@ ENEMY_TYPES.magma_crab = {
    ============================================================= */
 
 ENEMY_TYPES.void_stalker = {
-  id: 'void_stalker', name: 'Пустотный охотник', letter: 'В',
+  id: 'void_stalker', name: t('enemy_void_stalker'), letter: 'V',
   shape: 'rect', color: '#0d001a', stroke: '#6633cc',
   w: 24, h: 24, hp: 28, speed: 100, damage: 16,
   xp: [20, 26], behavior: 'void_stalker', tier: 4, dropChance: 0.70,
@@ -339,7 +339,7 @@ ENEMY_TYPES.void_stalker = {
 };
 
 ENEMY_TYPES.soul_collector = {
-  id: 'soul_collector', name: 'Собиратель душ', letter: 'С',
+  id: 'soul_collector', name: t('enemy_soul_collector'), letter: 'S',
   shape: 'diamond', color: '#2a0044', stroke: '#aa44ff',
   w: 28, h: 28, hp: 35, speed: 45, damage: 12,
   xp: [22, 28], behavior: 'soul_collector', tier: 4, dropChance: 0.75,
@@ -350,7 +350,7 @@ ENEMY_TYPES.soul_collector = {
 };
 
 ENEMY_TYPES.plague_golem = {
-  id: 'plague_golem', name: 'Чумной голем', letter: 'Г',
+  id: 'plague_golem', name: t('enemy_plague_golem'), letter: 'G',
   shape: 'rect', color: '#3a5a3a', stroke: '#88cc88',
   w: 38, h: 38, hp: 70, speed: 22, damage: 20,
   xp: [28, 34], behavior: 'plague_golem', tier: 4, dropChance: 0.80,
@@ -360,7 +360,7 @@ ENEMY_TYPES.plague_golem = {
 };
 
 ENEMY_TYPES.thunder_elemental = {
-  id: 'thunder_elemental', name: 'Элементаль молнии', letter: 'М',
+  id: 'thunder_elemental', name: t('enemy_thunder_elemental'), letter: 'M',
   shape: 'diamond', color: '#ffff00', stroke: '#ffffff',
   w: 26, h: 26, hp: 22, speed: 130, damage: 14,
   xp: [20, 26], behavior: 'thunder_elemental', tier: 4, dropChance: 0.65,
@@ -372,7 +372,7 @@ ENEMY_TYPES.thunder_elemental = {
 
 
 ENEMY_TYPES.bone_hydra_enemy = {
-  id: 'bone_hydra_enemy', name: 'Костяная гидра', letter: 'Г',
+  id: 'bone_hydra_enemy', name: t('enemy_bone_hydra_enemy'), letter: 'G',
   shape: 'oval', color: '#d9d0c0', stroke: '#ffffff',
   w: 36, h: 24, hp: 50, speed: 28, damage: 10,
   xp: [26, 32], behavior: 'bone_hydra_enemy', tier: 4, dropChance: 0.80,
@@ -383,7 +383,7 @@ ENEMY_TYPES.bone_hydra_enemy = {
 };
 
 ENEMY_TYPES.dream_weaver = {
-  id: 'dream_weaver', name: 'Ткач снов', letter: 'Т',
+  id: 'dream_weaver', name: t('enemy_dream_weaver'), letter: 'T',
   shape: 'circle', color: '#6644aa', stroke: '#cc88ff',
   w: 24, h: 24, hp: 25, speed: 50, damage: 10,
   xp: [22, 28], behavior: 'dream_weaver', tier: 4, dropChance: 0.70,
@@ -394,7 +394,7 @@ ENEMY_TYPES.dream_weaver = {
 };
 
 ENEMY_TYPES.rust_hulk = {
-  id: 'rust_hulk', name: 'Ржавый великан', letter: 'Р',
+  id: 'rust_hulk', name: t('enemy_rust_hulk'), letter: 'S',
   shape: 'rect', color: '#8b5a00', stroke: '#cc8800',
   w: 40, h: 40, hp: 60, speed: 22, damage: 22,
   xp: [28, 34], behavior: 'rust_hulk', tier: 4, dropChance: 0.80,
@@ -406,7 +406,7 @@ ENEMY_TYPES.rust_hulk = {
 };
 
 ENEMY_TYPES.parasite_host = {
-  id: 'parasite_host', name: 'Паразит-носитель', letter: 'П',
+  id: 'parasite_host', name: t('enemy_parasite_host'), letter: 'C',
   shape: 'oval', color: '#4a004a', stroke: '#aa44aa',
   w: 22, h: 16, hp: 18, speed: 90, damage: 10,
   xp: [18, 24], behavior: 'parasite_host', tier: 4, dropChance: 0.65,
@@ -417,7 +417,7 @@ ENEMY_TYPES.parasite_host = {
 };
 
 ENEMY_TYPES.hex_weaver = {
-  id: 'hex_weaver', name: 'Ткач проклятий', letter: 'Х',
+  id: 'hex_weaver', name: t('enemy_hex_weaver'), letter: 'H',
   shape: 'triangle', color: '#330066', stroke: '#9933ff',
   w: 24, h: 24, hp: 22, speed: 45, damage: 8,
   xp: [24, 30], behavior: 'hex_weaver', tier: 4, dropChance: 0.75,
@@ -429,7 +429,7 @@ ENEMY_TYPES.hex_weaver = {
 };
 
 ENEMY_TYPES.temporal_beetle = {
-  id: 'temporal_beetle', name: 'Хроно-жук', letter: 'Х',
+  id: 'temporal_beetle', name: t('enemy_temporal_beetle'), letter: 'H',
   shape: 'circle', color: '#004466', stroke: '#0088cc',
   w: 26, h: 26, hp: 30, speed: 40, damage: 10,
   xp: [22, 28], behavior: 'temporal_beetle', tier: 4, dropChance: 0.70,
@@ -445,7 +445,7 @@ ENEMY_TYPES.temporal_beetle = {
    ============================================================= */
 
 ENEMY_TYPES.entropy_golem = {
-  id: 'entropy_golem', name: 'Голем энтропии', letter: 'Э',
+  id: 'entropy_golem', name: t('enemy_entropy_golem'), letter: 'E',
   shape: 'rect', color: '#2a0033', stroke: '#aa33ff',
   w: 42, h: 42, hp: 90, speed: 22, damage: 25,
   xp: [38, 46], behavior: 'entropy_golem', tier: 5, dropChance: 0.90,
@@ -455,7 +455,7 @@ ENEMY_TYPES.entropy_golem = {
 };
 
 ENEMY_TYPES.soul_furnace = {
-  id: 'soul_furnace', name: 'Душеплавильня', letter: 'Д',
+  id: 'soul_furnace', name: t('enemy_soul_furnace'), letter: 'D',
   shape: 'rect', color: '#4a1a00', stroke: '#ff6600',
   w: 38, h: 38, hp: 80, speed: 25, damage: 20,
   xp: [40, 48], behavior: 'soul_furnace', tier: 5, dropChance: 0.90,
@@ -466,7 +466,7 @@ ENEMY_TYPES.soul_furnace = {
 };
 
 ENEMY_TYPES.void_leviathan = {
-  id: 'void_leviathan', name: 'Пустотный левиафан', letter: 'Л',
+  id: 'void_leviathan', name: t('enemy_void_leviathan'), letter: 'V',
   shape: 'oval', color: '#0d0033', stroke: '#4400aa',
   w: 44, h: 28, hp: 70, speed: 28, damage: 18,
   xp: [42, 50], behavior: 'void_leviathan', tier: 5, dropChance: 0.90,
@@ -476,7 +476,7 @@ ENEMY_TYPES.void_leviathan = {
 };
 
 ENEMY_TYPES.plague_knight = {
-  id: 'plague_knight', name: 'Чумной рыцарь', letter: 'Р',
+  id: 'plague_knight', name: t('enemy_plague_knight'), letter: 'S',
   shape: 'rect', color: '#1a2a1a', stroke: '#44aa44',
   w: 36, h: 36, hp: 85, speed: 40, damage: 22,
   xp: [44, 52], behavior: 'plague_knight', tier: 5, dropChance: 0.90,
@@ -487,7 +487,7 @@ ENEMY_TYPES.plague_knight = {
 };
 
 ENEMY_TYPES.hive_queen = {
-  id: 'hive_queen', name: 'Королева улья', letter: 'У',
+  id: 'hive_queen', name: t('enemy_hive_queen'), letter: 'M',
   shape: 'oval', color: '#6b6b00', stroke: '#cccc44',
   w: 36, h: 28, hp: 60, speed: 25, damage: 10,
   xp: [40, 48], behavior: 'hive_queen', tier: 5, dropChance: 0.90,
@@ -499,7 +499,7 @@ ENEMY_TYPES.hive_queen = {
 
 
 ENEMY_TYPES.chaos_chimera = {
-  id: 'chaos_chimera', name: 'Химера хаоса', letter: 'Х',
+  id: 'chaos_chimera', name: t('enemy_chaos_chimera'), letter: 'H',
   shape: 'rect', color: '#cc00cc', stroke: '#ff66ff',
   w: 38, h: 30, hp: 65, speed: 50, damage: 18,
   xp: [42, 50], behavior: 'chaos_chimera', tier: 5, dropChance: 0.90,
@@ -510,7 +510,7 @@ ENEMY_TYPES.chaos_chimera = {
 };
 
 ENEMY_TYPES.obelisk_guardian = {
-  id: 'obelisk_guardian', name: 'Страж обелиска', letter: 'О',
+  id: 'obelisk_guardian', name: t('enemy_obelisk_guardian'), letter: 'W',
   shape: 'rect', color: '#4a4a6a', stroke: '#8888cc',
   w: 30, h: 44, hp: 70, speed: 0, damage: 0,
   xp: [38, 46], behavior: 'obelisk_guardian', tier: 5, dropChance: 0.85,
@@ -520,7 +520,7 @@ ENEMY_TYPES.obelisk_guardian = {
 };
 
 ENEMY_TYPES.shadow_prince = {
-  id: 'shadow_prince', name: 'Теневой принц', letter: 'Т',
+  id: 'shadow_prince', name: t('enemy_shadow_prince'), letter: 'T',
   shape: 'rect', color: '#0a0a1a', stroke: '#4444aa',
   w: 30, h: 30, hp: 55, speed: 70, damage: 18,
   xp: [40, 48], behavior: 'shadow_prince', tier: 5, dropChance: 0.90,
@@ -530,7 +530,7 @@ ENEMY_TYPES.shadow_prince = {
 };
 
 ENEMY_TYPES.abyssal_maw = {
-  id: 'abyssal_maw', name: 'Бездонная пасть', letter: 'Б',
+  id: 'abyssal_maw', name: t('enemy_abyssal_maw'), letter: 'I',
   shape: 'circle', color: '#1a0022', stroke: '#660066',
   w: 40, h: 40, hp: 80, speed: 20, damage: 15,
   xp: [44, 52], behavior: 'abyssal_maw', tier: 5, dropChance: 0.90,
@@ -541,7 +541,7 @@ ENEMY_TYPES.abyssal_maw = {
 };
 
 ENEMY_TYPES.living_dungeon = {
-  id: 'living_dungeon', name: 'Живой подземелец', letter: 'Ж',
+  id: 'living_dungeon', name: t('enemy_living_dungeon'), letter: 'B',
   shape: 'rect', color: '#4a4a4a', stroke: '#888888',
   w: 44, h: 44, hp: 100, speed: 18, damage: 20,
   xp: [48, 56], behavior: 'living_dungeon', tier: 5, dropChance: 0.95,
@@ -556,7 +556,7 @@ ENEMY_TYPES.living_dungeon = {
    ============================================================= */
 
 ENEMY_TYPES.doom_herald = {
-  id: 'doom_herald', name: 'Вестник рока', letter: '!',
+  id: 'doom_herald', name: t('enemy_doom_herald'), letter: '!',
   shape: 'diamond', color: '#660000', stroke: '#ff0000',
   w: 30, h: 30, hp: 40, speed: 60, damage: 15,
   xp: [60, 80], behavior: 'doom_herald', tier: 0, dropChance: 1.0,
@@ -568,7 +568,7 @@ ENEMY_TYPES.doom_herald = {
 };
 
 ENEMY_TYPES.treasure_golem = {
-  id: 'treasure_golem', name: 'Золотой голем', letter: '$',
+  id: 'treasure_golem', name: t('enemy_treasure_golem'), letter: '$',
   shape: 'rect', color: '#ffd700', stroke: '#ffffff',
   w: 34, h: 34, hp: 50, speed: 120, damage: 0,
   xp: [80, 100], behavior: 'treasure_golem', tier: 0, dropChance: 1.0,
@@ -625,7 +625,7 @@ ENEMY_TIERS[5].ids.push(
 
 BOSS_TYPES.boss_web_architect = {
   id: 'boss_web_architect',
-  name: 'Архитектор Паутины',
+  name: t('boss_web_architect'),
   hp: 700,
   speed: 70,
   damage: 25,
@@ -652,7 +652,7 @@ BOSS_TYPES.boss_web_architect = {
 
 BOSS_TYPES.boss_storm_colossus = {
   id: 'boss_storm_colossus',
-  name: 'Грозовой Колосс',
+  name: t('boss_thunder_colossus'),
   hp: 900,
   speed: 35,
   damage: 30,
@@ -661,7 +661,7 @@ BOSS_TYPES.boss_storm_colossus = {
   color: '#334466',
   stroke: '#88ccff',
   shape: 'rect',
-  letter: 'Г',
+  letter: 'G',
   hitInterval: 1.0,
   attacks: {
     chainLightning: { cooldown: 3.0, damage: 22, jumps: 3, jumpRange: 80 },
@@ -682,7 +682,7 @@ BOSS_TYPES.boss_storm_colossus = {
 
 BOSS_TYPES.boss_puzzle_sphinx = {
   id: 'boss_puzzle_sphinx',
-  name: 'Сфинкс-Головоломщик',
+  name: t('boss_sphinx_puzzler'),
   hp: 800,
   speed: 50,
   damage: 22,
@@ -691,7 +691,7 @@ BOSS_TYPES.boss_puzzle_sphinx = {
   color: '#c9a84c',
   stroke: '#ffd700',
   shape: 'rect',
-  letter: 'С',
+  letter: 'S',
   hitInterval: 0.9,
   attacks: {
     eyeBeam: { cooldown: 2.0, damage: 18, speed: 200, trackSpeed: 1.5 },
@@ -714,7 +714,7 @@ BOSS_TYPES.boss_puzzle_sphinx = {
 
 BOSS_TYPES.boss_bone_hydra = {
   id: 'boss_bone_hydra',
-  name: 'Костяная Гидра',
+  name: t('boss_bone_hydra'),
   hp: 1000,
   speed: 30,
   damage: 20,
@@ -723,7 +723,7 @@ BOSS_TYPES.boss_bone_hydra = {
   color: '#d9d0c0', 
   stroke: '#ffffff',
   shape: 'oval',
-  letter: 'Г',
+  letter: 'G',
   hitInterval: 0.8,
   attacks: {
     fireHead:      { cooldown: 2.5, damage: 20, speed: 260, type: 'fire' },
@@ -746,7 +746,7 @@ BOSS_TYPES.boss_bone_hydra = {
 
 BOSS_TYPES.boss_mirror_king = {
   id: 'boss_mirror_king',
-  name: 'Зеркальный Король',
+  name: t('boss_mirror_king'),
   hp: 850,
   speed: 65,
   damage: 25,
@@ -755,7 +755,7 @@ BOSS_TYPES.boss_mirror_king = {
   color: '#c0c0c0',
   stroke: '#ffffff',
   shape: 'rect',
-  letter: 'К',
+  letter: 'R',
   hitInterval: 0.8,
   attacks: {
     mirrorSlash: { cooldown: 1.5, damage: 20, arc: 120, range: 55 },

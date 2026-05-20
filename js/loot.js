@@ -598,7 +598,7 @@ const MimicChest = {
         color: '#ff3333', speedMin: 60, speedMax: 160,
         lifeMin: 0.3, lifeMax: 0.6, sizeMin: 3, sizeMax: 6,
       });
-      Particles.text(chestX, chestY - 30, 'МИМИК!', 1.5, '#ff3333', 16);
+      Particles.text(chestX, chestY - 30, t('chest_mimic'), 1.5, '#ff3333', 16);
     }
   },
 };

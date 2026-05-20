@@ -8,12 +8,12 @@
    СИМВОЛЫ для загадок (общие для обоих типов)
    ============================================================ */
 const PUZZLE_SYMBOLS = [
-  { id: 'circle',    label: '\u25CF', name: 'Круг' },
-  { id: 'triangle',  label: '\u25B2', name: 'Треугольник' },
-  { id: 'square',    label: '\u25A0', name: 'Квадрат' },
-  { id: 'diamond',   label: '\u25C6', name: 'Ромб' },
-  { id: 'star',      label: '\u2605', name: 'Звезда' },
-  { id: 'cross',     label: '\u271A', name: 'Крест' },
+  { id: 'circle',    label: '\u25CF', name: 'Circle' },
+  { id: 'triangle',  label: '\u25B2', name: 'Triangle' },
+  { id: 'square',    label: '\u25A0', name: 'Square' },
+  { id: 'diamond',   label: '\u25C6', name: 'Diamond' },
+  { id: 'star',      label: '\u2605', name: 'Star' },
+  { id: 'cross',     label: '\u271A', name: 'Cross' },
 ];
 
 /* ============================================================

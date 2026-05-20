@@ -225,14 +225,14 @@ window.ObjectPool = ObjectPool;
 const ENEMY_TYPES = {
   /* ===== ТИР 1 (волны 1+) ===== */
   skeleton: {
-    id: 'skeleton', name: 'Скелет-воин', letter: 'S',
+    id: 'skeleton', name: t('enemy_skeleton'), letter: 'S',
     shape: 'rect', color: '#bdbdbd', stroke: '#ffffff',
     w: 28, h: 28, hp: 20, speed: 55, damage: 10,
     xp: [5, 10], behavior: 'chase', tier: 1, dropChance: 0.6,
     spawnWeight: 4, hitInterval: 0.6, wobble: 1.5,
   },
   zombie: {
-    id: 'zombie', name: 'Зомби', letter: 'Z',
+    id: 'zombie', name: t('enemy_zombie'), letter: 'Z',
     shape: 'rect', color: '#3e6b3a', stroke: '#a3d39c',
     w: 28, h: 28, hp: 40, speed: 32, damage: 15,
     xp: [10, 14], behavior: 'chase', tier: 1, dropChance: 0.7,
@@ -240,7 +240,7 @@ const ENEMY_TYPES = {
     deathPuddle: { kind: 'rot', chance: 0.30, radius: 40, life: 3, slow: 0.30 },
   },
   goblin: {
-    id: 'goblin', name: 'Гоблин-налётчик', letter: 'G',
+    id: 'goblin', name: t('enemy_goblin'), letter: 'G',
     shape: 'triangle', color: '#27ae60', stroke: '#a0f0bf',
     w: 20, h: 20, hp: 12, speed: 100, damage: 8,
     xp: [5, 8], behavior: 'goblin', tier: 1, dropChance: 0.30,
@@ -250,7 +250,7 @@ const ENEMY_TYPES = {
 
   /* ===== ТИР 2 (волны 3+) ===== */
   archer: {
-    id: 'archer', name: 'Скелет-лучник', letter: 'A',
+    id: 'archer', name: t('enemy_archer'), letter: 'A',
     shape: 'rect', color: '#d9c08a', stroke: '#fff5cc',
     w: 24, h: 24, hp: 15, speed: 50, damage: 8,
     xp: [7, 9], behavior: 'archer', tier: 2, dropChance: 0.55,
@@ -259,7 +259,7 @@ const ENEMY_TYPES = {
     attackCooldown: 2.0, projectile: { kind: 'arrow_e', speed: 320, life: 2.5 },
   },
   ooze: {
-    id: 'ooze', name: 'Слизень (охра)', letter: 'O',
+    id: 'ooze', name: t('enemy_ooze'), letter: 'O',
     shape: 'oval', color: '#e67e22', stroke: '#ffd9a8',
     w: 30, h: 20, hp: 30, speed: 40, damage: 12,
     xp: [8, 12], behavior: 'ooze', tier: 2, dropChance: 0.6,
@@ -269,7 +269,7 @@ const ENEMY_TYPES = {
     splitOnDeath: { childId: 'slimeling', count: 2 },
   },
   gasspore: {
-    id: 'gasspore', name: 'Газовый спор', letter: 'S',
+    id: 'gasspore', name: t('enemy_gasspore'), letter: 'S',
     shape: 'circle', color: '#7d8f6e', stroke: '#cfe0b6',
     w: 22, h: 22, hp: 15, speed: 40, damage: 0,
     xp: [8, 12], behavior: 'gas', tier: 2, dropChance: 0.55,
@@ -279,7 +279,7 @@ const ENEMY_TYPES = {
 
   /* ===== ТИР 3 (волны 5+) ===== */
   mage: {
-    id: 'mage', name: 'Скелет-маг', letter: 'M',
+    id: 'mage', name: t('enemy_mage'), letter: 'M',
     shape: 'rect', color: '#7e57c2', stroke: '#dccff5',
     w: 24, h: 24, hp: 18, speed: 55, damage: 12,
     xp: [12, 18], behavior: 'mage', tier: 3, dropChance: 0.7,
@@ -288,7 +288,7 @@ const ENEMY_TYPES = {
     attackCooldown: 2.5, projectile: { kind: 'magebolt', speed: 280, life: 3 },
   },
   spider: {
-    id: 'spider', name: 'Гигантский паук', letter: 'P',
+    id: 'spider', name: t('enemy_spider'), letter: 'P',
     shape: 'diamond', color: '#1e1e1e', stroke: '#a070a0',
     w: 26, h: 26, hp: 20, speed: 110, damage: 10,
     xp: [12, 18], behavior: 'spider', tier: 3, dropChance: 0.55,
@@ -297,7 +297,7 @@ const ENEMY_TYPES = {
     splitOnDeath: { childId: 'spiderling', count: 3 },
   },
   fire_elem: {
-    id: 'fire_elem', name: 'Огненный элементаль', letter: 'F',
+    id: 'fire_elem', name: t('enemy_fire_elem'), letter: 'F',
     shape: 'diamond', color: '#ff7a00', stroke: '#ffd97a',
     w: 30, h: 30, hp: 35, speed: 60, damage: 12,
     xp: [18, 22], behavior: 'fire_elem', tier: 3, dropChance: 0.75,
@@ -307,7 +307,7 @@ const ENEMY_TYPES = {
     explodeOnDeath: { radius: 80, damage: 20 },
   },
   bat: {
-    id: 'bat', name: 'Летучая мышь-вампир', letter: 'B',
+    id: 'bat', name: t('enemy_bat'), letter: 'B',
     shape: 'oval', color: '#7a1d2c', stroke: '#ffb3b3',
     w: 18, h: 12, hp: 10, speed: 130, damage: 6,
     xp: [7, 10], behavior: 'bat', tier: 3, dropChance: 0.45,
@@ -317,7 +317,7 @@ const ENEMY_TYPES = {
 
   /* ===== ТИР 4 (волны 7+) ===== */
   captain: {
-    id: 'captain', name: 'Скелет-капитан', letter: 'C',
+    id: 'captain', name: t('enemy_captain'), letter: 'C',
     shape: 'rect', color: '#c0392b', stroke: '#ffd700',
     w: 32, h: 32, hp: 60, speed: 50, damage: 18,
     xp: [25, 35], behavior: 'captain', tier: 4, dropChance: 0.85,
@@ -325,7 +325,7 @@ const ENEMY_TYPES = {
     auraRadius: 100, auraSpeedMul: 1.20, auraDmgMul: 1.20,
   },
   cultist: {
-    id: 'cultist', name: 'Культист', letter: 'K',
+    id: 'cultist', name: t('enemy_cultist'), letter: 'K',
     shape: 'triangle', color: '#1a1a1a', stroke: '#a040ff',
     w: 22, h: 22, hp: 20, speed: 35, damage: 0,
     xp: [30, 40], behavior: 'cultist', tier: 4, dropChance: 0.80,
@@ -334,7 +334,7 @@ const ENEMY_TYPES = {
     summonEvery: 5.0, summonChildId: 'skeleton', maxSummons: 3,
   },
   shadow: {
-    id: 'shadow', name: 'Теневой убийца', letter: 'X',
+    id: 'shadow', name: t('enemy_shadow'), letter: 'X',
     shape: 'rect', color: '#0a0a0a', stroke: '#7a7a7a',
     w: 22, h: 22, hp: 18, speed: 110, damage: 14,
     xp: [16, 22], behavior: 'shadow', tier: 4, dropChance: 0.65,
@@ -344,7 +344,7 @@ const ENEMY_TYPES = {
 
   /* ===== ТИР 5 (волны 8+) ===== */
   rotgolem: {
-    id: 'rotgolem', name: 'Гнилой голем', letter: 'G',
+    id: 'rotgolem', name: t('enemy_rotgolem'), letter: 'G',
     shape: 'rect', color: '#6b4a2b', stroke: '#c9a97a',
     w: 40, h: 40, hp: 80, speed: 28, damage: 25,
     xp: [35, 45], behavior: 'rotgolem', tier: 5, dropChance: 0.90,
@@ -352,7 +352,7 @@ const ENEMY_TYPES = {
     sporeCooldown: 5.0, sporeChildId: 'gasspore',
   },
   dragonet: {
-    id: 'dragonet', name: 'Костяной дракончик', letter: 'D',
+    id: 'dragonet', name: t('enemy_dragonet'), letter: 'D',
     shape: 'diamond', color: '#9aa0a6', stroke: '#fff5cc',
     w: 35, h: 20, hp: 25, speed: 70, damage: 10,
     xp: [18, 26], behavior: 'dragonet', tier: 5, dropChance: 0.85,
@@ -363,7 +363,7 @@ const ENEMY_TYPES = {
 
   /* ===== ОСОБЫЙ — мимик (не входит в волны, спавнится отдельно) ===== */
   mimic: {
-    id: 'mimic', name: 'Мимик', letter: '?',
+    id: 'mimic', name: t('enemy_mimic'), letter: '?',
     shape: 'rect', color: '#d8a826', stroke: '#fffce0',
     w: 28, h: 28, hp: 50, speed: 40, damage: 20,
     xp: [40, 60], behavior: 'mimic', tier: 0, dropChance: 1.0,
@@ -373,7 +373,7 @@ const ENEMY_TYPES = {
 
   /* ===== НОВЫЕ — ТИР 1 (волны 1+) ===== */
   giant_rat: {
-    id: 'giant_rat', name: 'Крыса-гигант', letter: 'R',
+    id: 'giant_rat', name: t('enemy_giant_rat'), letter: 'R',
     shape: 'oval', color: '#8b6914', stroke: '#d4a855',
     w: 18, h: 10, hp: 8, speed: 120, damage: 5,
     xp: [3, 5], behavior: 'rat', tier: 1, dropChance: 0.35,
@@ -381,7 +381,7 @@ const ENEMY_TYPES = {
     fearChance: 0.30, fearDuration: 2.0,
   },
   acid_slug: {
-    id: 'acid_slug', name: 'Слизень-лизун', letter: 'S',
+    id: 'acid_slug', name: t('enemy_acid_slug'), letter: 'S',
     shape: 'oval', color: '#2ecc40', stroke: '#a0ffa0',
     w: 22, h: 14, hp: 12, speed: 35, damage: 8,
     xp: [4, 6], behavior: 'chase', tier: 1, dropChance: 0.45,
@@ -389,7 +389,7 @@ const ENEMY_TYPES = {
     deathPuddle: { kind: 'acid', chance: 1.0, radius: 30, life: 2, slow: 0, dps: 5 },
   },
   cave_bat: {
-    id: 'cave_bat', name: 'Летучая мышь', letter: 'B',
+    id: 'cave_bat', name: t('enemy_cave_bat'), letter: 'B',
     shape: 'oval', color: '#666666', stroke: '#bbbbbb',
     w: 16, h: 10, hp: 6, speed: 140, damage: 4,
     xp: [2, 4], behavior: 'bat', tier: 1, dropChance: 0.25,
@@ -397,7 +397,7 @@ const ENEMY_TYPES = {
     sinAmp: 20, sinFreq: 7,
   },
   ratcatcher: {
-    id: 'ratcatcher', name: 'Скелет-крысолов', letter: 'R',
+    id: 'ratcatcher', name: t('enemy_ratcatcher'), letter: 'R',
     shape: 'rect', color: '#e8dca0', stroke: '#ffffff',
     w: 22, h: 22, hp: 18, speed: 55, damage: 10,
     xp: [6, 10], behavior: 'chase', tier: 1, dropChance: 0.55,
@@ -405,7 +405,7 @@ const ENEMY_TYPES = {
     splitOnDeath: { childId: 'giant_rat', count: 2 },
   },
   mold: {
-    id: 'mold', name: 'Плесень', letter: 'M',
+    id: 'mold', name: t('enemy_mold'), letter: 'M',
     shape: 'circle', color: '#6b8060', stroke: '#a0c090',
     w: 20, h: 20, hp: 10, speed: 0, damage: 12,
     xp: [3, 5], behavior: 'mold', tier: 1, dropChance: 0.35,
@@ -416,7 +416,7 @@ const ENEMY_TYPES = {
 
   /* ===== НОВЫЕ — ТИР 2 (волны 3+) ===== */
   gnoll: {
-    id: 'gnoll', name: 'Гнолл-налётчик', letter: 'G',
+    id: 'gnoll', name: t('enemy_gnoll'), letter: 'G',
     shape: 'triangle', color: '#8b4513', stroke: '#d2a06a',
     w: 24, h: 24, hp: 22, speed: 100, damage: 12,
     xp: [8, 12], behavior: 'gnoll', tier: 2, dropChance: 0.55,
@@ -424,7 +424,7 @@ const ENEMY_TYPES = {
     rageHpPct: 0.50, rageSpeedMul: 1.30,
   },
   kobold: {
-    id: 'kobold', name: 'Кобольд-ловчий', letter: 'K',
+    id: 'kobold', name: t('enemy_kobold'), letter: 'K',
     shape: 'rect', color: '#777777', stroke: '#cccccc',
     w: 18, h: 18, hp: 14, speed: 65, damage: 8,
     xp: [7, 11], behavior: 'kobold', tier: 2, dropChance: 0.50,
@@ -433,7 +433,7 @@ const ENEMY_TYPES = {
     trapCooldown: 10.0, trapRadius: 20, trapDamage: 10,
   },
   cave_crab: {
-    id: 'cave_crab', name: 'Пещерный краб', letter: 'C',
+    id: 'cave_crab', name: t('enemy_cave_crab'), letter: 'C',
     shape: 'oval', color: '#e67300', stroke: '#ffcc80',
     w: 30, h: 18, hp: 30, speed: 38, damage: 15,
     xp: [12, 16], behavior: 'crab', tier: 2, dropChance: 0.65,
@@ -441,7 +441,7 @@ const ENEMY_TYPES = {
     shellDR: 0.50, shellDuration: 1.0, shellCooldown: 3.0,
   },
   ghost: {
-    id: 'ghost', name: 'Призрак', letter: 'W',
+    id: 'ghost', name: t('enemy_ghost'), letter: 'W',
     shape: 'oval', color: '#ffffff', stroke: '#ccccff',
     w: 24, h: 24, hp: 15, speed: 60, damage: 10,
     xp: [10, 14], behavior: 'ghost', tier: 2, dropChance: 0.55,
@@ -449,7 +449,7 @@ const ENEMY_TYPES = {
     ignoreWalls: true,
   },
   alchemist_skel: {
-    id: 'alchemist_skel', name: 'Скелет-алхимик', letter: 'A',
+    id: 'alchemist_skel', name: t('enemy_alchemist_skel'), letter: 'A',
     shape: 'rect', color: '#30b030', stroke: '#a0ffa0',
     w: 24, h: 24, hp: 16, speed: 55, damage: 12,
     xp: [9, 13], behavior: 'archer', tier: 2, dropChance: 0.55,
@@ -460,7 +460,7 @@ const ENEMY_TYPES = {
     projectileAoE: 30,
   },
   harpy: {
-    id: 'harpy', name: 'Гарпия', letter: 'H',
+    id: 'harpy', name: t('enemy_harpy'), letter: 'H',
     shape: 'triangle', color: '#808080', stroke: '#d0d0d0',
     w: 22, h: 22, hp: 18, speed: 90, damage: 15,
     xp: [11, 15], behavior: 'harpy', tier: 2, dropChance: 0.55,
@@ -468,7 +468,7 @@ const ENEMY_TYPES = {
     diveCooldown: 3.0, diveSpeed: 300, diveTime: 0.4, retreatDist: 120,
   },
   dung_beetle: {
-    id: 'dung_beetle', name: 'Жук-навозник', letter: 'D',
+    id: 'dung_beetle', name: t('enemy_dung_beetle'), letter: 'D',
     shape: 'circle', color: '#6b4400', stroke: '#b08040',
     w: 24, h: 24, hp: 25, speed: 35, damage: 12,
     xp: [10, 14], behavior: 'beetle', tier: 2, dropChance: 0.55,
@@ -478,7 +478,7 @@ const ENEMY_TYPES = {
 
   /* ===== НОВЫЕ — ТИР 3 (волны 5+) ===== */
   minotaur: {
-    id: 'minotaur', name: 'Минотавр', letter: 'M',
+    id: 'minotaur', name: t('enemy_minotaur'), letter: 'M',
     shape: 'rect', color: '#7a4a2a', stroke: '#d4a06a',
     w: 36, h: 36, hp: 50, speed: 55, damage: 25,
     xp: [18, 24], behavior: 'minotaur', tier: 3, dropChance: 0.75,
@@ -487,7 +487,7 @@ const ENEMY_TYPES = {
     chargeRestTime: 2.0, knockback: 60,
   },
   basilisk: {
-    id: 'basilisk', name: 'Василиск', letter: 'B',
+    id: 'basilisk', name: t('enemy_basilisk'), letter: 'B',
     shape: 'rect', color: '#1a4d1a', stroke: '#40a040',
     w: 28, h: 28, hp: 30, speed: 50, damage: 12,
     xp: [16, 20], behavior: 'basilisk', tier: 3, dropChance: 0.65,
@@ -495,7 +495,7 @@ const ENEMY_TYPES = {
     gazeCooldown: 6.0, gazeRange: 80, gazeSlowPct: 0.60, gazeSlowDuration: 2.0, gazeDamage: 12,
   },
   medusa: {
-    id: 'medusa', name: 'Медуза', letter: 'M',
+    id: 'medusa', name: t('enemy_medusa'), letter: 'M',
     shape: 'oval', color: '#228b22', stroke: '#ffffff',
     w: 26, h: 26, hp: 25, speed: 40, damage: 10,
     xp: [15, 19], behavior: 'archer', tier: 3, dropChance: 0.60,
@@ -506,7 +506,7 @@ const ENEMY_TYPES = {
     poisonDps: 4, poisonDuration: 3,
   },
   doppelganger: {
-    id: 'doppelganger', name: 'Доппельгангер', letter: 'D',
+    id: 'doppelganger', name: t('enemy_doppelganger'), letter: 'D',
     shape: 'rect', color: '#3070d0', stroke: '#ff3030',
     w: 32, h: 32, hp: 35, speed: 180, damage: 0,
     xp: [22, 28], behavior: 'doppelganger', tier: 3, dropChance: 0.80,
@@ -514,7 +514,7 @@ const ENEMY_TYPES = {
     copyDamageMul: 0.50, attackCooldown: 2.0,
   },
   earth_elem: {
-    id: 'earth_elem', name: 'Элементаль земли', letter: 'E',
+    id: 'earth_elem', name: t('enemy_earth_elem'), letter: 'E',
     shape: 'rect', color: '#8b6b3a', stroke: '#c9a97a',
     w: 34, h: 34, hp: 60, speed: 25, damage: 20,
     xp: [20, 26], behavior: 'earth_elem', tier: 3, dropChance: 0.75,
@@ -522,7 +522,7 @@ const ENEMY_TYPES = {
     wallCooldown: 5.0, wallLength: 60, wallDuration: 4.0,
   },
   water_elem: {
-    id: 'water_elem', name: 'Элементаль воды', letter: 'E',
+    id: 'water_elem', name: t('enemy_water_elem'), letter: 'E',
     shape: 'oval', color: '#4da6ff', stroke: '#b3d9ff',
     w: 30, h: 20, hp: 35, speed: 55, damage: 14,
     xp: [16, 20], behavior: 'water_elem', tier: 3, dropChance: 0.65,
@@ -532,7 +532,7 @@ const ENEMY_TYPES = {
     waveCooldown: 4.0, waveRange: 100, waveDamage: 14, waveKnockback: 40,
   },
   beholder_spore: {
-    id: 'beholder_spore', name: 'Бехолдер-споровый', letter: 'B',
+    id: 'beholder_spore', name: t('enemy_beholder_spore'), letter: 'B',
     shape: 'circle', color: '#8b008b', stroke: '#dda0dd',
     w: 28, h: 28, hp: 28, speed: 30, damage: 7,
     xp: [18, 22], behavior: 'beholder_spore', tier: 3, dropChance: 0.70,
@@ -542,7 +542,7 @@ const ENEMY_TYPES = {
     explodeOnDeath: { radius: 60, damage: 15 },
   },
   hell_hound: {
-    id: 'hell_hound', name: 'Адская гончая', letter: 'H',
+    id: 'hell_hound', name: t('enemy_hell_hound'), letter: 'H',
     shape: 'diamond', color: '#cc0000', stroke: '#ff6666',
     w: 26, h: 26, hp: 22, speed: 120, damage: 12,
     xp: [13, 17], behavior: 'fire_elem', tier: 3, dropChance: 0.60,
@@ -554,7 +554,7 @@ const ENEMY_TYPES = {
 
   /* ===== НОВЫЕ — ТИР 4 (волны 7+) ===== */
   dragonid: {
-    id: 'dragonid', name: 'Драконид-воин', letter: 'D',
+    id: 'dragonid', name: t('enemy_dragonid'), letter: 'D',
     shape: 'rect', color: '#cc2200', stroke: '#ff9966',
     w: 30, h: 30, hp: 40, speed: 60, damage: 18,
     xp: [22, 28], behavior: 'dragonid', tier: 4, dropChance: 0.75,
@@ -562,7 +562,7 @@ const ENEMY_TYPES = {
     breathCooldown: 5.0, breathRange: 80, breathDamage: 14,
   },
   drow: {
-    id: 'drow', name: 'Дроу-разведчик', letter: 'D',
+    id: 'drow', name: t('enemy_drow'), letter: 'D',
     shape: 'triangle', color: '#3d0066', stroke: '#b366ff',
     w: 22, h: 22, hp: 20, speed: 110, damage: 15,
     xp: [18, 22], behavior: 'drow', tier: 4, dropChance: 0.65,
@@ -571,7 +571,7 @@ const ENEMY_TYPES = {
     trapCooldown: 8.0, trapDamage: 12, trapRadius: 18,
   },
   illithid: {
-    id: 'illithid', name: 'Иллитид', letter: 'I',
+    id: 'illithid', name: t('enemy_illithid'), letter: 'I',
     shape: 'rect', color: '#6600cc', stroke: '#cc99ff',
     w: 28, h: 28, hp: 30, speed: 55, damage: 18,
     xp: [28, 34], behavior: 'illithid', tier: 4, dropChance: 0.80,
@@ -581,7 +581,7 @@ const ENEMY_TYPES = {
     deathScream: { radius: 100, speedBuff: 0.20, duration: 3.0 },
   },
   stone_golem: {
-    id: 'stone_golem', name: 'Голем-страж', letter: 'G',
+    id: 'stone_golem', name: t('enemy_stone_golem'), letter: 'G',
     shape: 'rect', color: '#808080', stroke: '#c0c0c0',
     w: 40, h: 40, hp: 80, speed: 25, damage: 25,
     xp: [32, 38], behavior: 'chase', tier: 4, dropChance: 0.85,
@@ -590,7 +590,7 @@ const ENEMY_TYPES = {
     immunePoison: true, immuneBleed: true,
   },
   rust_monster: {
-    id: 'rust_monster', name: 'Ржавый монстр', letter: 'R',
+    id: 'rust_monster', name: t('enemy_rust_monster'), letter: 'R',
     shape: 'oval', color: '#b36b00', stroke: '#ff9933',
     w: 30, h: 20, hp: 35, speed: 55, damage: 15,
     xp: [20, 26], behavior: 'chase', tier: 4, dropChance: 0.70,
@@ -600,7 +600,7 @@ const ENEMY_TYPES = {
     deathRust: true,
   },
   lich_minor: {
-    id: 'lich_minor', name: 'Лич-некромант', letter: 'N',
+    id: 'lich_minor', name: t('enemy_lich_minor'), letter: 'N',
     shape: 'rect', color: '#330066', stroke: '#ffd700',
     w: 26, h: 26, hp: 28, speed: 35, damage: 16,
     xp: [32, 38], behavior: 'lich_minor', tier: 4, dropChance: 0.80,
@@ -612,7 +612,7 @@ const ENEMY_TYPES = {
     killSummonsOnDeath: true,
   },
   chimera: {
-    id: 'chimera', name: 'Химера', letter: 'C',
+    id: 'chimera', name: t('enemy_chimera'), letter: 'C',
     shape: 'rect', color: '#b3b300', stroke: '#66ff66',
     w: 36, h: 28, hp: 45, speed: 55, damage: 15,
     xp: [25, 31], behavior: 'chimera', tier: 4, dropChance: 0.80,
@@ -624,7 +624,7 @@ const ENEMY_TYPES = {
     },
   },
   demon_berserker: {
-    id: 'demon_berserker', name: 'Демон-берсерк', letter: 'D',
+    id: 'demon_berserker', name: t('enemy_demon_berserker'), letter: 'D',
     shape: 'rect', color: '#cc0000', stroke: '#ff6666',
     w: 34, h: 34, hp: 50, speed: 100, damage: 20,
     xp: [28, 34], behavior: 'demon_berserker', tier: 4, dropChance: 0.80,
@@ -634,7 +634,7 @@ const ENEMY_TYPES = {
 
   /* ===== НОВЫЕ — ТИР 5 (волны 8+) ===== */
   young_dragon: {
-    id: 'young_dragon', name: 'Молодой дракон', letter: 'D',
+    id: 'young_dragon', name: t('enemy_young_dragon'), letter: 'D',
     shape: 'diamond', color: '#cc3300', stroke: '#ffd700',
     w: 44, h: 30, hp: 70, speed: 100, damage: 22,
     xp: [38, 44], behavior: 'young_dragon', tier: 5, dropChance: 0.90,
@@ -643,7 +643,7 @@ const ENEMY_TYPES = {
     tailSweep: { damage: 18, radius: 60, cooldown: 8.0, knockback: 50 },
   },
   observer: {
-    id: 'observer', name: 'Наблюдатель', letter: 'B',
+    id: 'observer', name: t('enemy_observer'), letter: 'B',
     shape: 'circle', color: '#660099', stroke: '#cc66ff',
     w: 34, h: 34, hp: 55, speed: 30, damage: 8,
     xp: [38, 44], behavior: 'observer', tier: 5, dropChance: 0.90,
@@ -653,7 +653,7 @@ const ENEMY_TYPES = {
     antimagicCooldown: 6.0, antimagicDuration: 2.0,
   },
   death_knight: {
-    id: 'death_knight', name: 'Рыцарь смерти', letter: 'D',
+    id: 'death_knight', name: t('enemy_death_knight'), letter: 'D',
     shape: 'rect', color: '#1a1a1a', stroke: '#cc0000',
     w: 38, h: 38, hp: 90, speed: 40, damage: 28,
     xp: [45, 55], behavior: 'death_knight', tier: 5, dropChance: 0.95,
@@ -662,7 +662,7 @@ const ENEMY_TYPES = {
     deathCurse: { damageTakenMul: 1.30, duration: 5.0 },
   },
   hydra_small: {
-    id: 'hydra_small', name: 'Гидра (малая)', letter: 'H',
+    id: 'hydra_small', name: t('enemy_hydra_small'), letter: 'H',
     shape: 'oval', color: '#228b22', stroke: '#66ff66',
     w: 44, h: 28, hp: 60, speed: 30, damage: 10,
     xp: [42, 48], behavior: 'hydra', tier: 5, dropChance: 0.90,
@@ -670,7 +670,7 @@ const ENEMY_TYPES = {
     heads: 3, headHp: 20, headRegenTime: 5.0, regenPerHead: 2,
   },
   archlich: {
-    id: 'archlich', name: 'Архилич', letter: 'A',
+    id: 'archlich', name: t('enemy_archlich'), letter: 'A',
     shape: 'rect', color: '#0d0d0d', stroke: '#ffd700',
     w: 30, h: 30, hp: 100, speed: 55, damage: 25,
     xp: [55, 65], behavior: 'archlich', tier: 5, dropChance: 1.0,
@@ -682,7 +682,7 @@ const ENEMY_TYPES = {
     rareSpawn: true, maxPerRun: 1,
   },
   eldritch_horror: {
-    id: 'eldritch_horror', name: 'Потусторонний ужас', letter: 'H',
+    id: 'eldritch_horror', name: t('enemy_eldritch_horror'), letter: 'H',
     shape: 'rect', color: '#2d0040', stroke: '#9933ff',
     w: 48, h: 48, hp: 120, speed: 22, damage: 30,
     xp: [65, 75], behavior: 'eldritch_horror', tier: 5, dropChance: 1.0,
@@ -693,7 +693,7 @@ const ENEMY_TYPES = {
   },
   /* ===== Ещё один враг тир5 для разнообразия ===== */
   bone_colossus: {
-    id: 'bone_colossus', name: 'Костяной колосс', letter: 'K',
+    id: 'bone_colossus', name: t('enemy_bone_colossus'), letter: 'K',
     shape: 'rect', color: '#d9d0c0', stroke: '#ffffff',
     w: 42, h: 42, hp: 85, speed: 28, damage: 26,
     xp: [40, 50], behavior: 'rotgolem', tier: 5, dropChance: 0.90,
@@ -703,14 +703,14 @@ const ENEMY_TYPES = {
 
   /* ===== ДОЧЕРНИЕ (не призываются волной) ===== */
   spiderling: {
-    id: 'spiderling', name: 'Паучок', letter: 'p',
+    id: 'spiderling', name: t('enemy_spiderling'), letter: 'p',
     shape: 'diamond', color: '#3a3a3a', stroke: '#a070a0',
     w: 16, h: 16, hp: 5, speed: 130, damage: 3,
     xp: [3, 5], behavior: 'chase', tier: 0, dropChance: 0.20,
     spawnWeight: 0, hitInterval: 0.4, wobble: 1.5,
   },
   slimeling: {
-    id: 'slimeling', name: 'Малый слизень', letter: 'o',
+    id: 'slimeling', name: t('enemy_slimeling'), letter: 'o',
     shape: 'oval', color: '#f0a050', stroke: '#ffd9a8',
     w: 18, h: 12, hp: 8, speed: 50, damage: 4,
     xp: [4, 6], behavior: 'chase', tier: 0, dropChance: 0.30,
@@ -762,7 +762,7 @@ const BOSS_CONFIG = {
 const BOSS_TYPES = {
   boss_skeleton_knight: {
     id: 'boss_skeleton_knight',
-    name: 'Скелет-рыцарь',
+    name: t('boss_skeleton_king'),
     hp: 300,
     speed: 72,           // 0.4 от героя (180 * 0.4)
     damage: 25,
@@ -784,7 +784,7 @@ const BOSS_TYPES = {
 
   boss_lich: {
     id: 'boss_lich',
-    name: 'Лич',
+    name: t('boss_lich'),
     hp: 200,
     speed: 108,          // 0.6 от героя (180 * 0.6)
     damage: 15,
@@ -809,7 +809,7 @@ const BOSS_TYPES = {
 
   boss_spider_queen: {
     id: 'boss_spider_queen',
-    name: 'Паук-королева',
+    name: t('boss_spider_queen'),
     hp: 350,
     speed: 198,          // 1.1 от героя (180 * 1.1)
     damage: 20,
@@ -832,7 +832,7 @@ const BOSS_TYPES = {
 
   boss_fire_lord: {
     id: 'boss_fire_lord',
-    name: 'Огненный элементаль-лорд',
+    name: t('boss_fire_elemental_lord'),
     hp: 500,
     speed: 54,           // 0.3 от героя (180 * 0.3)
     damage: 30,
@@ -859,7 +859,7 @@ const BOSS_TYPES = {
 /* Шаг 13: Добавляем новых боссов-стражей для ледяных пещер, лесных руин и замка */
 BOSS_TYPES.boss_ice_lord = {
   id: 'boss_ice_lord',
-  name: 'Ледяной элементаль-лорд',
+  name: t('boss_ice_elemental_lord'),
   hp: 450,
   speed: 60,
   damage: 25,
@@ -884,7 +884,7 @@ BOSS_TYPES.boss_ice_lord = {
 
 BOSS_TYPES.boss_ancient_ent = {
   id: 'boss_ancient_ent',
-  name: 'Древний энт',
+  name: t('boss_ancient_ent'),
   hp: 600,
   speed: 35,
   damage: 30,
@@ -911,7 +911,7 @@ BOSS_TYPES.boss_ancient_ent = {
 
 BOSS_TYPES.boss_dark_knight = {
   id: 'boss_dark_knight',
-  name: 'Тёмный рыцарь',
+  name: t('boss_dark_knight'),
   hp: 550,
   speed: 80,
   damage: 30,
@@ -937,7 +937,7 @@ BOSS_TYPES.boss_dark_knight = {
 
 BOSS_TYPES.boss_ghoul_king = {
   id: 'boss_ghoul_king',
-  name: 'Король упырей',
+  name: t('boss_ghoul_king'),
   hp: 350,
   speed: 130,
   damage: 20,
@@ -964,7 +964,7 @@ BOSS_TYPES.boss_ghoul_king = {
 
 BOSS_TYPES.boss_ice_serpent = {
   id: 'boss_ice_serpent',
-  name: 'Ледяной змей',
+  name: t('boss_ice_serpent'),
   hp: 400,
   speed: 70,
   damage: 18,
@@ -990,7 +990,7 @@ BOSS_TYPES.boss_ice_serpent = {
 
 BOSS_TYPES.boss_magma_giant = {
   id: 'boss_magma_giant',
-  name: 'Магма-гигант',
+  name: t('boss_magma_giant'),
   hp: 500,
   speed: 40,
   damage: 30,
@@ -1019,7 +1019,7 @@ BOSS_TYPES.boss_magma_giant = {
 
 BOSS_TYPES.boss_spider_matriarch = {
   id: 'boss_spider_matriarch',
-  name: 'Королева пауков',
+  name: t('boss_spider_queen_large'),
   hp: 320,
   speed: 100,
   damage: 15,
@@ -1045,7 +1045,7 @@ BOSS_TYPES.boss_spider_matriarch = {
 
 BOSS_TYPES.boss_knight_commander = {
   id: 'boss_knight_commander',
-  name: 'Рыцарь-командор',
+  name: t('boss_knight_commander'),
   hp: 450,
   speed: 65,
   damage: 35,
@@ -1072,7 +1072,7 @@ BOSS_TYPES.boss_knight_commander = {
 
 BOSS_TYPES.boss_shadow_dragon = {
   id: 'boss_shadow_dragon',
-  name: 'Теневой дракон',
+  name: t('boss_shadow_dragon'),
   hp: 600,
   speed: 90,
   damage: 28,
@@ -1081,7 +1081,7 @@ BOSS_TYPES.boss_shadow_dragon = {
   color: '#1a0033',
   stroke: '#9933ff',
   shape: 'diamond',
-  letter: 'Д',
+  letter: 'D',
   hitInterval: 0.8,
   // Атаки
   attacks: {
@@ -1158,7 +1158,7 @@ BOSS_CONFIG.REWARDS = {
    ============================================================ */
 BOSS_TYPES.boss_ancient_dragon = {
   id: 'boss_ancient_dragon',
-  name: 'Древний дракон',
+  name: t('boss_ancient_dragon'),
   hp: 800,
   speed: 45,
   damage: 25,
@@ -1244,34 +1244,34 @@ const PASSIVE_CONFIGS = {
   /* === Категория: Защита === */
   armor: {
     id: 'armor',
-    name: 'Броня',
+    name: t('ability_armor'),
     icon: '🛡',
-    desc: 'Снижение получаемого урона на 5% за уровень.',
+    desc: t('ability_armor_desc'),
     effectType: 'statModifier',
     perLevel: 0.05,        // -5% урона за уровень (уровень 5: -25%)
   },
   mana_shield: {
     id: 'mana_shield',
-    name: 'Щит маны',
+    name: t('ability_mana_shield'),
     icon: '🔵',
-    desc: 'Блокирует следующий удар полностью (кулдаун уменьшается с уровнем).',
+    desc: t('ability_mana_shield_desc'),
     effectType: 'periodic',
     baseCooldown: 12,      // уровень 1: каждые 12 сек, уровень 5: каждые 8 сек
     cdReductionPerLevel: 1, // -1 сек кулдауна за уровень
   },
   fortify: {
     id: 'fortify',
-    name: 'Укрепление',
+    name: t('ability_fortify'),
     icon: '❤',
-    desc: '+8% к максимальному HP за уровень.',
+    desc: t('ability_fortify_desc'),
     effectType: 'statModifier',
     perLevel: 0.08,        // +8% maxHp за уровень
   },
   resistance: {
     id: 'resistance',
-    name: 'Сопротивление',
+    name: t('ability_resistance'),
     icon: '✜',
-    desc: '-15% длительности отрицательных эффектов за уровень.',
+    desc: t('ability_resistance_desc'),
     effectType: 'statModifier',
     perLevel: 0.15,        // -15% длительности дебаффов за уровень (макс -75%)
   },
@@ -1279,25 +1279,25 @@ const PASSIVE_CONFIGS = {
   /* === Категория: Атака === */
   bloodlust: {
     id: 'bloodlust',
-    name: 'Жажда крови',
+    name: t('ability_bloodlust'),
     icon: '🦷',
-    desc: '+2% вампиризма (лечение от урона) за уровень.',
+    desc: t('ability_bloodlust_desc'),
     effectType: 'onHit',
     perLevel: 0.02,        // 2% lifesteal за уровень
   },
   crit_strike: {
     id: 'crit_strike',
-    name: 'Критический удар',
+    name: t('ability_crit_strike'),
     icon: '⚡',
-    desc: '+4% шанс крита (×2 урон) за уровень.',
+    desc: t('ability_crit_strike_desc'),
     effectType: 'statModifier',
     perLevel: 0.04,        // +4% шанс крита за уровень
   },
   bleed: {
     id: 'bleed',
-    name: 'Кровотечение',
+    name: t('ability_bleed'),
     icon: '💧',
-    desc: '10% шанс за уровень наложить кровотечение (4 урон/сек, 3 сек).',
+    desc: t('ability_bleed_desc'),
     effectType: 'onHit',
     perLevel: 0.10,        // +10% шанс за уровень
     dotDps: 4,
@@ -1305,9 +1305,9 @@ const PASSIVE_CONFIGS = {
   },
   explosive_death: {
     id: 'explosive_death',
-    name: 'Взрывная смерть',
+    name: t('ability_explosive_death'),
     icon: '💥',
-    desc: '10% шанс за уровень: при убийстве — взрыв (урон 18, радиус 50px).',
+    desc: t('ability_explosive_death_desc'),
     effectType: 'onKill',
     perLevel: 0.10,        // +10% шанс за уровень
     explosionDamage: 18,
@@ -1317,34 +1317,34 @@ const PASSIVE_CONFIGS = {
   /* === Категория: Магия === */
   quick_fingers: {
     id: 'quick_fingers',
-    name: 'Быстрые пальцы',
+    name: t('ability_quick_fingers'),
     icon: '🔄',
-    desc: '-4% кулдауна всех оружий за уровень.',
+    desc: t('ability_quick_fingers_desc'),
     effectType: 'statModifier',
     perLevel: 0.04,        // -4% CD за уровень (уровень 5: -20%)
   },
   frost_aura: {
     id: 'frost_aura',
-    name: 'Аура холода',
+    name: t('ability_frost_aura'),
     icon: '❄',
-    desc: 'Замедляет врагов в радиусе 60px на 8% за уровень.',
+    desc: t('ability_frost_aura_desc'),
     effectType: 'aura',
     radius: 60,
     perLevel: 0.08,        // -8% скорости врагов за уровень
   },
   magic_boost: {
     id: 'magic_boost',
-    name: 'Усиление магии',
+    name: t('ability_magic_boost'),
     icon: '✦',
-    desc: '+10% к магическому урону за уровень.',
+    desc: t('ability_magic_boost_desc'),
     effectType: 'statModifier',
     perLevel: 0.10,        // +10% magic damage за уровень
   },
   magic_echo: {
     id: 'magic_echo',
-    name: 'Магический отклик',
+    name: t('ability_magic_echo'),
     icon: '🔮',
-    desc: '15% шанс за уровень: при получении урона — ответный снаряд (урон 15).',
+    desc: t('ability_magic_echo_desc'),
     effectType: 'onDamageTaken',
     perLevel: 0.15,        // +15% шанс за уровень
     echoDamage: 15,
@@ -1354,33 +1354,33 @@ const PASSIVE_CONFIGS = {
   /* === Категория: Удача и лут === */
   lucky: {
     id: 'lucky',
-    name: 'Счастливчик',
+    name: t('ability_lucky'),
     icon: '🎲',
-    desc: '+1 к мин. результату d20 за уровень.',
+    desc: t('ability_lucky_desc'),
     effectType: 'statModifier',
     perLevel: 1,           // +1 к минимальному d20 за уровень
   },
   double_xp: {
     id: 'double_xp',
-    name: 'Удвоение опыта',
+    name: t('ability_double_xp'),
     icon: '✕2',
-    desc: '6% шанс за уровень получить удвоенный опыт.',
+    desc: t('ability_double_xp_desc'),
     effectType: 'onKill',
     perLevel: 0.06,        // +6% шанс за уровень
   },
   alchemist: {
     id: 'alchemist',
-    name: 'Алхимик',
+    name: t('ability_alchemist'),
     icon: '⚗',
-    desc: '+12% к урону ядов и огня (DoT) за уровень.',
+    desc: t('ability_alchemist_desc'),
     effectType: 'statModifier',
     perLevel: 0.12,        // +12% DoT damage за уровень
   },
   magnet_plus: {
     id: 'magnet_plus',
-    name: 'Магнит предметов',
+    name: t('ability_magnet_plus'),
     icon: '⊕',
-    desc: '+20% к радиусу подбора за уровень (стакается с Магнитом опыта).',
+    desc: t('ability_magnet_plus_desc'),
     effectType: 'statModifier',
     perLevel: 0.20,        // +20% pickup radius за уровень
   },
@@ -1398,7 +1398,7 @@ window.PASSIVE_CONFIGS = PASSIVE_CONFIGS;
 const BIOMES = [
   {
     id: 'crypt',
-    name: 'Склеп',
+    name: t('biome_crypt'),
     floorColor: '#3a3a3a',
     floorGridColor: '#444444',
     wallColor: '#1a1a1a',
@@ -1422,7 +1422,7 @@ const BIOMES = [
   },
   {
     id: 'ice_caves',
-    name: 'Ледяные пещеры',
+    name: t('biome_ice_caves'),
     floorColor: '#3a3a4a',
     floorGridColor: '#4a4a5a',
     wallColor: '#1a1a2a',
@@ -1445,7 +1445,7 @@ const BIOMES = [
   },
   {
     id: 'fire_mines',
-    name: 'Огненные шахты',
+    name: t('biome_fire_mines'),
     floorColor: '#3a2a2a',
     floorGridColor: '#4a3a3a',
     wallColor: '#2a1a1a',
@@ -1468,7 +1468,7 @@ const BIOMES = [
   },
   {
     id: 'forest_ruins',
-    name: 'Лесные руины',
+    name: t('biome_forest_ruins'),
     floorColor: '#3a3a2a',
     floorGridColor: '#4a4a3a',
     wallColor: '#1a2a1a',
@@ -1491,7 +1491,7 @@ const BIOMES = [
   },
   {
     id: 'castle',
-    name: 'Замок',
+    name: t('biome_castle'),
     floorColor: '#2a2a3a',
     floorGridColor: '#3a3a4a',
     wallColor: '#1a1a2a',
@@ -1515,7 +1515,7 @@ const BIOMES = [
   /* ===== Биом 6: Небесный город (Sky Citadel) ===== */
   {
     id: 'sky_citadel',
-    name: 'Небесный город',
+    name: t('biome_sky_citadel'),
     floorColor: '#d8e8f0',
     floorGridColor: '#c0d8e8',
     wallColor: '#e8e8e8',
@@ -1543,7 +1543,7 @@ const BIOMES = [
   /* ===== Биом 7: Эльфийский лес (Elven Forest) ===== */
   {
     id: 'elven_forest',
-    name: 'Эльфийский лес',
+    name: t('biome_elven_forest'),
     floorColor: '#4a7a3a',
     floorGridColor: '#5a8a4a',
     wallColor: '#3a2a1a',
@@ -1567,7 +1567,7 @@ const BIOMES = [
   /* ===== Биом 8: Горная местность (Mountain Keep) ===== */
   {
     id: 'mountain_keep',
-    name: 'Горная крепость',
+    name: t('biome_mountain_keep'),
     floorColor: '#6b5a4a',
     floorGridColor: '#7a6a5a',
     wallColor: '#3a3a3a',

@@ -13,7 +13,7 @@
 /* --- Кровопускатель (Секира + Жажда крови) --- */
 class BloodletterWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'bloodletter', name: 'Кровопускатель', type: 'melee', baseCooldown: 0.9, baseDamage: 24, icon: '🪓', evolvedFrom: 'axe' });
+    super({ id: 'bloodletter', name: t('evo_bloodletter'), type: 'melee', baseCooldown: 0.9, baseDamage: 24, icon: '🪓', evolvedFrom: 'axe' });
     this.radius = 70; this.arc = Math.PI; this.swingTime = 0.20; this.lifesteal = 5;
     this.swing = { active: false, t: 0, angle: 0 };
   }
@@ -48,7 +48,7 @@ class BloodletterWeapon extends EvolutionWeapon {
 /* --- Пронзатель (Копьё + Критический удар) --- */
 class PiercerWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'piercer', name: 'Пронзатель', type: 'melee', baseCooldown: 0.8, baseDamage: 22, icon: '⚜', evolvedFrom: 'spear' });
+    super({ id: 'piercer', name: t('evo_piercer'), type: 'melee', baseCooldown: 0.8, baseDamage: 22, icon: '⚜', evolvedFrom: 'spear' });
     this.range = 150; this.width = 24; this.critChance = 0.30; this.thrustTime = 0.15;
     this.thrust = { active: false, t: 0, angle: 0 };
   }
@@ -82,7 +82,7 @@ class PiercerWeapon extends EvolutionWeapon {
 /* --- Молот титана (Молот + Укрепление) --- */
 class TitanHammerWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'titan_hammer', name: 'Молот титана', type: 'melee', baseCooldown: 1.4, baseDamage: 24, icon: '⚒', evolvedFrom: 'hammer' });
+    super({ id: 'titan_hammer', name: t('evo_titan_hammer'), type: 'melee', baseCooldown: 1.4, baseDamage: 24, icon: '⚒', evolvedFrom: 'hammer' });
     this.radius = 90; this.slamTime = 0.25; this.slam = { active: false, t: 0 };
     this._killCount = 0; this._bonusHp = 0; this._bonusTimer = 0;
   }
@@ -114,7 +114,7 @@ class TitanHammerWeapon extends EvolutionWeapon {
 /* --- Бич боли (Кнут + Усиление урона) --- */
 class PainLashWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'pain_lash', name: 'Бич боли', type: 'melee', baseCooldown: 0.6, baseDamage: 18, icon: '〰', evolvedFrom: 'whip' });
+    super({ id: 'pain_lash', name: t('evo_pain_lash'), type: 'melee', baseCooldown: 0.6, baseDamage: 18, icon: '〰', evolvedFrom: 'whip' });
     this.range = 150; this.whipTime = 0.2; this.whipAnim = { active: false, t: 0, tx: 0, ty: 0 };
   }
   tick(dt) { if (this.whipAnim.active) { this.whipAnim.t += dt; if (this.whipAnim.t >= this.whipTime) this.whipAnim.active = false; } }
@@ -144,7 +144,7 @@ class PainLashWeapon extends EvolutionWeapon {
 /* --- Казнь (Арбалет + Кровотечение) --- */
 class ExecutionerWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'executioner', name: 'Казнь', type: 'ranged', baseCooldown: 1.6, baseDamage: 30, icon: '☠', evolvedFrom: 'crossbow' });
+    super({ id: 'executioner', name: t('evo_executioner'), type: 'ranged', baseCooldown: 1.6, baseDamage: 30, icon: '☠', evolvedFrom: 'crossbow' });
     this.speed = 480; this.life = 2.2; this.range = 650;
   }
   doAttack(player, enemies, projectiles) {
@@ -165,7 +165,7 @@ class ExecutionerWeapon extends EvolutionWeapon {
 /* --- Топоры мясника (Мет. топоры + Крит) --- */
 class ButcherAxesWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'butcher_axes', name: 'Топоры мясника', type: 'ranged', baseCooldown: 0.9, baseDamage: 14, icon: '⚒', evolvedFrom: 'throwing_axes' });
+    super({ id: 'butcher_axes', name: t('evo_butcher_axes'), type: 'ranged', baseCooldown: 0.9, baseDamage: 14, icon: '⚒', evolvedFrom: 'throwing_axes' });
     this.speed = 420; this.life = 1.5; this.range = 520; this.count = 3;
     this.critChance = 0.25; this.critMul = 3;
     this.spreadAngle = (12 * Math.PI) / 180;
@@ -195,7 +195,7 @@ class ButcherAxesWeapon extends EvolutionWeapon {
 /* --- Игольчатый шторм (Дротики + Быстрые пальцы) --- */
 class NeedleStormWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'needle_storm', name: 'Игольчатый шторм', type: 'ranged', baseCooldown: 0.4, baseDamage: 7, icon: '↗', evolvedFrom: 'darts' });
+    super({ id: 'needle_storm', name: t('evo_needle_storm'), type: 'ranged', baseCooldown: 0.4, baseDamage: 7, icon: '↗', evolvedFrom: 'darts' });
     this.speed = 580; this.life = 1.2; this.range = 520;
     this.burstCount = 5; this.burstInterval = 0.08;
     this._burstLeft = 0; this._burstTimer = 0; this._lastDir = { x: 1, y: 0 };
@@ -229,7 +229,7 @@ class NeedleStormWeapon extends EvolutionWeapon {
 /* --- Метеоритный удар (Праща + Взрывная смерть) --- */
 class MeteorStrikeWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'meteor_strike', name: 'Метеоритный удар', type: 'ranged', baseCooldown: 0.8, baseDamage: 22, icon: '☄', evolvedFrom: 'sling' });
+    super({ id: 'meteor_strike', name: t('evo_meteor_strike'), type: 'ranged', baseCooldown: 0.8, baseDamage: 22, icon: '☄', evolvedFrom: 'sling' });
     this.range = 550; this.aoeRadius = 60;
   }
   doAttack(player, enemies, projectiles) {
@@ -248,7 +248,7 @@ class MeteorStrikeWeapon extends EvolutionWeapon {
 /* --- Ледяной шторм (Ледяная стрела + Аура холода) --- */
 class IceStormWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'ice_storm', name: 'Ледяной шторм', type: 'magic', baseCooldown: 1.1, baseDamage: 16, icon: '❄', evolvedFrom: 'ice_arrow' });
+    super({ id: 'ice_storm', name: t('evo_ice_storm'), type: 'magic', baseCooldown: 1.1, baseDamage: 16, icon: '❄', evolvedFrom: 'ice_arrow' });
     this.speed = 380; this.life = 1.8; this.range = 520;
   }
   doAttack(player, enemies, projectiles) {
@@ -268,7 +268,7 @@ class IceStormWeapon extends EvolutionWeapon {
 /* --- Грозовая цепь (Цеп. молния + Усиление магии) --- */
 class ThunderChainWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'thunder_chain', name: 'Грозовая цепь', type: 'magic', baseCooldown: 1.4, baseDamage: 18, icon: '⚡', evolvedFrom: 'chain_lightning' });
+    super({ id: 'thunder_chain', name: t('evo_thunder_chain'), type: 'magic', baseCooldown: 1.4, baseDamage: 18, icon: '⚡', evolvedFrom: 'chain_lightning' });
     this.range = 320; this.chainRadius = 80; this.chains = 5;
     this.lightningAnim = { active: false, t: 0, points: [] };
   }
@@ -312,7 +312,7 @@ class ThunderChainWeapon extends EvolutionWeapon {
 /* --- Чумное облако (Яд. облако + Алхимик) --- */
 class PlagueCloudWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'plague_cloud', name: 'Чумное облако', type: 'magic', baseCooldown: 1.8, baseDamage: 12, icon: '☣', evolvedFrom: 'poison_cloud' });
+    super({ id: 'plague_cloud', name: t('evo_plague_cloud'), type: 'magic', baseCooldown: 1.8, baseDamage: 12, icon: '☣', evolvedFrom: 'poison_cloud' });
     this.range = 320; this.cloudRadius = 80; this.cloudLife = 5.0;
     this._clouds = [];
   }
@@ -350,7 +350,7 @@ class PlagueCloudWeapon extends EvolutionWeapon {
 /* --- Безумный гримуар (Книга закл. + Магический отклик) --- */
 class MadGrimoireWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'mad_grimoire', name: 'Безумный гримуар', type: 'magic', baseCooldown: 0.7, baseDamage: 12, icon: '📖', evolvedFrom: 'spellbook' });
+    super({ id: 'mad_grimoire', name: t('evo_mad_grimoire'), type: 'magic', baseCooldown: 0.7, baseDamage: 12, icon: '📖', evolvedFrom: 'spellbook' });
     this.speed = 400; this.life = 1.3; this.count = 4;
   }
   doAttack(player, _enemies, projectiles) {
@@ -372,7 +372,7 @@ class MadGrimoireWeapon extends EvolutionWeapon {
 /* --- Инферно (Огн. шторм + Усиление урона) --- */
 class InfernoWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'inferno', name: 'Инферно', type: 'aoe', baseCooldown: 2.2, baseDamage: 25, icon: '🌋', evolvedFrom: 'firestorm' });
+    super({ id: 'inferno', name: t('evo_inferno'), type: 'aoe', baseCooldown: 2.2, baseDamage: 25, icon: '🌋', evolvedFrom: 'firestorm' });
     this.spawnRadius = 130; this.aoeRadius = 45; this.pillarLife = 0.8; this.pillarCount = 5;
     this._pillars = [];
   }
@@ -413,7 +413,7 @@ class InfernoWeapon extends EvolutionWeapon {
 /* --- Аура мученика (Св. аура + Регенерация) --- */
 class MartyrAuraWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'martyr_aura', name: 'Аура мученика', type: 'aoe', baseCooldown: 0, baseDamage: 6, icon: '✡', evolvedFrom: 'holy_aura' });
+    super({ id: 'martyr_aura', name: t('evo_martyr_aura'), type: 'aoe', baseCooldown: 0, baseDamage: 6, icon: '✡', evolvedFrom: 'holy_aura' });
     this.radius = 70; this.undeadDps = 18; this._tickAcc = 0;
   }
   update(player, enemies, _proj, dt, helpers) {
@@ -447,7 +447,7 @@ class MartyrAuraWeapon extends EvolutionWeapon {
 /* --- Шипастый бастион (Кольцо шипов + Броня) --- */
 class SpikeBastionWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'spike_bastion', name: 'Шипастый бастион', type: 'aoe', baseCooldown: 0, baseDamage: 16, icon: '✸', evolvedFrom: 'spike_ring' });
+    super({ id: 'spike_bastion', name: t('evo_spike_bastion'), type: 'aoe', baseCooldown: 0, baseDamage: 16, icon: '✸', evolvedFrom: 'spike_ring' });
     this.radius = 65; this.spikeCount = 6; this.rotSpeed = Math.PI * 1.2;
     this._angle = 0; this._hitCooldowns = new Map(); this.bonusDR = 0.05;
   }
@@ -487,7 +487,7 @@ class SpikeBastionWeapon extends EvolutionWeapon {
 /* --- Тектонический разлом (Землетрясение + Укрепление) --- */
 class TectonicRiftWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'tectonic_rift', name: 'Тектонический разлом', type: 'aoe', baseCooldown: 2.8, baseDamage: 18, icon: '◉', evolvedFrom: 'earthquake' });
+    super({ id: 'tectonic_rift', name: t('evo_tectonic_rift'), type: 'aoe', baseCooldown: 2.8, baseDamage: 18, icon: '◉', evolvedFrom: 'earthquake' });
     this.maxRadius = 180; this.expandTime = 0.6; this._waves = []; this._cracks = [];
   }
   doAttack(player) {
@@ -547,7 +547,7 @@ class TectonicRiftWeapon extends EvolutionWeapon {
 /* --- Клинок героя (Меч + Усиление урона) --- */
 class HeroBladeWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'hero_blade', name: 'Клинок героя', type: 'melee', baseCooldown: 0.7, baseDamage: 30, icon: '⚔', evolvedFrom: 'sword' });
+    super({ id: 'hero_blade', name: t('evo_hero_blade'), type: 'melee', baseCooldown: 0.7, baseDamage: 30, icon: '⚔', evolvedFrom: 'sword' });
     this.radius = 65; this.arc = Math.PI * 0.9; this.swingTime = 0.16;
     this.swing = { active: false, t: 0, angle: 0 }; this.dmgBonus = 0.15;
   }
@@ -580,7 +580,7 @@ class HeroBladeWeapon extends EvolutionWeapon {
 /* --- Пироклазм (Огненный шар + Усиление магии) --- */
 class PyroclasmWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'pyroclasm', name: 'Пироклазм', type: 'aoe', baseCooldown: 2.2, baseDamage: 35, icon: '🔥', evolvedFrom: 'fireball' });
+    super({ id: 'pyroclasm', name: t('evo_pyroclasm'), type: 'aoe', baseCooldown: 2.2, baseDamage: 35, icon: '🔥', evolvedFrom: 'fireball' });
     this.flightTime = 0.6; this.explodeRadius = 100; this.range = 700; this.speed = 300;
   }
   doAttack(player, enemies, projectiles) {
@@ -601,7 +601,7 @@ class PyroclasmWeapon extends EvolutionWeapon {
 /* --- Ледяной шип (Ледяная стрела + Магический отклик) --- */
 class IceSpikeWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'ice_spike', name: 'Ледяной шип', type: 'magic', baseCooldown: 1.2, baseDamage: 15, icon: '🧊', evolvedFrom: 'ice_arrow' });
+    super({ id: 'ice_spike', name: t('evo_ice_spike'), type: 'magic', baseCooldown: 1.2, baseDamage: 15, icon: '🧊', evolvedFrom: 'ice_arrow' });
     this.speed = 420; this.life = 1.6; this.range = 520;
   }
   doAttack(player, enemies, projectiles) {
@@ -622,7 +622,7 @@ class IceSpikeWeapon extends EvolutionWeapon {
 /* --- Электрический каскад (Цеп. молния + Быстрые пальцы) --- */
 class ElectricCascadeWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'electric_cascade', name: 'Электр. каскад', type: 'magic', baseCooldown: 0.8, baseDamage: 14, icon: '⚡', evolvedFrom: 'chain_lightning' });
+    super({ id: 'electric_cascade', name: t('evo_electric_cascade'), type: 'magic', baseCooldown: 0.8, baseDamage: 14, icon: '⚡', evolvedFrom: 'chain_lightning' });
     this.range = 300; this.chainRadius = 70; this.chains = 3;
     this.lightningAnim = { active: false, t: 0, points: [] };
   }
@@ -661,7 +661,7 @@ class ElectricCascadeWeapon extends EvolutionWeapon {
 /* --- Миазмы (Яд. облако + Аура холода) --- */
 class MiasmaWeapon extends EvolutionWeapon {
   constructor() {
-    super({ id: 'miasma', name: 'Миазмы', type: 'magic', baseCooldown: 1.8, baseDamage: 9, icon: '☁', evolvedFrom: 'poison_cloud' });
+    super({ id: 'miasma', name: t('evo_miasma'), type: 'magic', baseCooldown: 1.8, baseDamage: 9, icon: '☁', evolvedFrom: 'poison_cloud' });
     this.range = 300; this.cloudRadius = 70; this.cloudLife = 4.0;
     this._clouds = [];
   }
@@ -718,7 +718,7 @@ class ExclusiveWeapon extends Weapon {
 /* --- E1: Клинок короля-лича --- */
 class LichBladeWeapon extends ExclusiveWeapon {
   constructor() {
-    super({ id: 'lich_blade', name: 'Клинок короля-лича', type: 'melee', baseCooldown: 0.8, baseDamage: 30, icon: '💀', desc: 'Ближний бой, урон 30. При гильдии 2+ убийство призывает скелета-миньона.', exclusiveColor: '#8b00ff' });
+    super({ id: 'lich_blade', name: t('guild_reward_lich_blade'), type: 'melee', baseCooldown: 0.8, baseDamage: 30, icon: '💀', desc: 'Melee, 30 dmg. Guild 2+: kills summon a skeleton minion.', exclusiveColor: '#8b00ff' });
     this.radius = 65; this.arc = Math.PI * 0.9; this.swingTime = 0.18;
     this.swing = { active: false, t: 0, angle: 0 };
     // Skeleton minion system
@@ -763,7 +763,7 @@ class LichBladeWeapon extends ExclusiveWeapon {
         color: '#8b00ff', speedMin: 30, speedMax: 80,
         lifeMin: 0.3, lifeMax: 0.5, sizeMin: 2, sizeMax: 4,
       });
-      if (Particles.text) Particles.text(enemy.x, enemy.y - 20, '☠ Скелет!', 0.8, '#bf7fff', 10);
+      if (Particles.text) Particles.text(enemy.x, enemy.y - 20, '☠ Skeleton!', 0.8, '#bf7fff', 10);
     }
   }
 
@@ -859,7 +859,7 @@ class LichBladeWeapon extends ExclusiveWeapon {
 /* --- E2: Лук феникса --- */
 class PhoenixBowWeapon extends ExclusiveWeapon {
   constructor() {
-    super({ id: 'phoenix_bow', name: 'Лук феникса', type: 'ranged', baseCooldown: 1.3, baseDamage: 25, icon: '🔥', desc: 'Огненная стрела, взрыв 40px при попадании.', exclusiveColor: '#ff4500' });
+    super({ id: 'phoenix_bow', name: t('weapon_phoenix_bow'), type: 'ranged', baseCooldown: 1.3, baseDamage: 25, icon: '🔥', desc: 'Fire arrow, 40px explosion on hit.', exclusiveColor: '#ff4500' });
     this.speed = 500; this.life = 1.8; this.range = 560; this.explodeRadius = 40;
   }
   doAttack(player, enemies, projectiles) {
@@ -879,7 +879,7 @@ class PhoenixBowWeapon extends ExclusiveWeapon {
 /* --- E3: Посох архимага --- */
 class ArchmageStaffWeapon extends ExclusiveWeapon {
   constructor() {
-    super({ id: 'archmage_staff', name: 'Посох архимага', type: 'magic', baseCooldown: 1.5, baseDamage: 18, icon: '🪄', desc: '3 разноцветных шара (огонь+лёд+молния) каждые 1.5 сек.', exclusiveColor: '#9c27b0' });
+    super({ id: 'archmage_staff', name: t('guild_reward_archmage_staff'), type: 'magic', baseCooldown: 1.5, baseDamage: 18, icon: '🪄', desc: '3 colored orbs (fire+ice+lightning) every 1.5s.', exclusiveColor: '#9c27b0' });
     this.speed = 380; this.life = 1.5; this.range = 500;
   }
   doAttack(player, enemies, projectiles) {
@@ -906,7 +906,7 @@ class ArchmageStaffWeapon extends ExclusiveWeapon {
 /* --- E4: Коготь зверя --- */
 class BeastClawWeapon extends ExclusiveWeapon {
   constructor() {
-    super({ id: 'beast_claw', name: 'Коготь зверя', type: 'melee', baseCooldown: 0.4, baseDamage: 12, icon: '🐾', desc: 'Быстрые удары (0.4 сек), урон 12, 15% крит, кровотечение.', exclusiveColor: '#4caf50' });
+    super({ id: 'beast_claw', name: t('weapon_beast_claw'), type: 'melee', baseCooldown: 0.4, baseDamage: 12, icon: '🐾', desc: 'Fast strikes (0.4s), 12 dmg, 15% crit, bleed.', exclusiveColor: '#4caf50' });
     this.radius = 50; this.arc = Math.PI * 0.7; this.swingTime = 0.12;
     this.critChance = 0.15; this.swing = { active: false, t: 0, angle: 0 };
   }
@@ -945,7 +945,7 @@ class BeastClawWeapon extends ExclusiveWeapon {
 /* --- E5: Рунный щит --- */
 class RuneShieldWeapon extends ExclusiveWeapon {
   constructor() {
-    super({ id: 'rune_shield', name: 'Рунный щит', type: 'aura', baseCooldown: 0, baseDamage: 15, icon: '🛡', desc: 'Постоянный урон 15/сек в радиусе 50px, +10% DR.', exclusiveColor: '#2196f3' });
+    super({ id: 'rune_shield', name: t('weapon_rune_shield'), type: 'aura', baseCooldown: 0, baseDamage: 15, icon: '🛡', desc: 'Constant 15 dps in 50px radius, +10% DR.', exclusiveColor: '#2196f3' });
     this.radius = 50; this._tickAcc = 0; this.bonusDR = 0.10;
   }
   update(player, enemies, _proj, dt, helpers) {
@@ -985,7 +985,7 @@ class SuperEvolutionWeapon extends Weapon {
 /* --- Клинок Вечной Ночи --- */
 class EternalNightBladeWeapon extends SuperEvolutionWeapon {
   constructor() {
-    super({ id: 'eternal_night_blade', name: 'Клинок Вечной Ночи', type: 'melee', baseCooldown: 0.6, baseDamage: 45, icon: '🌑', superColor: '#4a0080' });
+    super({ id: 'eternal_night_blade', name: t('evo_eternal_night_blade'), type: 'melee', baseCooldown: 0.6, baseDamage: 45, icon: '🌑', superColor: '#4a0080' });
     this.radius = 75; this.arc = Math.PI; this.swingTime = 0.15; this.lifesteal = 8;
     this.swing = { active: false, t: 0, angle: 0 };
   }
@@ -1021,7 +1021,7 @@ class EternalNightBladeWeapon extends SuperEvolutionWeapon {
 /* --- Лук Апокалипсиса --- */
 class ApocalypseBowWeapon extends SuperEvolutionWeapon {
   constructor() {
-    super({ id: 'apocalypse_bow', name: 'Лук Апокалипсиса', type: 'ranged', baseCooldown: 1.2, baseDamage: 20, icon: '🏹', superColor: '#ff2200' });
+    super({ id: 'apocalypse_bow', name: t('evo_apocalypse_bow'), type: 'ranged', baseCooldown: 1.2, baseDamage: 20, icon: '🏹', superColor: '#ff2200' });
     this.speed = 560; this.life = 1.8; this.range = 580; this.explodeRadius = 60;
     this.burstCount = 5; this.burstInterval = 0.08;
     this._burstLeft = 0; this._burstTimer = 0; this._lastDir = { x: 1, y: 0 };
@@ -1056,7 +1056,7 @@ class ApocalypseBowWeapon extends SuperEvolutionWeapon {
 /* --- Посох Вечности --- */
 class EternityStaffWeapon extends SuperEvolutionWeapon {
   constructor() {
-    super({ id: 'eternity_staff', name: 'Посох Вечности', type: 'magic', baseCooldown: 0.6, baseDamage: 14, icon: '🔮', superColor: '#9c27b0' });
+    super({ id: 'eternity_staff', name: t('evo_eternity_staff'), type: 'magic', baseCooldown: 0.6, baseDamage: 14, icon: '🔮', superColor: '#9c27b0' });
     this.speed = 420; this.life = 1.4; this.count = 5;
   }
   doAttack(player, _enemies, projectiles) {
@@ -1077,7 +1077,7 @@ class EternityStaffWeapon extends SuperEvolutionWeapon {
 /* --- Когти Пожирателя --- */
 class DevourerClawsWeapon extends SuperEvolutionWeapon {
   constructor() {
-    super({ id: 'devourer_claws', name: 'Когти Пожирателя', type: 'melee', baseCooldown: 0.3, baseDamage: 18, icon: '🐾', superColor: '#b71c1c' });
+    super({ id: 'devourer_claws', name: t('evo_devourer_claws'), type: 'melee', baseCooldown: 0.3, baseDamage: 18, icon: '🐾', superColor: '#b71c1c' });
     this.radius = 55; this.arc = Math.PI * 0.8; this.swingTime = 0.10;
     this.critChance = 0.25; this.lifesteal = 10; this.bleedDps = 15;
     this.swing = { active: false, t: 0, angle: 0 };
@@ -1117,7 +1117,7 @@ class DevourerClawsWeapon extends SuperEvolutionWeapon {
 /* --- Бастион Света --- */
 class BastionOfLightWeapon extends SuperEvolutionWeapon {
   constructor() {
-    super({ id: 'bastion_of_light', name: 'Бастион Света', type: 'aura', baseCooldown: 0, baseDamage: 10, icon: '🛡', superColor: '#ffd700' });
+    super({ id: 'bastion_of_light', name: t('evo_bastion_of_light'), type: 'aura', baseCooldown: 0, baseDamage: 10, icon: '🛡', superColor: '#ffd700' });
     this.radius = 90; this.undeadDps = 30; this.bonusDR = 0.20; this.healPerSec = 5;
     this._tickAcc = 0;
   }
@@ -1187,11 +1187,11 @@ const EXCLUSIVE_WEAPON_FACTORIES = {
 };
 
 const EXCLUSIVE_WEAPON_INFO = [
-  { id: 'lich_blade',     name: 'Клинок короля-лича', icon: '💀', desc: 'Ближний бой, урон 30. Гильдия 2+: призыв скелетов.' },
-  { id: 'phoenix_bow',    name: 'Лук феникса',        icon: '🔥', desc: 'Огненная стрела, взрыв 40px.' },
-  { id: 'archmage_staff', name: 'Посох архимага',     icon: '🪄', desc: '3 шара (огонь+лёд+молния).' },
-  { id: 'beast_claw',     name: 'Коготь зверя',       icon: '🐾', desc: 'Быстрые удары, крит, кровотечение.' },
-  { id: 'rune_shield',    name: 'Рунный щит',         icon: '🛡', desc: 'Урон 15/сек в радиусе 50px, +10% DR.' },
+  { id: 'lich_blade',     name: t('guild_reward_lich_blade'), icon: '💀', desc: 'Melee, 30 dmg. Guild 2+: summons skeletons.' },
+  { id: 'phoenix_bow',    name: t('weapon_phoenix_bow'),        icon: '🔥', desc: 'Fire arrow, 40px explosion.' },
+  { id: 'archmage_staff', name: t('guild_reward_archmage_staff'),     icon: '🪄', desc: '3 orbs (fire+ice+lightning).' },
+  { id: 'beast_claw',     name: t('weapon_beast_claw'),       icon: '🐾', desc: 'Fast strikes, crit, bleed.' },
+  { id: 'rune_shield',    name: t('weapon_rune_shield'),         icon: '🛡', desc: '15 dps in 50px radius, +10% DR.' },
 ];
 
 // Супер-эволюции
