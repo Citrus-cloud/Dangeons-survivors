@@ -718,11 +718,102 @@ class ExclusiveWeapon extends Weapon {
 /* --- E1: Клинок короля-лича --- */
 class LichBladeWeapon extends ExclusiveWeapon {
   constructor() {
-    super({ id: 'lich_blade', name: 'Клинок короля-лича', type: 'melee', baseCooldown: 0.8, baseDamage: 30, icon: '💀', desc: 'Ближний бой, урон 30, при убийстве призывает скелета-миньона.', exclusiveColor: '#8b00ff' });
+    super({ id: 'lich_blade', name: 'Клинок короля-лича', type: 'melee', baseCooldown: 0.8, baseDamage: 30, icon: '💀', desc: 'Ближний бой, урон 30. При гильдии 2+ убийство призывает скелета-миньона.', exclusiveColor: '#8b00ff' });
     this.radius = 65; this.arc = Math.PI * 0.9; this.swingTime = 0.18;
     this.swing = { active: false, t: 0, angle: 0 };
+    // Skeleton minion system
+    this._minions = [];
+    this._maxMinions = 3;
+    this._minionDuration = 8.0; // seconds
+    this._minionDamage = 10;
+    this._minionSpeed = 90;
+    this._minionRadius = 12;
   }
-  tick(dt) { if (this.swing.active) { this.swing.t += dt; if (this.swing.t >= this.swingTime) this.swing.active = false; } }
+  tick(dt) {
+    if (this.swing.active) { this.swing.t += dt; if (this.swing.t >= this.swingTime) this.swing.active = false; }
+    // Update minions
+    this._updateMinions(dt);
+  }
+
+  /** Check if guild level is >= 2 (skeleton summon enabled). */
+  _canSummon() {
+    return window.MetaProgress && MetaProgress.getGuildLevel && MetaProgress.getGuildLevel() >= 2;
+  }
+
+  /** Called from main.js killEnemy hook — summon skeleton on kill. */
+  onKill(enemy, player) {
+    if (!this._canSummon()) return;
+    if (this._minions.length >= this._maxMinions) return;
+    // Summon skeleton at enemy position
+    this._minions.push({
+      x: enemy.x,
+      y: enemy.y,
+      hp: 30,
+      life: this._minionDuration,
+      damage: this._minionDamage * WEAPON_LEVEL_DAMAGE[this.level - 1],
+      speed: this._minionSpeed,
+      radius: this._minionRadius,
+      attackCd: 0,
+      attackCdMax: 0.8,
+      targetIdx: -1,
+    });
+    // Visual feedback
+    if (window.Particles) {
+      Particles.burst(enemy.x, enemy.y, 5, {
+        color: '#8b00ff', speedMin: 30, speedMax: 80,
+        lifeMin: 0.3, lifeMax: 0.5, sizeMin: 2, sizeMax: 4,
+      });
+      if (Particles.text) Particles.text(enemy.x, enemy.y - 20, '☠ Скелет!', 0.8, '#bf7fff', 10);
+    }
+  }
+
+  /** Update all active minions: movement, attacking, lifetime. */
+  _updateMinions(dt) {
+    if (!window.Game || !Game.enemies) return;
+    const enemies = Game.enemies;
+    const player = (Game.player) ? Game.player : null;
+
+    for (let i = this._minions.length - 1; i >= 0; i--) {
+      const m = this._minions[i];
+      m.life -= dt;
+      if (m.life <= 0) { this._minions.splice(i, 1); continue; }
+
+      // Find nearest enemy
+      let target = null, bestD2 = 200 * 200; // attack range 200px
+      for (let j = 0; j < enemies.items.length; j++) {
+        const e = enemies.items[j];
+        if (!e.active) continue;
+        const dx = e.x - m.x, dy = e.y - m.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < bestD2) { bestD2 = d2; target = e; }
+      }
+
+      if (target) {
+        // Move towards target
+        const dx = target.x - m.x, dy = target.y - m.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 30) {
+          m.x += (dx / dist) * m.speed * dt;
+          m.y += (dy / dist) * m.speed * dt;
+        }
+        // Attack
+        m.attackCd -= dt;
+        if (m.attackCd <= 0 && dist <= 40) {
+          if (window.Game && Game.damageEnemy) Game.damageEnemy(target, m.damage);
+          m.attackCd = m.attackCdMax;
+        }
+      } else if (player) {
+        // No enemies — follow player
+        const dx = player.x - m.x, dy = player.y - m.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 60) {
+          m.x += (dx / dist) * m.speed * 0.7 * dt;
+          m.y += (dy / dist) * m.speed * 0.7 * dt;
+        }
+      }
+    }
+  }
+
   doAttack(player, enemies, _proj, helpers) {
     const target = Projectiles.findNearestEnemy(enemies, player.x, player.y, this.radius);
     if (!target) return false;
@@ -741,10 +832,27 @@ class LichBladeWeapon extends ExclusiveWeapon {
     return true;
   }
   renderOverlay(ctx, player) {
-    if (!this.swing.active) return;
-    const t = this.swing.t / this.swingTime; const alpha = (1 - t) * 0.9;
-    ctx.strokeStyle = `rgba(139,0,255,${alpha})`; ctx.lineWidth = 6;
-    ctx.beginPath(); ctx.arc(player.x, player.y, this.radius, this.swing.angle - this.arc * 0.5, this.swing.angle + this.arc * 0.5); ctx.stroke();
+    if (!this.swing.active && this._minions.length === 0) return;
+    // Swing arc
+    if (this.swing.active) {
+      const t = this.swing.t / this.swingTime; const alpha = (1 - t) * 0.9;
+      ctx.strokeStyle = `rgba(139,0,255,${alpha})`; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.arc(player.x, player.y, this.radius, this.swing.angle - this.arc * 0.5, this.swing.angle + this.arc * 0.5); ctx.stroke();
+    }
+    // Render minions
+    for (const m of this._minions) {
+      const fadeAlpha = Math.min(1, m.life / 1.0); // Fade out in last second
+      // Body
+      ctx.fillStyle = `rgba(180,140,255,${0.8 * fadeAlpha})`;
+      ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2); ctx.fill();
+      // Skull face
+      ctx.fillStyle = `rgba(40,0,60,${0.9 * fadeAlpha})`;
+      ctx.beginPath(); ctx.arc(m.x - 3, m.y - 2, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(m.x + 3, m.y - 2, 2, 0, Math.PI * 2); ctx.fill();
+      // Glow
+      ctx.strokeStyle = `rgba(139,0,255,${0.4 * fadeAlpha})`; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(m.x, m.y, m.radius + 3, 0, Math.PI * 2); ctx.stroke();
+    }
   }
 }
 
@@ -1079,7 +1187,7 @@ const EXCLUSIVE_WEAPON_FACTORIES = {
 };
 
 const EXCLUSIVE_WEAPON_INFO = [
-  { id: 'lich_blade',     name: 'Клинок короля-лича', icon: '💀', desc: 'Ближний бой, урон 30, призыв скелетов.' },
+  { id: 'lich_blade',     name: 'Клинок короля-лича', icon: '💀', desc: 'Ближний бой, урон 30. Гильдия 2+: призыв скелетов.' },
   { id: 'phoenix_bow',    name: 'Лук феникса',        icon: '🔥', desc: 'Огненная стрела, взрыв 40px.' },
   { id: 'archmage_staff', name: 'Посох архимага',     icon: '🪄', desc: '3 шара (огонь+лёд+молния).' },
   { id: 'beast_claw',     name: 'Коготь зверя',       icon: '🐾', desc: 'Быстрые удары, крит, кровотечение.' },

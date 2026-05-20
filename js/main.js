@@ -296,8 +296,9 @@ const Game = {
         kind: 'weapon',
         icon: w.icon,
         id: w.id,
+        weaponId: w.id,
         title: `${w.name} ${Utils.roman(w.level)} → ${Utils.roman(next)}`,
-        desc: '+15% урона, -5% кулдауна.',
+        desc: `Урон +12%, кулдаун -5%. (Ур. ${next}/${w.maxLevel})`,
         apply(player) {
           const tgt = Player.findWeapon(player, w.id);
           if (tgt) tgt.upgrade();
@@ -334,8 +335,9 @@ const Game = {
         kind: 'ability',
         icon: a.icon,
         id: a.id,
+        abilityId: a.id,
         title: `${a.name} ${Utils.roman(a.level)} → ${Utils.roman(next)}`,
-        desc: a.desc,
+        desc: a.effectText ? a.effectText.call ? `След.: ${(function(){ const tmp = Object.create(a); tmp.level = next; return tmp.effectText ? tmp.effectText() : a.desc; })()}` : a.desc : a.desc,
         apply(player) {
           const tgt = Player.findAbility(player, a.id);
           if (tgt) tgt.upgrade(player);
@@ -1456,6 +1458,16 @@ const Game = {
     }
     e.active = false;
     this.kills += 1;
+
+    // Клинок короля-лича: призыв скелета при убийстве (если гильдия >= 2)
+    if (this.player && this.player.weaponSlots) {
+      for (const w of this.player.weaponSlots) {
+        if (w && w.id === 'lich_blade' && w.onKill) {
+          w.onKill(e, this.player);
+          break;
+        }
+      }
+    }
     // Учёт по типам (заготовка для UI)
     const tid = (e.cfg && e.cfg.id) || e.type || 'unknown';
     this.killsByType[tid] = (this.killsByType[tid] || 0) + 1;
