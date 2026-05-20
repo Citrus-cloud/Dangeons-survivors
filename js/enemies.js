@@ -833,6 +833,7 @@ const Enemies = {
      Render — пиксельные спрайты (sprites.js)
      ============================================================ */
   render(ctx, pool, cam, viewW, viewH) {
+    ctx.imageSmoothingEnabled = false;
     const minX = cam.x, minY = cam.y;
     const maxX = cam.x + viewW, maxY = cam.y + viewH;
     const items = pool.items;

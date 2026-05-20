@@ -2001,7 +2001,6 @@ const GameMap = {
   moveWithCollision(x, y, dx, dy, rad, shrinkFactor) {
     if (!this.dungeon) return { x: x + dx, y: y + dy, blockedX: false, blockedY: false };
     const sf = (shrinkFactor !== undefined) ? shrinkFactor : 0.25;
-    // Шаг 1: уменьшенный радиус проверки (хитбокс стен на 2px меньше визуала)
     const checkRad = rad;
     let nx = x, ny = y;
     let blockedX = false, blockedY = false;
@@ -2012,11 +2011,11 @@ const GameMap = {
       if (this.rectIsWalkable(tryX, y, checkRad, sf)) {
         nx = tryX;
       } else {
-        // Пошагово ищем максимально возможное смещение
+        // Пошагово ищем максимально возможное смещение (шаг 1px для плавности)
         const sign = Math.sign(dx);
         const absDx = Math.abs(dx);
         let stepped = 0;
-        const stepSize = 2;
+        const stepSize = 1;
         while (stepped + stepSize <= absDx) {
           const next = stepped + stepSize;
           if (this.rectIsWalkable(x + sign * next, y, checkRad, sf)) {
@@ -2034,11 +2033,11 @@ const GameMap = {
       if (this.rectIsWalkable(nx, tryY, checkRad, sf)) {
         ny = tryY;
       } else {
-        // Пошагово ищем максимально возможное смещение
+        // Пошагово ищем максимально возможное смещение (шаг 1px для плавности)
         const sign = Math.sign(dy);
         const absDy = Math.abs(dy);
         let stepped = 0;
-        const stepSize = 2;
+        const stepSize = 1;
         while (stepped + stepSize <= absDy) {
           const next = stepped + stepSize;
           if (this.rectIsWalkable(nx, ny + sign * next, checkRad, sf)) {
@@ -2053,9 +2052,9 @@ const GameMap = {
     // Финальная проверка — если застряли, небольшое выталкивание
     if (!this.rectIsWalkable(nx, ny, rad, sf)) {
       const offsets = [
-        {dx: 0, dy: -3}, {dx: 0, dy: 3}, {dx: -3, dy: 0}, {dx: 3, dy: 0},
-        {dx: -3, dy: -3}, {dx: 3, dy: -3}, {dx: -3, dy: 3}, {dx: 3, dy: 3},
-        {dx: 0, dy: -6}, {dx: 0, dy: 6}, {dx: -6, dy: 0}, {dx: 6, dy: 0},
+        {dx: 0, dy: -2}, {dx: 0, dy: 2}, {dx: -2, dy: 0}, {dx: 2, dy: 0},
+        {dx: -2, dy: -2}, {dx: 2, dy: -2}, {dx: -2, dy: 2}, {dx: 2, dy: 2},
+        {dx: 0, dy: -4}, {dx: 0, dy: 4}, {dx: -4, dy: 0}, {dx: 4, dy: 0},
       ];
       for (const off of offsets) {
         if (this.rectIsWalkable(nx + off.dx, ny + off.dy, rad, sf)) {
@@ -3363,8 +3362,12 @@ const GameMap = {
       if (effect === 0) {
         // Отбрасывание
         const dist = Math.hypot(dx, dy) || 1;
-        player.x += (dx / dist) * tc.KNOCKBACK_FORCE;
-        player.y += (dy / dist) * tc.KNOCKBACK_FORCE;
+        const _kbX = (dx / dist) * tc.KNOCKBACK_FORCE;
+        const _kbY = (dy / dist) * tc.KNOCKBACK_FORCE;
+        if (this.moveWithCollision) {
+          const r = this.moveWithCollision(player.x, player.y, _kbX, _kbY, player.size * 0.35, 0.25);
+          player.x = r.x; player.y = r.y;
+        } else { player.x += _kbX; player.y += _kbY; }
       } else if (effect === 1) {
         // Замедление
         player._runeSlow = tc.SLOW_PCT;
@@ -4054,8 +4057,13 @@ GameMap.updateStep17 = function(dt, player) {
       const ev = Boulder.update(boulder, player, enemies, dt);
       if (ev && ev.type === 'hit_player') {
         player.hp -= ev.damage;
-        player.x += ev.knockX;
-        player.y += ev.knockY;
+        if (this.moveWithCollision) {
+          const r = this.moveWithCollision(player.x, player.y, ev.knockX, ev.knockY, player.size * 0.35, 0.25);
+          player.x = r.x; player.y = r.y;
+        } else {
+          player.x += ev.knockX;
+          player.y += ev.knockY;
+        }
         player.x = Utils.clamp(player.x, 20, GameMap.mapW - 20);
         player.y = Utils.clamp(player.y, 20, GameMap.mapH - 20);
         if (window.Particles) {

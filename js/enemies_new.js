@@ -207,7 +207,10 @@ Behaviors.minotaur = function(e, player, dt) {
         // Отбрасывание
         const kb = e.cfg.knockback || 60;
         const kn = _norm(pdx, pdy);
-        player.x += kn.x * kb; player.y += kn.y * kb;
+        if (window.GameMap && GameMap.moveWithCollision) {
+          const r = GameMap.moveWithCollision(player.x, player.y, kn.x * kb, kn.y * kb, player.size * 0.35, 0.25);
+          player.x = r.x; player.y = r.y;
+        } else { player.x += kn.x * kb; player.y += kn.y * kb; }
       }
       if (e._chargeTimer <= 0) {
         e._chargeState = 'rest';
@@ -571,8 +574,11 @@ Behaviors.young_dragon = function(e, player, dt) {
       if (Player.takeDamage) Player.takeDamage(player, dmg, e);
       else player.hp -= dmg;
       const kn = _norm(pdx, pdy);
-      player.x += kn.x * (ts.knockback || 50);
-      player.y += kn.y * (ts.knockback || 50);
+      const _kb = ts.knockback || 50;
+      if (window.GameMap && GameMap.moveWithCollision) {
+        const r = GameMap.moveWithCollision(player.x, player.y, kn.x * _kb, kn.y * _kb, player.size * 0.35, 0.25);
+        player.x = r.x; player.y = r.y;
+      } else { player.x += kn.x * _kb; player.y += kn.y * _kb; }
     }
     e._tailCd = ts.cooldown || 8.0;
     if (window.Particles) {
