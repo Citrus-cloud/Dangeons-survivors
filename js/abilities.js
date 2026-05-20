@@ -59,10 +59,10 @@ class Ability {
 /* ---------- 1) Ускорение ---------- */
 class HasteAbility extends Ability {
   constructor() {
-    super({ id: 'haste', name: 'Ускорение', icon: '➤',
-      desc: '+8% к скорости передвижения за уровень.' });
+    super({ id: 'haste', name: t('ability_haste'), icon: '➤',
+      desc: t('ability_haste_desc') });
   }
-  effectText() { return `Скорость +${this.level * 8}%`; }
+  effectText() { return `Speed +${this.level * 8}%`; }
   _applyForLevel(player, level) {
     const factor = 1 + 0.08 * level;
     this._applied = { factor };
@@ -76,10 +76,10 @@ class HasteAbility extends Ability {
 /* ---------- 2) Регенерация ---------- */
 class RegenAbility extends Ability {
   constructor() {
-    super({ id: 'regen', name: 'Регенерация', icon: '✚',
-      desc: '+1 HP каждые 3 сек за уровень.' });
+    super({ id: 'regen', name: t('ability_regen'), icon: '✚',
+      desc: t('ability_regen_desc') });
   }
-  effectText() { return `+${this.level} HP / 3 сек`; }
+  effectText() { return `+${this.level} HP / 3s`; }
   _applyForLevel(player, level) {
     const add = level / 3;
     this._applied = { add };
@@ -93,10 +93,10 @@ class RegenAbility extends Ability {
 /* ---------- 3) Усиление урона ---------- */
 class PowerAbility extends Ability {
   constructor() {
-    super({ id: 'power', name: 'Усиление урона', icon: '⚡',
-      desc: '+10% ко всему урону за уровень.' });
+    super({ id: 'power', name: t('ability_power'), icon: '⚡',
+      desc: t('ability_power_desc') });
   }
-  effectText() { return `Урон +${this.level * 10}%`; }
+  effectText() { return `Damage +${this.level * 10}%`; }
   _applyForLevel(player, level) {
     const factor = 1 + 0.10 * level;
     this._applied = { factor };
@@ -110,10 +110,10 @@ class PowerAbility extends Ability {
 /* ---------- 4) Магнит опыта ---------- */
 class MagnetAbility extends Ability {
   constructor() {
-    super({ id: 'magnet', name: 'Магнит опыта', icon: '◎',
-      desc: '+30% к радиусу подбора кристаллов за уровень.' });
+    super({ id: 'magnet', name: t('ability_magnet'), icon: '◎',
+      desc: t('ability_magnet_desc') });
   }
-  effectText() { return `Подбор +${this.level * 30}%`; }
+  effectText() { return `Pickup +${this.level * 30}%`; }
   _applyForLevel(player, level) {
     const factor = 1 + 0.30 * level;
     this._applied = { factor };
@@ -135,10 +135,10 @@ class MagnetAbility extends Ability {
 /* ---------- 5) Броня ---------- */
 class ArmorAbility extends Ability {
   constructor() {
-    super({ id: 'armor', name: 'Броня', icon: '🛡',
-      desc: 'Снижение получаемого урона на 5% за уровень.' });
+    super({ id: 'armor', name: t('ability_armor'), icon: '🛡',
+      desc: t('ability_armor_desc') });
   }
-  effectText() { return `Защита ${this.level * 5}%`; }
+  effectText() { return `Defense ${this.level * 5}%`; }
   _applyForLevel(player, level) {
     const reduction = 0.05 * level;
     this._applied = { reduction };
@@ -155,14 +155,14 @@ class ArmorAbility extends Ability {
 /* ---------- 6) Щит маны ---------- */
 class ManaShieldAbility extends Ability {
   constructor() {
-    super({ id: 'mana_shield', name: 'Щит маны', icon: '🔵',
-      desc: 'Блокирует следующий удар (кулдаун уменьшается с уровнем).' });
+    super({ id: 'mana_shield', name: t('ability_mana_shield'), icon: '🔵',
+      desc: t('ability_mana_shield_desc') });
     this.cooldownTimer = 0;
     this.shieldReady = false;
   }
   effectText() {
     const cd = 12 - this.level;
-    return `Блок 1 удара / ${cd}с`;
+    return `Block 1 hit / ${cd}s`;
   }
   _applyForLevel(player, level) {
     const cd = 12 - level;
@@ -201,10 +201,10 @@ class ManaShieldAbility extends Ability {
 /* ---------- 7) Укрепление ---------- */
 class FortifyAbility extends Ability {
   constructor() {
-    super({ id: 'fortify', name: 'Укрепление', icon: '❤',
-      desc: '+8% к максимальному HP за уровень.' });
+    super({ id: 'fortify', name: t('ability_fortify'), icon: '❤',
+      desc: t('ability_fortify_desc') });
   }
-  effectText() { return `Макс HP +${this.level * 8}%`; }
+  effectText() { return `Max HP +${this.level * 8}%`; }
   _applyForLevel(player, level) {
     const factor = 1 + 0.08 * level;
     this._applied = { factor };
@@ -231,10 +231,10 @@ class FortifyAbility extends Ability {
 /* ---------- 8) Сопротивление ---------- */
 class ResistanceAbility extends Ability {
   constructor() {
-    super({ id: 'resistance', name: 'Сопротивление', icon: '✜',
-      desc: '-15% длительности дебаффов за уровень.' });
+    super({ id: 'resistance', name: t('ability_resistance'), icon: '✜',
+      desc: t('ability_resistance_desc') });
   }
-  effectText() { return `Дебафф -${this.level * 15}%`; }
+  effectText() { return `Debuff -${this.level * 15}%`; }
   _applyForLevel(player, level) {
     const reduction = 0.15 * level;
     this._applied = { reduction };
@@ -255,10 +255,10 @@ class ResistanceAbility extends Ability {
 /* ---------- 9) Жажда крови ---------- */
 class BloodlustAbility extends Ability {
   constructor() {
-    super({ id: 'bloodlust', name: 'Жажда крови', icon: '🦷',
-      desc: '+2% вампиризма (лечение от урона) за уровень.' });
+    super({ id: 'bloodlust', name: t('ability_bloodlust'), icon: '🦷',
+      desc: t('ability_bloodlust_desc') });
   }
-  effectText() { return `Вампиризм ${this.level * 2}%`; }
+  effectText() { return `Lifesteal ${this.level * 2}%`; }
   _applyForLevel(player, level) {
     const pct = 0.02 * level;
     this._applied = { pct };
@@ -275,10 +275,10 @@ class BloodlustAbility extends Ability {
 /* ---------- 10) Критический удар ---------- */
 class CritStrikeAbility extends Ability {
   constructor() {
-    super({ id: 'crit_strike', name: 'Критический удар', icon: '⚡',
-      desc: '+4% шанс крита (×2 урон) за уровень.' });
+    super({ id: 'crit_strike', name: t('ability_crit_strike'), icon: '⚡',
+      desc: t('ability_crit_strike_desc') });
   }
-  effectText() { return `Крит ${this.level * 4}%`; }
+  effectText() { return `Crit ${this.level * 4}%`; }
   _applyForLevel(player, level) {
     const chance = 0.04 * level;
     this._applied = { chance };
@@ -295,10 +295,10 @@ class CritStrikeAbility extends Ability {
 /* ---------- 11) Кровотечение ---------- */
 class BleedAbility extends Ability {
   constructor() {
-    super({ id: 'bleed', name: 'Кровотечение', icon: '💧',
-      desc: '10% шанс за уровень наложить кровотечение (4 ед/сек, 3 сек).' });
+    super({ id: 'bleed', name: t('ability_bleed'), icon: '💧',
+      desc: t('ability_bleed_desc') });
   }
-  effectText() { return `Шанс ${this.level * 10}%`; }
+  effectText() { return `Chance ${this.level * 10}%`; }
   _applyForLevel(player, level) {
     const chance = 0.10 * level;
     this._applied = { chance };
@@ -315,10 +315,10 @@ class BleedAbility extends Ability {
 /* ---------- 12) Взрывная смерть ---------- */
 class ExplosiveDeathAbility extends Ability {
   constructor() {
-    super({ id: 'explosive_death', name: 'Взрывная смерть', icon: '💥',
-      desc: '10% шанс за уровень: при убийстве — взрыв (урон 18, радиус 50px).' });
+    super({ id: 'explosive_death', name: t('ability_explosive_death'), icon: '💥',
+      desc: t('ability_explosive_death_desc') });
   }
-  effectText() { return `Шанс ${this.level * 10}%`; }
+  effectText() { return `Chance ${this.level * 10}%`; }
   _applyForLevel(player, level) {
     const chance = 0.10 * level;
     this._applied = { chance };
@@ -339,8 +339,8 @@ class ExplosiveDeathAbility extends Ability {
 /* ---------- 13) Быстрые пальцы ---------- */
 class QuickFingersAbility extends Ability {
   constructor() {
-    super({ id: 'quick_fingers', name: 'Быстрые пальцы', icon: '🔄',
-      desc: '-4% кулдауна всех оружий за уровень.' });
+    super({ id: 'quick_fingers', name: t('ability_quick_fingers'), icon: '🔄',
+      desc: t('ability_quick_fingers_desc') });
   }
   effectText() { return `CD -${this.level * 4}%`; }
   _applyForLevel(player, level) {
@@ -359,10 +359,10 @@ class QuickFingersAbility extends Ability {
 /* ---------- 14) Аура холода ---------- */
 class FrostAuraAbility extends Ability {
   constructor() {
-    super({ id: 'frost_aura', name: 'Аура холода', icon: '❄',
-      desc: 'Замедляет врагов в радиусе 60px на 8% за уровень.' });
+    super({ id: 'frost_aura', name: t('ability_frost_aura'), icon: '❄',
+      desc: t('ability_frost_aura_desc') });
   }
-  effectText() { return `Замедление ${this.level * 8}%`; }
+  effectText() { return `Slow ${this.level * 8}%`; }
   _applyForLevel(player, level) {
     const slow = 0.08 * level;
     const radius = 60;
@@ -380,10 +380,10 @@ class FrostAuraAbility extends Ability {
 /* ---------- 15) Усиление магии ---------- */
 class MagicBoostAbility extends Ability {
   constructor() {
-    super({ id: 'magic_boost', name: 'Усиление магии', icon: '✦',
-      desc: '+10% к магическому урону за уровень.' });
+    super({ id: 'magic_boost', name: t('ability_magic_boost'), icon: '✦',
+      desc: t('ability_magic_boost_desc') });
   }
-  effectText() { return `Маг. урон +${this.level * 10}%`; }
+  effectText() { return `Magic dmg +${this.level * 10}%`; }
   _applyForLevel(player, level) {
     const factor = 1 + 0.10 * level;
     this._applied = { factor };
@@ -400,10 +400,10 @@ class MagicBoostAbility extends Ability {
 /* ---------- 16) Магический отклик ---------- */
 class MagicEchoAbility extends Ability {
   constructor() {
-    super({ id: 'magic_echo', name: 'Магический отклик', icon: '🔮',
-      desc: '15% шанс за уровень: при получении урона — ответный снаряд (урон 15).' });
+    super({ id: 'magic_echo', name: t('ability_magic_echo'), icon: '🔮',
+      desc: t('ability_magic_echo_desc') });
   }
-  effectText() { return `Шанс ${this.level * 15}%`; }
+  effectText() { return `Chance ${this.level * 15}%`; }
   _applyForLevel(player, level) {
     const chance = 0.15 * level;
     this._applied = { chance };
@@ -424,10 +424,10 @@ class MagicEchoAbility extends Ability {
 /* ---------- 17) Счастливчик ---------- */
 class LuckyAbility extends Ability {
   constructor() {
-    super({ id: 'lucky', name: 'Счастливчик', icon: '🎲',
-      desc: '+1 к мин. результату d20 за уровень.' });
+    super({ id: 'lucky', name: t('ability_lucky'), icon: '🎲',
+      desc: t('ability_lucky_desc') });
   }
-  effectText() { return `Мин. d20 = ${this.level + 1}`; }
+  effectText() { return `Min d20 = ${this.level + 1}`; }
   _applyForLevel(player, level) {
     this._applied = { bonus: level };
     player.d20MinBonus = (player.d20MinBonus || 0) + level;
@@ -443,10 +443,10 @@ class LuckyAbility extends Ability {
 /* ---------- 18) Удвоение опыта ---------- */
 class DoubleXPAbility extends Ability {
   constructor() {
-    super({ id: 'double_xp', name: 'Удвоение опыта', icon: '✕2',
-      desc: '6% шанс за уровень получить удвоенный опыт.' });
+    super({ id: 'double_xp', name: t('ability_double_xp'), icon: '✕2',
+      desc: t('ability_double_xp_desc') });
   }
-  effectText() { return `Шанс ×2 XP: ${this.level * 6}%`; }
+  effectText() { return `×2 XP chance: ${this.level * 6}%`; }
   _applyForLevel(player, level) {
     const chance = 0.06 * level;
     this._applied = { chance };
@@ -463,8 +463,8 @@ class DoubleXPAbility extends Ability {
 /* ---------- 19) Алхимик ---------- */
 class AlchemistAbility extends Ability {
   constructor() {
-    super({ id: 'alchemist', name: 'Алхимик', icon: '⚗',
-      desc: '+12% к урону ядов и огня (DoT) за уровень.' });
+    super({ id: 'alchemist', name: t('ability_alchemist'), icon: '⚗',
+      desc: t('ability_alchemist_desc') });
   }
   effectText() { return `DoT +${this.level * 12}%`; }
   _applyForLevel(player, level) {
@@ -483,10 +483,10 @@ class AlchemistAbility extends Ability {
 /* ---------- 20) Магнит предметов ---------- */
 class MagnetPlusAbility extends Ability {
   constructor() {
-    super({ id: 'magnet_plus', name: 'Магнит предметов', icon: '⊕',
-      desc: '+20% к радиусу подбора за уровень (стакается с Магнитом опыта).' });
+    super({ id: 'magnet_plus', name: t('ability_magnet_plus'), icon: '⊕',
+      desc: t('ability_magnet_plus_desc') });
   }
-  effectText() { return `Подбор +${this.level * 20}%`; }
+  effectText() { return `Pickup +${this.level * 20}%`; }
   _applyForLevel(player, level) {
     const factor = 1 + 0.20 * level;
     this._applied = { factor };
@@ -528,26 +528,26 @@ const ABILITY_FACTORIES = {
 };
 
 const ABILITY_INFO = [
-  { id: 'haste',           name: 'Ускорение',         icon: '➤',  desc: '+8% к скорости передвижения за уровень.' },
-  { id: 'regen',           name: 'Регенерация',       icon: '✚',  desc: '+1 HP каждые 3 сек за уровень.' },
-  { id: 'power',           name: 'Усиление урона',    icon: '⚡', desc: '+10% ко всему урону за уровень.' },
-  { id: 'magnet',          name: 'Магнит опыта',      icon: '◎',  desc: '+30% к радиусу подбора кристаллов за уровень.' },
-  { id: 'armor',           name: 'Броня',             icon: '🛡', desc: 'Снижение получаемого урона на 5% за уровень.' },
-  { id: 'mana_shield',     name: 'Щит маны',          icon: '🔵', desc: 'Блокирует следующий удар (кулдаун уменьшается с уровнем).' },
-  { id: 'fortify',         name: 'Укрепление',        icon: '❤',  desc: '+8% к максимальному HP за уровень.' },
-  { id: 'resistance',      name: 'Сопротивление',     icon: '✜',  desc: '-15% длительности дебаффов за уровень.' },
-  { id: 'bloodlust',       name: 'Жажда крови',       icon: '🦷', desc: '+2% вампиризма (лечение от урона) за уровень.' },
-  { id: 'crit_strike',     name: 'Критический удар',  icon: '⚡', desc: '+4% шанс крита (×2 урон) за уровень.' },
-  { id: 'bleed',           name: 'Кровотечение',      icon: '💧', desc: '10% шанс за уровень наложить кровотечение.' },
-  { id: 'explosive_death', name: 'Взрывная смерть',   icon: '💥', desc: '10% шанс за уровень: взрыв при убийстве.' },
-  { id: 'quick_fingers',   name: 'Быстрые пальцы',   icon: '🔄', desc: '-4% кулдауна всех оружий за уровень.' },
-  { id: 'frost_aura',      name: 'Аура холода',       icon: '❄',  desc: 'Замедляет ближайших врагов на 8% за уровень.' },
-  { id: 'magic_boost',     name: 'Усиление магии',    icon: '✦',  desc: '+10% к магическому урону за уровень.' },
-  { id: 'magic_echo',      name: 'Магический отклик', icon: '🔮', desc: '15% шанс: ответный снаряд при получении урона.' },
-  { id: 'lucky',           name: 'Счастливчик',       icon: '🎲', desc: '+1 к мин. результату d20 за уровень.' },
-  { id: 'double_xp',       name: 'Удвоение опыта',    icon: '✕2', desc: '6% шанс за уровень получить ×2 опыт.' },
-  { id: 'alchemist',       name: 'Алхимик',           icon: '⚗',  desc: '+12% к урону ядов и огня (DoT) за уровень.' },
-  { id: 'magnet_plus',     name: 'Магнит предметов',  icon: '⊕',  desc: '+20% к радиусу подбора за уровень.' },
+  { id: 'haste',           name: t('ability_haste'),         icon: '➤',  desc: t('ability_haste_desc') },
+  { id: 'regen',           name: t('ability_regen'),       icon: '✚',  desc: t('ability_regen_desc') },
+  { id: 'power',           name: t('ability_power'),    icon: '⚡', desc: t('ability_power_desc') },
+  { id: 'magnet',          name: t('ability_magnet'),      icon: '◎',  desc: t('ability_magnet_desc') },
+  { id: 'armor',           name: t('ability_armor'),             icon: '🛡', desc: t('ability_armor_desc') },
+  { id: 'mana_shield',     name: t('ability_mana_shield'),          icon: '🔵', desc: t('ability_mana_shield_desc') },
+  { id: 'fortify',         name: t('ability_fortify'),        icon: '❤',  desc: t('ability_fortify_desc') },
+  { id: 'resistance',      name: t('ability_resistance'),     icon: '✜',  desc: t('ability_resistance_desc') },
+  { id: 'bloodlust',       name: t('ability_bloodlust'),       icon: '🦷', desc: t('ability_bloodlust_desc') },
+  { id: 'crit_strike',     name: t('ability_crit_strike'),  icon: '⚡', desc: t('ability_crit_strike_desc') },
+  { id: 'bleed',           name: t('ability_bleed'),      icon: '💧', desc: t('ability_bleed_desc') },
+  { id: 'explosive_death', name: t('ability_explosive_death'),   icon: '💥', desc: t('ability_explosive_death_desc') },
+  { id: 'quick_fingers',   name: t('ability_quick_fingers'),   icon: '🔄', desc: t('ability_quick_fingers_desc') },
+  { id: 'frost_aura',      name: t('ability_frost_aura'),       icon: '❄',  desc: t('ability_frost_aura_desc') },
+  { id: 'magic_boost',     name: t('ability_magic_boost'),    icon: '✦',  desc: t('ability_magic_boost_desc') },
+  { id: 'magic_echo',      name: t('ability_magic_echo'), icon: '🔮', desc: t('ability_magic_echo_desc') },
+  { id: 'lucky',           name: t('ability_lucky'),       icon: '🎲', desc: t('ability_lucky_desc') },
+  { id: 'double_xp',       name: t('ability_double_xp'),    icon: '✕2', desc: t('ability_double_xp_desc') },
+  { id: 'alchemist',       name: t('ability_alchemist'),           icon: '⚗',  desc: t('ability_alchemist_desc') },
+  { id: 'magnet_plus',     name: t('ability_magnet_plus'),  icon: '⊕',  desc: t('ability_magnet_plus_desc') },
 ];
 
 

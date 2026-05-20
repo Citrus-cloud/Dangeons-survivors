@@ -1250,3 +1250,567 @@ document.addEventListener('DOMContentLoaded', () => {
 /* Дополнительные ключи */
 LOCALE.ru.transition_text = 'Переход в следующее подземелье...';
 LOCALE.en.transition_text = 'Moving to the next dungeon...';
+
+
+/* ============================================================
+   EXPANSION ENEMIES (names) — EN
+   ============================================================ */
+LOCALE.en.enemy_plague_rat = 'Plague Rat';
+LOCALE.en.enemy_mushroom_sprite = 'Mushroom Sprite';
+LOCALE.en.enemy_bone_crawler = 'Bone Crawler';
+LOCALE.en.enemy_wisp_minor = 'Minor Wisp';
+LOCALE.en.enemy_carrion_beetle = 'Carrion Beetle';
+LOCALE.en.enemy_mud_imp = 'Mud Imp';
+LOCALE.en.enemy_spirit_wisp = 'Spirit Wisp';
+LOCALE.en.enemy_vine_creeper = 'Vine Creeper';
+LOCALE.en.enemy_necro_acolyte = 'Necro Acolyte';
+LOCALE.en.enemy_sand_worm = 'Sand Worm';
+LOCALE.en.enemy_toxic_toad = 'Toxic Toad';
+LOCALE.en.enemy_chain_phantom = 'Chain Phantom';
+LOCALE.en.enemy_ember_moth = 'Ember Moth';
+LOCALE.en.enemy_frozen_husk = 'Frozen Husk';
+LOCALE.en.enemy_swarm_beetle = 'Swarm Beetle';
+LOCALE.en.enemy_mirror_wisp = 'Mirror Wisp';
+LOCALE.en.enemy_root_shambler = 'Root Shambler';
+LOCALE.en.enemy_plaguebearer = 'Plaguebearer';
+LOCALE.en.enemy_clockwork_spider = 'Clockwork Spider';
+LOCALE.en.enemy_blood_ooze = 'Blood Ooze';
+LOCALE.en.enemy_ash_wraith = 'Ash Wraith';
+LOCALE.en.enemy_crystal_golem = 'Crystal Golem';
+LOCALE.en.enemy_nether_hound = 'Nether Hound';
+LOCALE.en.enemy_spore_carrier = 'Spore Carrier';
+LOCALE.en.enemy_gravity_aberration = 'Gravity Aberration';
+LOCALE.en.enemy_corpse_detonator = 'Corpse Detonator';
+LOCALE.en.enemy_echo_shade = 'Echo Shade';
+LOCALE.en.enemy_magma_crab = 'Magma Crab';
+LOCALE.en.enemy_void_stalker = 'Void Stalker';
+LOCALE.en.enemy_soul_collector = 'Soul Collector';
+LOCALE.en.enemy_plague_golem = 'Plague Golem';
+LOCALE.en.enemy_thunder_elemental = 'Thunder Elemental';
+LOCALE.en.enemy_bone_hydra_enemy = 'Bone Hydra';
+LOCALE.en.enemy_dream_weaver = 'Dream Weaver';
+LOCALE.en.enemy_rust_hulk = 'Rust Hulk';
+LOCALE.en.enemy_parasite_host = 'Parasite Host';
+LOCALE.en.enemy_hex_weaver = 'Hex Weaver';
+LOCALE.en.enemy_temporal_beetle = 'Temporal Beetle';
+LOCALE.en.enemy_entropy_golem = 'Entropy Golem';
+LOCALE.en.enemy_soul_furnace = 'Soul Furnace';
+LOCALE.en.enemy_void_leviathan = 'Void Leviathan';
+LOCALE.en.enemy_plague_knight = 'Plague Knight';
+LOCALE.en.enemy_hive_queen = 'Hive Queen';
+LOCALE.en.enemy_chaos_chimera = 'Chaos Chimera';
+LOCALE.en.enemy_obelisk_guardian = 'Obelisk Guardian';
+LOCALE.en.enemy_shadow_prince = 'Shadow Prince';
+LOCALE.en.enemy_abyssal_maw = 'Abyssal Maw';
+LOCALE.en.enemy_living_dungeon = 'Living Dungeon';
+LOCALE.en.enemy_doom_herald = 'Doom Herald';
+LOCALE.en.enemy_treasure_golem = 'Treasure Golem';
+
+/* ============================================================
+   STEP12 ENEMIES (names) — EN
+   ============================================================ */
+LOCALE.en.enemy_bone_golem = 'Bone Golem';
+LOCALE.en.enemy_phase_spider = 'Phase Spider';
+LOCALE.en.enemy_ettercap = 'Ettercap';
+LOCALE.en.enemy_fungal_man = 'Fungal Man';
+LOCALE.en.enemy_troll = 'Troll';
+LOCALE.en.enemy_cave_bear = 'Cave Bear';
+LOCALE.en.enemy_ogre = 'Ogre';
+LOCALE.en.enemy_pterodactyl = 'Pterodactyl';
+LOCALE.en.enemy_giant_scorpion = 'Giant Scorpion';
+LOCALE.en.enemy_lamia = 'Lamia';
+LOCALE.en.enemy_dragon_wyrm = 'Dragon Wyrm';
+LOCALE.en.enemy_salamander = 'Salamander';
+LOCALE.en.enemy_water_elem_large = 'Water Elemental (Large)';
+LOCALE.en.enemy_air_elem = 'Air Elemental';
+LOCALE.en.enemy_gargoyle = 'Gargoyle';
+LOCALE.en.enemy_banshee = 'Banshee';
+LOCALE.en.enemy_vampire_spawn = 'Vampire Spawn';
+LOCALE.en.enemy_doppelganger_mage = 'Doppelganger Mage';
+LOCALE.en.enemy_owlbear = 'Owlbear';
+LOCALE.en.enemy_ice_elem = 'Ice Elemental';
+LOCALE.en.enemy_adult_dragon = 'Adult Dragon';
+LOCALE.en.enemy_demon_destroyer = 'Demon Destroyer';
+LOCALE.en.enemy_illithid_arcanist = 'Illithid Arcanist';
+LOCALE.en.enemy_rakshasa = 'Rakshasa';
+LOCALE.en.enemy_golem_colossus = 'Golem Colossus';
+LOCALE.en.enemy_shadow_dragon = 'Shadow Dragon';
+LOCALE.en.enemy_slime_queen = 'Slime Queen';
+LOCALE.en.enemy_iron_golem = 'Iron Golem';
+LOCALE.en.enemy_archdemon = 'Archdemon';
+LOCALE.en.enemy_star_spawn = 'Star Spawn';
+LOCALE.en.enemy_ancient_dragon = 'Ancient Dragon';
+LOCALE.en.enemy_kraken_tentacle = 'Kraken Tentacle';
+LOCALE.en.enemy_tarrasque_juv = 'Juvenile Tarrasque';
+LOCALE.en.enemy_chaos_god = 'Chaos God';
+LOCALE.en.enemy_vampire_lord = 'Vampire Lord';
+LOCALE.en.enemy_demilich = 'Demilich';
+LOCALE.en.enemy_empyrean = 'Empyrean';
+LOCALE.en.enemy_beast_lord = 'Beast Lord';
+LOCALE.en.enemy_titan_elem = 'Titan Elemental';
+LOCALE.en.enemy_night_walker = 'Night Walker';
+
+/* ============================================================
+   EXPANSION BOSSES (names) — EN
+   ============================================================ */
+LOCALE.en.boss_web_architect = 'Web Architect';
+LOCALE.en.boss_thunder_colossus = 'Thunder Colossus';
+LOCALE.en.boss_sphinx_puzzler = 'Sphinx Puzzler';
+LOCALE.en.boss_bone_hydra = 'Bone Hydra';
+LOCALE.en.boss_bone_hydra_boss = 'Bone Hydra';
+LOCALE.en.boss_mirror_king = 'Mirror King';
+LOCALE.en.boss_skeleton_king = 'Skeleton King';
+LOCALE.en.boss_lich = 'Lich';
+LOCALE.en.boss_ancient_dragon = 'Ancient Dragon';
+LOCALE.en.boss_magma_giant = 'Magma Giant';
+LOCALE.en.boss_spider_queen = 'Spider Queen';
+LOCALE.en.boss_dark_knight = 'Dark Knight';
+LOCALE.en.boss_frost_giant = 'Frost Giant';
+LOCALE.en.boss_undead_lord = 'Undead Lord';
+
+/* ============================================================
+   EXPANSION BESTIARY DESCRIPTIONS — EN
+   ============================================================ */
+LOCALE.en.bestiary_desc_plague_rat = 'A regular rat that went to the wrong party.';
+LOCALE.en.bestiary_desc_mushroom_sprite = 'Cute mushroom. With toxic spores. Very cute.';
+LOCALE.en.bestiary_desc_bone_crawler = 'Crawls along walls like paranoia crawls through your mind.';
+LOCALE.en.bestiary_desc_wisp_minor = 'Flickers and vanishes. Like your motivation on Monday.';
+LOCALE.en.bestiary_desc_carrion_beetle = 'Feeds on corpses. The more you kill, the fatter it gets.';
+LOCALE.en.bestiary_desc_mud_imp = 'Small, dirty, and surprisingly annoying.';
+LOCALE.en.bestiary_desc_spirit_wisp = 'A spark of the dead. Harmless? Not really.';
+LOCALE.en.bestiary_desc_vine_creeper = 'A vine that decided to become a predator.';
+LOCALE.en.bestiary_desc_necro_acolyte = 'Failed necromancy school. Still dangerous.';
+LOCALE.en.bestiary_desc_sand_worm = 'Surfaces, bites, disappears. Rinse and repeat.';
+LOCALE.en.bestiary_desc_toxic_toad = 'Licks itself and somehow YOU get poisoned.';
+LOCALE.en.bestiary_desc_chain_phantom = 'Bound in chains. Still faster than you expect.';
+LOCALE.en.bestiary_desc_ember_moth = 'Beautiful. Also on fire. Very on fire.';
+LOCALE.en.bestiary_desc_frozen_husk = 'A frozen corpse that forgot it was dead.';
+LOCALE.en.bestiary_desc_swarm_beetle = 'One is harmless. A hundred? Run.';
+LOCALE.en.bestiary_desc_mirror_wisp = 'Reflects your own attacks back. Rude.';
+LOCALE.en.bestiary_desc_root_shambler = 'A walking tree stump with anger issues.';
+LOCALE.en.bestiary_desc_plaguebearer = 'Carries disease with religious dedication.';
+LOCALE.en.bestiary_desc_clockwork_spider = 'Mechanical, precise, and hates organic life.';
+LOCALE.en.bestiary_desc_blood_ooze = 'Red, angry, and hungry for your health bar.';
+LOCALE.en.bestiary_desc_ash_wraith = 'Born from flames, returns to flames. Takes you with it.';
+LOCALE.en.bestiary_desc_crystal_golem = 'Shiny, hard, and very unfriendly.';
+LOCALE.en.bestiary_desc_nether_hound = 'Bad boy from another dimension.';
+LOCALE.en.bestiary_desc_spore_carrier = 'Walking biohazard. Keep your distance.';
+LOCALE.en.bestiary_desc_gravity_aberration = 'Bends space around itself. Physics hates it.';
+LOCALE.en.bestiary_desc_corpse_detonator = 'Explodes. That is its entire personality.';
+LOCALE.en.bestiary_desc_echo_shade = 'A shadow of a shadow. Recursive evil.';
+LOCALE.en.bestiary_desc_magma_crab = 'Like a regular crab but on fire. Much worse.';
+LOCALE.en.bestiary_desc_void_stalker = 'Hunts from the void. You are the prey.';
+LOCALE.en.bestiary_desc_soul_collector = 'Collects souls like stamps. Yours is next.';
+LOCALE.en.bestiary_desc_plague_golem = 'A golem made of disease and bad decisions.';
+LOCALE.en.bestiary_desc_thunder_elemental = 'Lightning in a vaguely humanoid shape.';
+LOCALE.en.bestiary_desc_bone_hydra_enemy = 'Multiple bone heads, multiple problems.';
+LOCALE.en.bestiary_desc_dream_weaver = 'Puts you to sleep. Permanently.';
+LOCALE.en.bestiary_desc_rust_hulk = 'Rusted, huge, and still very much operational.';
+LOCALE.en.bestiary_desc_parasite_host = 'The host is dead. The parasites are not.';
+LOCALE.en.bestiary_desc_hex_weaver = 'Curses you with the passion of a retail worker.';
+LOCALE.en.bestiary_desc_temporal_beetle = 'Bends time. Yesterday it already bit you.';
+LOCALE.en.bestiary_desc_entropy_golem = 'Everything it touches decays. Including your morale.';
+LOCALE.en.bestiary_desc_soul_furnace = 'Burns souls for fuel. Efficient and terrifying.';
+LOCALE.en.bestiary_desc_void_leviathan = 'From the depths of nothing. Huge and hungry.';
+LOCALE.en.bestiary_desc_plague_knight = 'A knight who chose plague over honor.';
+LOCALE.en.bestiary_desc_hive_queen = 'Mother of swarms. Congratulations, you found her.';
+LOCALE.en.bestiary_desc_chaos_chimera = 'Three heads of chaos. Zero heads of reason.';
+LOCALE.en.bestiary_desc_obelisk_guardian = 'Guards an obelisk. Takes the job very seriously.';
+LOCALE.en.bestiary_desc_shadow_prince = 'Royalty of darkness. Demands your life as tribute.';
+LOCALE.en.bestiary_desc_abyssal_maw = 'A mouth from the abyss. It only knows hunger.';
+LOCALE.en.bestiary_desc_living_dungeon = 'The dungeon itself decided to fight back.';
+LOCALE.en.bestiary_desc_doom_herald = 'Announces your doom. Then delivers it personally.';
+LOCALE.en.bestiary_desc_treasure_golem = 'Made of gold. Hits like gold. Very heavy gold.';
+
+/* ============================================================
+   STEP12 BESTIARY DESCRIPTIONS — EN
+   ============================================================ */
+LOCALE.en.bestiary_desc_bone_golem = 'A pile of bones held by magic. Shoots shards.';
+LOCALE.en.bestiary_desc_phase_spider = 'Teleports, bites, poisons. An unfair spider.';
+LOCALE.en.bestiary_desc_ettercap = 'Weaves webs in combat. A sticky fellow.';
+LOCALE.en.bestiary_desc_fungal_man = 'A mushroom that learned to walk. Releases spores.';
+LOCALE.en.bestiary_desc_troll = 'Regenerates. Only fire stops it.';
+LOCALE.en.bestiary_desc_cave_bear = 'Roars so loud it slows you. Bigger than expected.';
+LOCALE.en.bestiary_desc_ogre = 'Huge, dumb, strong. Hit by one and you remember grandma.';
+LOCALE.en.bestiary_desc_pterodactyl = 'A flying lizard from the past. Dives like a hawk.';
+LOCALE.en.bestiary_desc_giant_scorpion = 'Venomous stinger, pincers like vices.';
+LOCALE.en.bestiary_desc_lamia = 'Pulls victims with magic. Serpentine nature.';
+LOCALE.en.bestiary_desc_dragon_wyrm = 'Long, sinuous, venomous. A snake with wings.';
+LOCALE.en.bestiary_desc_salamander = 'Lives in fire, leaves fire, explodes into fire.';
+LOCALE.en.bestiary_desc_water_elem_large = 'A waterfall with attitude. Will sweep you away.';
+LOCALE.en.bestiary_desc_air_elem = 'Wind gusts with a mind. Ignores walls.';
+LOCALE.en.bestiary_desc_gargoyle = 'Stone statue? No. A predator waiting for its moment.';
+LOCALE.en.bestiary_desc_banshee = 'Her scream is the last thing you will hear.';
+LOCALE.en.bestiary_desc_vampire_spawn = 'Bites, heals, fast. Classic bloodsucker.';
+LOCALE.en.bestiary_desc_doppelganger_mage = 'Copies and splits. Two are worse than one.';
+LOCALE.en.bestiary_desc_owlbear = 'Half-owl, half-bear. Fully angry.';
+LOCALE.en.bestiary_desc_ice_elem = 'Freezes everything around. Like January, but angrier.';
+LOCALE.en.bestiary_desc_adult_dragon = 'Fully grown dragon. Run.';
+LOCALE.en.bestiary_desc_demon_destroyer = 'Whip, meteors, death explosion. Fun times.';
+LOCALE.en.bestiary_desc_illithid_arcanist = 'An illithid with a PhD. Enslaves minds and bodies.';
+LOCALE.en.bestiary_desc_rakshasa = 'Creates illusions, slashes with claws. A trickster.';
+LOCALE.en.bestiary_desc_golem_colossus = 'A walking mountain. One hit = death.';
+LOCALE.en.bestiary_desc_shadow_dragon = 'Dragon of darkness. Weakens and summons shadows.';
+LOCALE.en.bestiary_desc_slime_queen = 'Mother of all slimes. Spawns. Endlessly.';
+LOCALE.en.bestiary_desc_iron_golem = 'Iron, electric, indestructible.';
+LOCALE.en.bestiary_desc_archdemon = 'Lord of the underworld. Fire, rings, explosions.';
+LOCALE.en.bestiary_desc_star_spawn = 'From another dimension. Psychic attack.';
+LOCALE.en.bestiary_desc_ancient_dragon = 'Ancient. Wise. Deadly.';
+LOCALE.en.bestiary_desc_kraken_tentacle = 'A tentacle from the abyss. Area attack.';
+LOCALE.en.bestiary_desc_tarrasque_juv = 'A young Tarrasque. Already terrifying.';
+LOCALE.en.bestiary_desc_chaos_god = 'Avatar of chaos. Beams, waves, total destruction.';
+LOCALE.en.bestiary_desc_vampire_lord = 'Vampire lord. Transforms into mist.';
+LOCALE.en.bestiary_desc_demilich = 'A floating skull full of dark magic.';
+LOCALE.en.bestiary_desc_empyrean = 'Celestial warrior. Light beams and fire pillars.';
+LOCALE.en.bestiary_desc_beast_lord = 'Commander of beasts. Summons an army of creatures.';
+LOCALE.en.bestiary_desc_titan_elem = 'Switches elements like gloves. Each one kills.';
+LOCALE.en.bestiary_desc_night_walker = 'Invisible night killer. Backstab x2.';
+
+/* ============================================================
+   STEP12 BESTIARY ABILITIES — EN
+   ============================================================ */
+LOCALE.en.bestiary_ability_bone_golem = 'Shoots bone shards (3); immune to bleed';
+LOCALE.en.bestiary_ability_phase_spider = 'Teleports to target; poison bite (4 DPS, 3s)';
+LOCALE.en.bestiary_ability_ettercap = 'Creates web (60% slow, radius 50)';
+LOCALE.en.bestiary_ability_fungal_man = 'Spore cloud (8 DPS + 1s disorientation)';
+LOCALE.en.bestiary_ability_troll = 'Regeneration 5 HP/s; x2 damage from fire';
+LOCALE.en.bestiary_ability_cave_bear = 'Roar: 30% slow for 2s (radius 80)';
+LOCALE.en.bestiary_ability_ogre = 'Ground slam: AoE 60px + 0.5s stun';
+LOCALE.en.bestiary_ability_pterodactyl = 'Dive at high speed (320)';
+LOCALE.en.bestiary_ability_giant_scorpion = 'Poison stinger (6 DPS, 4s); cloud on death';
+LOCALE.en.bestiary_ability_lamia = 'Pulls victim + ranged damage';
+LOCALE.en.bestiary_ability_dragon_wyrm = 'Fast; poison breath (5 DPS, 4s)';
+LOCALE.en.bestiary_ability_salamander = 'Fire trail; explosion on death; fire immune';
+LOCALE.en.bestiary_ability_water_elem_large = 'Water trail (20% slow); wave (knockback + flood)';
+LOCALE.en.bestiary_ability_air_elem = 'Wind gust (60 knockback); passes through walls';
+LOCALE.en.bestiary_ability_gargoyle = 'Immobile while hero is far; swift attack';
+LOCALE.en.bestiary_ability_banshee = 'Scream: 20 dmg + 1s fear (radius 120); passes walls';
+LOCALE.en.bestiary_ability_vampire_spawn = '50% lifesteal; weak to light (x2)';
+LOCALE.en.bestiary_ability_doppelganger_mage = 'Copies weapon; splits into 2 clones';
+LOCALE.en.bestiary_ability_owlbear = 'Dash to target (280 speed); heavy hit 18';
+LOCALE.en.bestiary_ability_ice_elem = 'Ice breath (50% slow); ice wall; slow explosion';
+LOCALE.en.bestiary_ability_adult_dragon = 'Wide fire breath; enrage at <30% HP';
+LOCALE.en.bestiary_ability_demon_destroyer = 'Whip (150 range); meteors (3)';
+LOCALE.en.bestiary_ability_illithid_arcanist = 'Psychic blast (60px); enslaves enemies (+50% stats)';
+LOCALE.en.bestiary_ability_rakshasa = '50% magic resistance; creates 2 illusions; bleed';
+LOCALE.en.bestiary_ability_golem_colossus = 'Slam (80px + 1s stun); shockwave on death';
+LOCALE.en.bestiary_ability_shadow_dragon = 'Dark breath (-30% hero dmg); summons 2 shadows';
+LOCALE.en.bestiary_ability_slime_queen = 'Acid trail; 3 slowing blobs; 5 slimes on death';
+LOCALE.en.bestiary_ability_iron_golem = '20% electric shock chance (70px); fire speeds it up';
+LOCALE.en.bestiary_ability_archdemon = 'Fire breath (cone); fire ring; 150px explosion on death';
+LOCALE.en.bestiary_ability_star_spawn = 'Psionic wave (80px, disorientation); summons 2 spores; zone on death';
+LOCALE.en.bestiary_ability_ancient_dragon = 'Fire breath (180px); slow aura; enrage at <20%';
+LOCALE.en.bestiary_ability_kraken_tentacle = 'Immobile; area slam (150px, 2s cooldown)';
+LOCALE.en.bestiary_ability_tarrasque_juv = '80% magic resistance; 30% phys reflect; slam (200px + stun)';
+LOCALE.en.bestiary_ability_chaos_god = 'Chaos beam; destruction wave (160px); 200px explosion on death';
+LOCALE.en.bestiary_ability_vampire_lord = '100% lifesteal; mist form; regeneration after death';
+LOCALE.en.bestiary_ability_demilich = 'Wail (150px + fear); soul drain (15 DPS); summons 5 mages on death';
+LOCALE.en.bestiary_ability_empyrean = 'Light beams (350 speed); fire pillars (3, 60px)';
+LOCALE.en.bestiary_ability_beast_lord = 'Summons beasts (max 6): rats, bears, owlbears';
+LOCALE.en.bestiary_ability_titan_elem = 'Phase shift (fire/water/earth/air); 140px explosion on death';
+LOCALE.en.bestiary_ability_night_walker = 'Invisibility; backstab x2 damage';
+
+/* ============================================================
+   EXPANSION BOSS DESCRIPTIONS — EN
+   ============================================================ */
+LOCALE.en.bestiary_desc_boss_web_architect = 'Master of webs and eight-legged minions.';
+LOCALE.en.bestiary_desc_boss_thunder_colossus = 'A giant wreathed in lightning.';
+LOCALE.en.bestiary_desc_boss_puzzle_sphinx = 'Riddles or death. Usually both.';
+LOCALE.en.bestiary_desc_boss_storm_colossus = 'A storm given form and fury.';
+LOCALE.en.bestiary_desc_boss_bone_hydra = 'Many bone heads, all angry.';
+LOCALE.en.bestiary_desc_boss_mirror_king = 'Reflects everything. Including your hope.';
+
+
+/* ============================================================
+   EXPANSION ENEMIES (names) — RU
+   ============================================================ */
+LOCALE.ru.enemy_plague_rat = 'Чумная крыса';
+LOCALE.ru.enemy_mushroom_sprite = 'Грибной спрайт';
+LOCALE.ru.enemy_bone_crawler = 'Костяной ползун';
+LOCALE.ru.enemy_wisp_minor = 'Блуждающий огонёк';
+LOCALE.ru.enemy_carrion_beetle = 'Жук-падальщик';
+LOCALE.ru.enemy_mud_imp = 'Грязевой бесёнок';
+LOCALE.ru.enemy_spirit_wisp = 'Дух-искра';
+LOCALE.ru.enemy_vine_creeper = 'Лозолаз';
+LOCALE.ru.enemy_necro_acolyte = 'Некро-аколит';
+LOCALE.ru.enemy_sand_worm = 'Песчаный червь';
+LOCALE.ru.enemy_toxic_toad = 'Ядовитая жаба';
+LOCALE.ru.enemy_chain_phantom = 'Цепной фантом';
+LOCALE.ru.enemy_ember_moth = 'Угольная моль';
+LOCALE.ru.enemy_frozen_husk = 'Ледяная шелуха';
+LOCALE.ru.enemy_swarm_beetle = 'Жук-роевик';
+LOCALE.ru.enemy_mirror_wisp = 'Зеркальный дух';
+LOCALE.ru.enemy_root_shambler = 'Корневой скиталец';
+LOCALE.ru.enemy_plaguebearer = 'Носитель чумы';
+LOCALE.ru.enemy_clockwork_spider = 'Заводной паук';
+LOCALE.ru.enemy_blood_ooze = 'Кровавый слизень';
+LOCALE.ru.enemy_ash_wraith = 'Пепельный призрак';
+LOCALE.ru.enemy_crystal_golem = 'Кристальный голем';
+LOCALE.ru.enemy_nether_hound = 'Потусторонний пёс';
+LOCALE.ru.enemy_spore_carrier = 'Споровый носитель';
+LOCALE.ru.enemy_gravity_aberration = 'Гравитационная аномалия';
+LOCALE.ru.enemy_corpse_detonator = 'Трупный подрыватель';
+LOCALE.ru.enemy_echo_shade = 'Эхо-тень';
+LOCALE.ru.enemy_magma_crab = 'Магматический краб';
+LOCALE.ru.enemy_void_stalker = 'Пустотный охотник';
+LOCALE.ru.enemy_soul_collector = 'Собиратель душ';
+LOCALE.ru.enemy_plague_golem = 'Чумной голем';
+LOCALE.ru.enemy_thunder_elemental = 'Элементаль молнии';
+LOCALE.ru.enemy_bone_hydra_enemy = 'Костяная гидра';
+LOCALE.ru.enemy_dream_weaver = 'Ткач снов';
+LOCALE.ru.enemy_rust_hulk = 'Ржавый великан';
+LOCALE.ru.enemy_parasite_host = 'Паразит-носитель';
+LOCALE.ru.enemy_hex_weaver = 'Ткач проклятий';
+LOCALE.ru.enemy_temporal_beetle = 'Хроно-жук';
+LOCALE.ru.enemy_entropy_golem = 'Голем энтропии';
+LOCALE.ru.enemy_soul_furnace = 'Душеплавильня';
+LOCALE.ru.enemy_void_leviathan = 'Пустотный левиафан';
+LOCALE.ru.enemy_plague_knight = 'Чумной рыцарь';
+LOCALE.ru.enemy_hive_queen = 'Королева улья';
+LOCALE.ru.enemy_chaos_chimera = 'Химера хаоса';
+LOCALE.ru.enemy_obelisk_guardian = 'Страж обелиска';
+LOCALE.ru.enemy_shadow_prince = 'Теневой принц';
+LOCALE.ru.enemy_abyssal_maw = 'Бездонная пасть';
+LOCALE.ru.enemy_living_dungeon = 'Живой подземелец';
+LOCALE.ru.enemy_doom_herald = 'Вестник рока';
+LOCALE.ru.enemy_treasure_golem = 'Золотой голем';
+
+/* ============================================================
+   STEP12 ENEMIES (names) — RU
+   ============================================================ */
+LOCALE.ru.enemy_bone_golem = 'Костяной голем';
+LOCALE.ru.enemy_phase_spider = 'Фазовый паук';
+LOCALE.ru.enemy_ettercap = 'Эттеркап';
+LOCALE.ru.enemy_fungal_man = 'Грибной человек';
+LOCALE.ru.enemy_troll = 'Тролль';
+LOCALE.ru.enemy_cave_bear = 'Пещерный медведь';
+LOCALE.ru.enemy_ogre = 'Огр';
+LOCALE.ru.enemy_pterodactyl = 'Птеродактиль';
+LOCALE.ru.enemy_giant_scorpion = 'Гигантский скорпион';
+LOCALE.ru.enemy_lamia = 'Ламия';
+LOCALE.ru.enemy_dragon_wyrm = 'Дракон-змей';
+LOCALE.ru.enemy_salamander = 'Саламандра';
+LOCALE.ru.enemy_water_elem_large = 'Элементаль воды (большой)';
+LOCALE.ru.enemy_air_elem = 'Элементаль воздуха';
+LOCALE.ru.enemy_gargoyle = 'Горгулья';
+LOCALE.ru.enemy_banshee = 'Банши';
+LOCALE.ru.enemy_vampire_spawn = 'Вампир-новообращённый';
+LOCALE.ru.enemy_doppelganger_mage = 'Доппельгангер-маг';
+LOCALE.ru.enemy_owlbear = 'Совомедведь';
+LOCALE.ru.enemy_ice_elem = 'Ледяной элементаль';
+LOCALE.ru.enemy_adult_dragon = 'Взрослый дракон';
+LOCALE.ru.enemy_demon_destroyer = 'Демон-разрушитель';
+LOCALE.ru.enemy_illithid_arcanist = 'Иллитид-заклинатель';
+LOCALE.ru.enemy_rakshasa = 'Ракшаса';
+LOCALE.ru.enemy_golem_colossus = 'Голем-колосс';
+LOCALE.ru.enemy_shadow_dragon = 'Теневой дракон';
+LOCALE.ru.enemy_slime_queen = 'Королева слизней';
+LOCALE.ru.enemy_iron_golem = 'Железный голем';
+LOCALE.ru.enemy_archdemon = 'Архидемон';
+LOCALE.ru.enemy_star_spawn = 'Порождение звёзд';
+LOCALE.ru.enemy_ancient_dragon = 'Древний дракон';
+LOCALE.ru.enemy_kraken_tentacle = 'Щупальце кракена';
+LOCALE.ru.enemy_tarrasque_juv = 'Молодой Терраска';
+LOCALE.ru.enemy_chaos_god = 'Аватар хаоса';
+LOCALE.ru.enemy_vampire_lord = 'Лорд вампиров';
+LOCALE.ru.enemy_demilich = 'Демилич';
+LOCALE.ru.enemy_empyrean = 'Небожитель';
+LOCALE.ru.enemy_beast_lord = 'Повелитель зверей';
+LOCALE.ru.enemy_titan_elem = 'Элементаль-титан';
+LOCALE.ru.enemy_night_walker = 'Ночной странник';
+
+/* ============================================================
+   BOSSES — RU
+   ============================================================ */
+LOCALE.ru.boss_web_architect = 'Архитектор Паутины';
+LOCALE.ru.boss_thunder_colossus = 'Грозовой Колосс';
+LOCALE.ru.boss_sphinx_puzzler = 'Сфинкс-Головоломщик';
+LOCALE.ru.boss_bone_hydra = 'Костяная Гидра';
+LOCALE.ru.boss_bone_hydra_boss = 'Костяная Гидра';
+LOCALE.ru.boss_mirror_king = 'Зеркальный Король';
+LOCALE.ru.boss_skeleton_king = 'Король скелетов';
+LOCALE.ru.boss_lich = 'Лич';
+LOCALE.ru.boss_ancient_dragon = 'Древний дракон';
+LOCALE.ru.boss_magma_giant = 'Магма-гигант';
+LOCALE.ru.boss_spider_queen = 'Паучья королева';
+LOCALE.ru.boss_dark_knight = 'Тёмный рыцарь';
+LOCALE.ru.boss_frost_giant = 'Ледяной великан';
+LOCALE.ru.boss_undead_lord = 'Повелитель нежити';
+
+/* ============================================================
+   BESTIARY DESCRIPTIONS — RU (step12)
+   ============================================================ */
+LOCALE.ru.bestiary_desc_bone_golem = 'Куча костей, скреплённых магией. Стреляет осколками.';
+LOCALE.ru.bestiary_desc_phase_spider = 'Телепортируется, кусает, ядовит. Нечестный паук.';
+LOCALE.ru.bestiary_desc_ettercap = 'Плетёт паутины прямо в бою. Вязкий тип.';
+LOCALE.ru.bestiary_desc_fungal_man = 'Гриб, который научился ходить. Выпускает споры.';
+LOCALE.ru.bestiary_desc_troll = 'Регенерирует. Только огонь его останавливает.';
+LOCALE.ru.bestiary_desc_cave_bear = 'Ревёт так, что замедляет. Больше, чем ты ожидал.';
+LOCALE.ru.bestiary_desc_ogre = 'Огромный, тупой, сильный. Ударит — вспомнишь бабушку.';
+LOCALE.ru.bestiary_desc_pterodactyl = 'Летающий ящер из прошлого. Пикирует как ястреб.';
+LOCALE.ru.bestiary_desc_giant_scorpion = 'Жало с ядом, клешни как тиски.';
+LOCALE.ru.bestiary_desc_lamia = 'Притягивает жертву магией. Змеиная натура.';
+LOCALE.ru.bestiary_desc_dragon_wyrm = 'Длинный, извилистый, ядовитый. Змея с крыльями.';
+LOCALE.ru.bestiary_desc_salamander = 'Живёт в огне, оставляет огонь, взрывается огнём.';
+LOCALE.ru.bestiary_desc_water_elem_large = 'Водопад с характером. Смоет и не заметит.';
+LOCALE.ru.bestiary_desc_air_elem = 'Порывы ветра с разумом. Игнорирует стены.';
+LOCALE.ru.bestiary_desc_gargoyle = 'Каменная статуя? Нет. Хищник, ждущий свой момент.';
+LOCALE.ru.bestiary_desc_banshee = 'Её крик — последнее, что ты услышишь.';
+LOCALE.ru.bestiary_desc_vampire_spawn = 'Кусает, лечится, быстрый. Классический кровосос.';
+LOCALE.ru.bestiary_desc_doppelganger_mage = 'Копирует и раздваивается. Два — хуже одного.';
+LOCALE.ru.bestiary_desc_owlbear = 'Полу-сова, полу-медведь. Полностью злой.';
+LOCALE.ru.bestiary_desc_ice_elem = 'Морозит всё вокруг. Как январь, но злее.';
+LOCALE.ru.bestiary_desc_adult_dragon = 'Полностью выросший дракон. Беги.';
+LOCALE.ru.bestiary_desc_demon_destroyer = 'Хлыст, метеоры, взрыв при смерти. Весело.';
+LOCALE.ru.bestiary_desc_illithid_arcanist = 'Иллитид с PhD. Порабощает умы и тела.';
+LOCALE.ru.bestiary_desc_rakshasa = 'Создаёт иллюзии, режет когтями. Хитрец.';
+LOCALE.ru.bestiary_desc_golem_colossus = 'Ходячая гора. Одно попадание = смерть.';
+LOCALE.ru.bestiary_desc_shadow_dragon = 'Дракон из тьмы. Ослабляет и призывает тени.';
+LOCALE.ru.bestiary_desc_slime_queen = 'Мать всех слизней. Рожает. Бесконечно.';
+LOCALE.ru.bestiary_desc_iron_golem = 'Железный, электрический, несокрушимый.';
+LOCALE.ru.bestiary_desc_archdemon = 'Владыка преисподней. Огонь, кольца, взрывы.';
+LOCALE.ru.bestiary_desc_star_spawn = 'Из другого измерения. Психическая атака.';
+LOCALE.ru.bestiary_desc_ancient_dragon = 'Древний. Мудрый. Убийственный.';
+LOCALE.ru.bestiary_desc_kraken_tentacle = 'Щупальце из бездны. Бьёт по площади.';
+LOCALE.ru.bestiary_desc_tarrasque_juv = 'Молодой Терраска. И это уже ужас.';
+LOCALE.ru.bestiary_desc_chaos_god = 'Аватар хаоса. Лучи, волны, полное уничтожение.';
+LOCALE.ru.bestiary_desc_vampire_lord = 'Лорд вампиров. Превращается в туман.';
+LOCALE.ru.bestiary_desc_demilich = 'Парящий череп, полный тёмной магии.';
+LOCALE.ru.bestiary_desc_empyrean = 'Небесный воин. Лучи света и столбы огня.';
+LOCALE.ru.bestiary_desc_beast_lord = 'Командир зверей. Призывает армию тварей.';
+LOCALE.ru.bestiary_desc_titan_elem = 'Меняет стихии как перчатки. Каждая убивает.';
+LOCALE.ru.bestiary_desc_night_walker = 'Невидимый убийца ночи. Удар в спину ×2.';
+
+/* ============================================================
+   BESTIARY DESCRIPTIONS — RU (expansion)
+   ============================================================ */
+LOCALE.ru.bestiary_desc_plague_rat = 'Обычная крыса, которая пошла не на ту вечеринку.';
+LOCALE.ru.bestiary_desc_mushroom_sprite = 'Милый грибочек. С ядовитыми спорами. Очень милый.';
+LOCALE.ru.bestiary_desc_bone_crawler = 'Ползёт вдоль стен, как паранойя — вдоль разума.';
+LOCALE.ru.bestiary_desc_wisp_minor = 'Мерцает и исчезает. Как твоя мотивация в понедельник.';
+LOCALE.ru.bestiary_desc_carrion_beetle = 'Питается трупами. Чем больше дерёшь — тем он толще.';
+LOCALE.ru.bestiary_desc_mud_imp = 'Маленький, грязный и удивительно надоедливый.';
+LOCALE.ru.bestiary_desc_spirit_wisp = 'Искра мёртвого. Безобидный? Не совсем.';
+LOCALE.ru.bestiary_desc_vine_creeper = 'Лоза, которая решила стать хищником.';
+LOCALE.ru.bestiary_desc_necro_acolyte = 'Провалил школу некромантии. Всё равно опасен.';
+LOCALE.ru.bestiary_desc_sand_worm = 'Всплывает, кусает, исчезает. Повтор.';
+LOCALE.ru.bestiary_desc_toxic_toad = 'Лижет себя и почему-то ТЫ травишься.';
+LOCALE.ru.bestiary_desc_chain_phantom = 'Скован цепями. Всё ещё быстрее, чем ты ожидал.';
+LOCALE.ru.bestiary_desc_ember_moth = 'Красивая. И в огне. Очень в огне.';
+LOCALE.ru.bestiary_desc_frozen_husk = 'Замёрзший труп, который забыл, что он мёртв.';
+LOCALE.ru.bestiary_desc_swarm_beetle = 'Один безобиден. Сотня? Беги.';
+LOCALE.ru.bestiary_desc_mirror_wisp = 'Отражает твои атаки обратно. Грубо.';
+LOCALE.ru.bestiary_desc_root_shambler = 'Ходячий пень с проблемами гнева.';
+LOCALE.ru.bestiary_desc_plaguebearer = 'Несёт болезнь с религиозным рвением.';
+LOCALE.ru.bestiary_desc_clockwork_spider = 'Механический, точный и ненавидит органику.';
+LOCALE.ru.bestiary_desc_blood_ooze = 'Красный, злой и голоден до твоего HP.';
+LOCALE.ru.bestiary_desc_ash_wraith = 'Рождён из огня, возвращается в огонь. Заберёт тебя с собой.';
+LOCALE.ru.bestiary_desc_crystal_golem = 'Блестящий, твёрдый и очень недружелюбный.';
+LOCALE.ru.bestiary_desc_nether_hound = 'Плохой мальчик из другого измерения.';
+LOCALE.ru.bestiary_desc_spore_carrier = 'Ходячая биоопасность. Держись подальше.';
+LOCALE.ru.bestiary_desc_gravity_aberration = 'Искривляет пространство вокруг себя. Физика её ненавидит.';
+LOCALE.ru.bestiary_desc_corpse_detonator = 'Взрывается. Это вся его личность.';
+LOCALE.ru.bestiary_desc_echo_shade = 'Тень тени. Рекурсивное зло.';
+LOCALE.ru.bestiary_desc_magma_crab = 'Как обычный краб, но в огне. Намного хуже.';
+LOCALE.ru.bestiary_desc_void_stalker = 'Охотится из пустоты. Ты — добыча.';
+LOCALE.ru.bestiary_desc_soul_collector = 'Коллекционирует души как марки. Твоя следующая.';
+LOCALE.ru.bestiary_desc_plague_golem = 'Голем из болезни и плохих решений.';
+LOCALE.ru.bestiary_desc_thunder_elemental = 'Молния в условно гуманоидной форме.';
+LOCALE.ru.bestiary_desc_bone_hydra_enemy = 'Много костяных голов, много проблем.';
+LOCALE.ru.bestiary_desc_dream_weaver = 'Усыпляет. Навсегда.';
+LOCALE.ru.bestiary_desc_rust_hulk = 'Ржавый, огромный, но всё ещё на ходу.';
+LOCALE.ru.bestiary_desc_parasite_host = 'Хозяин мёртв. Паразиты — нет.';
+LOCALE.ru.bestiary_desc_hex_weaver = 'Проклинает с усердием работника розницы.';
+LOCALE.ru.bestiary_desc_temporal_beetle = 'Искривляет время. Вчера он тебя уже укусил.';
+LOCALE.ru.bestiary_desc_entropy_golem = 'Всё, чего касается, разлагается. Включая мораль.';
+LOCALE.ru.bestiary_desc_soul_furnace = 'Сжигает души как топливо. Эффективно и ужасно.';
+LOCALE.ru.bestiary_desc_void_leviathan = 'Из глубин ничего. Огромный и голодный.';
+LOCALE.ru.bestiary_desc_plague_knight = 'Рыцарь, выбравший чуму вместо чести.';
+LOCALE.ru.bestiary_desc_hive_queen = 'Мать роёв. Поздравляю, ты её нашёл.';
+LOCALE.ru.bestiary_desc_chaos_chimera = 'Три головы хаоса. Ноль голов разума.';
+LOCALE.ru.bestiary_desc_obelisk_guardian = 'Охраняет обелиск. Относится к работе серьёзно.';
+LOCALE.ru.bestiary_desc_shadow_prince = 'Королевская особа тьмы. Требует жизнь как дань.';
+LOCALE.ru.bestiary_desc_abyssal_maw = 'Пасть из бездны. Знает только голод.';
+LOCALE.ru.bestiary_desc_living_dungeon = 'Само подземелье решило дать отпор.';
+LOCALE.ru.bestiary_desc_doom_herald = 'Возвещает твою гибель. Потом лично доставляет.';
+LOCALE.ru.bestiary_desc_treasure_golem = 'Сделан из золота. Бьёт как золото. Очень тяжёлое золото.';
+
+/* ============================================================
+   BESTIARY ABILITIES — RU (step12)
+   ============================================================ */
+LOCALE.ru.bestiary_ability_bone_golem = 'Стреляет костяными осколками (3 шт.); иммунитет к кровотечению';
+LOCALE.ru.bestiary_ability_phase_spider = 'Телепортируется к цели; ядовитый укус (4 DPS, 3с)';
+LOCALE.ru.bestiary_ability_ettercap = 'Создаёт паутину (замедление 60%, радиус 50)';
+LOCALE.ru.bestiary_ability_fungal_man = 'Облако спор (8 DPS + дезориентация 1с)';
+LOCALE.ru.bestiary_ability_troll = 'Регенерация 5 HP/с; ×2 урона от огня';
+LOCALE.ru.bestiary_ability_cave_bear = 'Рёв: замедление 30% на 2с (радиус 80)';
+LOCALE.ru.bestiary_ability_ogre = 'Удар по земле: AoE 60px + оглушение 0.5с';
+LOCALE.ru.bestiary_ability_pterodactyl = 'Пикирование с высокой скоростью (320)';
+LOCALE.ru.bestiary_ability_giant_scorpion = 'Ядовитое жало (6 DPS, 4с); облако при смерти';
+LOCALE.ru.bestiary_ability_lamia = 'Притяжение жертвы + урон на расстоянии';
+LOCALE.ru.bestiary_ability_dragon_wyrm = 'Быстрый; ядовитое дыхание (5 DPS, 4с)';
+LOCALE.ru.bestiary_ability_salamander = 'Огненный след; взрыв при смерти; иммунитет к огню';
+LOCALE.ru.bestiary_ability_water_elem_large = 'Водный след (замедление 20%); волна (отбрасывание + наводнение)';
+LOCALE.ru.bestiary_ability_air_elem = 'Порыв ветра (отбрасывание 60); проходит сквозь стены';
+LOCALE.ru.bestiary_ability_gargoyle = 'Неподвижен пока герой далеко; стремительная атака';
+LOCALE.ru.bestiary_ability_banshee = 'Крик: 20 урона + страх 1с (радиус 120); проходит стены';
+LOCALE.ru.bestiary_ability_vampire_spawn = 'Вампиризм 50% урона в HP; слаб к свету (×2)';
+LOCALE.ru.bestiary_ability_doppelganger_mage = 'Копирует оружие; раздваивается на 2 клона';
+LOCALE.ru.bestiary_ability_owlbear = 'Рывок к цели (280 скорость); тяжёлый удар 18';
+LOCALE.ru.bestiary_ability_ice_elem = 'Ледяное дыхание (50% замедление); ледяная стена; взрыв замедления';
+LOCALE.ru.bestiary_ability_adult_dragon = 'Широкое огненное дыхание; ярость при <30% HP';
+LOCALE.ru.bestiary_ability_demon_destroyer = 'Хлыст (150 дальность); метеоры (3 шт.)';
+LOCALE.ru.bestiary_ability_illithid_arcanist = 'Психовзрыв (60px); порабощение врагов (+50% стат)';
+LOCALE.ru.bestiary_ability_rakshasa = '50% магическая защита; создаёт 2 иллюзии; кровотечение';
+LOCALE.ru.bestiary_ability_golem_colossus = 'Удар (80px + оглушение 1с); ударная волна при смерти';
+LOCALE.ru.bestiary_ability_shadow_dragon = 'Тёмное дыхание (−30% урон героя); призыв 2 теней';
+LOCALE.ru.bestiary_ability_slime_queen = 'Кислотный след; стреляет 3 замедляющих шара; 5 слизней при смерти';
+LOCALE.ru.bestiary_ability_iron_golem = '20% шанс электрошока (70px); огонь ускоряет его';
+LOCALE.ru.bestiary_ability_archdemon = 'Огненное дыхание (конус); огненное кольцо; взрыв 150px при смерти';
+LOCALE.ru.bestiary_ability_star_spawn = 'Псионическая волна (80px, дезориентация); призыв 2 спор; зона при смерти';
+LOCALE.ru.bestiary_ability_ancient_dragon = 'Огненное дыхание (180px); аура замедления; ярость при <20%';
+LOCALE.ru.bestiary_ability_kraken_tentacle = 'Неподвижно; удар по площади (150px, 2с кулдаун)';
+LOCALE.ru.bestiary_ability_tarrasque_juv = '80% магическая защита; 30% отражение физ.; удар (200px + оглушение)';
+LOCALE.ru.bestiary_ability_chaos_god = 'Луч хаоса; волна уничтожения (160px); взрыв 200px при смерти';
+LOCALE.ru.bestiary_ability_vampire_lord = '100% вампиризм; превращение в туман; регенерация после смерти';
+LOCALE.ru.bestiary_ability_demilich = 'Вой (150px + страх); вытягивание души (15 DPS); призыв 5 магов при смерти';
+LOCALE.ru.bestiary_ability_empyrean = 'Лучи света (350 скорость); столбы огня (3 шт., 60px)';
+LOCALE.ru.bestiary_ability_beast_lord = 'Призыв зверей (макс 6): крысы, медведи, совомедведи';
+LOCALE.ru.bestiary_ability_titan_elem = 'Смена фаз (огонь/вода/земля/воздух); взрыв 140px при смерти';
+LOCALE.ru.bestiary_ability_night_walker = 'Невидимость; бэкстаб ×2 урона';
+
+
+
+/* ============================================================
+   ADDITIONAL BOSS NAMES — EN/RU
+   ============================================================ */
+LOCALE.en.boss_fire_elemental_lord = 'Fire Elemental Lord';
+LOCALE.en.boss_ice_elemental_lord = 'Ice Elemental Lord';
+LOCALE.en.boss_ancient_ent = 'Ancient Ent';
+LOCALE.en.boss_ghoul_king = 'Ghoul King';
+LOCALE.en.boss_ice_serpent = 'Ice Serpent';
+LOCALE.en.boss_spider_queen_large = 'Spider Queen';
+LOCALE.en.boss_knight_commander = 'Knight Commander';
+LOCALE.en.boss_shadow_dragon = 'Shadow Dragon';
+
+LOCALE.ru.boss_fire_elemental_lord = 'Огненный элементаль-лорд';
+LOCALE.ru.boss_ice_elemental_lord = 'Ледяной элементаль-лорд';
+LOCALE.ru.boss_ancient_ent = 'Древний энт';
+LOCALE.ru.boss_ghoul_king = 'Король упырей';
+LOCALE.ru.boss_ice_serpent = 'Ледяной змей';
+LOCALE.ru.boss_spider_queen_large = 'Королева пауков';
+LOCALE.ru.boss_knight_commander = 'Рыцарь-командор';
+LOCALE.ru.boss_shadow_dragon = 'Теневой дракон';
+
+
+
+/* ============================================================
+   EXCLUSIVE WEAPONS — EN/RU
+   ============================================================ */
+LOCALE.en.weapon_phoenix_bow = 'Phoenix Bow';
+LOCALE.en.weapon_beast_claw = 'Beast Claw';
+LOCALE.en.weapon_rune_shield = 'Rune Shield';
+
+LOCALE.ru.weapon_phoenix_bow = 'Лук феникса';
+LOCALE.ru.weapon_beast_claw = 'Коготь зверя';
+LOCALE.ru.weapon_rune_shield = 'Рунный щит';

@@ -2481,7 +2481,7 @@ const GameMap = {
       Particles.ring(door.x + door.w / 2, door.y + door.h / 2, 80, 0.5,
         'rgba(255, 215, 80, 0.85)', 4);
       Particles.text(door.x + door.w / 2, door.y - 16,
-        'СЕКРЕТНАЯ КОМНАТА ОТКРЫТА', 1.6, '#ffd84a', 14);
+        'SECRET ROOM OPENED', 1.6, '#ffd84a', 14);
     }
     // Спавним сундук в секретной комнате (через main.js)
     if (window.Game && Game.spawnSecretChest) Game.spawnSecretChest();
@@ -3704,7 +3704,7 @@ GameMap.updateCampaignObjects = function(dt, player) {
             color: '#9b59b6', speedMin: 60, speedMax: 180,
             lifeMin: 0.5, lifeMax: 1.0, sizeMin: 3, sizeMax: 6,
           });
-          Particles.text(obj.x, obj.y - 30, 'АЛТАРЬ АКТИВИРОВАН!', 1.5, '#9b59b6', 14);
+          Particles.text(obj.x, obj.y - 30, 'ALTAR ACTIVATED!', 1.5, '#9b59b6', 14);
         }
       }
     }
@@ -3747,7 +3747,7 @@ GameMap.updateCampaignObjects = function(dt, player) {
             }
           }
           if (window.Particles && player) {
-            Particles.text(player.x, player.y - 40, 'ХРАНИТЕЛЬ КЛЮЧА ПОЯВИЛСЯ!', 2.0, '#ffd700', 14);
+            Particles.text(player.x, player.y - 40, 'KEY GUARDIAN APPEARED!', 2.0, '#ffd700', 14);
           }
         }
       }
@@ -4098,14 +4098,14 @@ GameMap._handlePuzzleEvent = function(event, player) {
       Game.secretChest = c;
       if (window.Particles) {
         Particles.burst(c.x, c.y, 10, { color: '#ffd700', speedMin: 60, speedMax: 160, lifeMin: 0.4, lifeMax: 0.8, sizeMin: 3, sizeMax: 6 });
-        Particles.text(player.x, player.y - 40, 'ЗАГАДКА РЕШЕНА!', 1.5, '#ffd700', 14);
+        Particles.text(player.x, player.y - 40, 'PUZZLE SOLVED!', 1.5, '#ffd700', 14);
       }
     }
   } else if (event.type === 'error') {
     player.hp -= event.damage || 5;
     if (window.Particles) {
       Particles.burst(player.x, player.y, 4, { color: '#ff3333', speedMin: 40, speedMax: 100, lifeMin: 0.2, lifeMax: 0.4, sizeMin: 2, sizeMax: 4 });
-      Particles.text(player.x, player.y - 30, 'ОШИБКА!', 1.0, '#ff3333', 12);
+      Particles.text(player.x, player.y - 30, 'ERROR!', 1.0, '#ff3333', 12);
     }
     if (window.Enemies && window.Game && Game.enemies) {
       const count = event.damage >= 10 ? 2 : 1;

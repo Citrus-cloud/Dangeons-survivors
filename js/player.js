@@ -206,7 +206,7 @@ const Player = {
     // Уворот (талант): шанс полностью избежать удара
     if (player._dodgeChance && player._dodgeChance > 0 && Math.random() < player._dodgeChance) {
       if (window.Particles && Particles.text) {
-        Particles.text(player.x, player.y - 30, 'УВОРОТ!', 0.8, '#2ecc71', 14);
+        Particles.text(player.x, player.y - 30, 'DODGE!', 0.8, '#2ecc71', 14);
       }
       return 0;
     }

@@ -8,25 +8,25 @@ const CAMPAIGN_KEY = 'd20_campaignProgress';
 
 /* ---------- Диалоги ---------- */
 const CAMPAIGN_DIALOGUES = {
-  beforeMap1: 'Древнее зло пробудилось в глубинах под королевством. Дракон, спавший тысячелетия, сеет хаос. Ты — рыцарь ордена, последняя надежда. Спустись в склеп, найди рунные алтари и открой путь в недра.',
-  afterMap1: 'Алтари активированы. Тьма расступается, открывая проход в ледяные пещеры. Будь осторожен — эти земли не видели солнца веками.',
-  afterMap2: 'Ледяной перевал пройден. Впереди — огненные недра, где кузнецы хаоса выковали сердце тьмы. Уничтожь стража и забери Огненное сердце — оно пригодится.',
-  afterMap3: 'Огненное сердце пульсирует в твоей руке. Ты чувствуешь, как сила стихий наполняет тебя. Но впереди — заросший храм, где томятся пленники дракона.',
-  mageSaved: 'Спасибо, рыцарь! Я — маг ордена, дракон держал меня здесь, чтобы вытягивать мою силу. Возьми моё благословение — оно поможет в битве с чудовищем.',
-  afterMap4: 'Маг спасён. Его благословение усиливает твои заклинания. Теперь — в Цитадель тьмы. Дракон ждёт.',
-  beforeBoss: 'Древний дракон восседает на троне из костей героев. Он чувствует твоё приближение. Время последней битвы!',
-  victory: 'Дракон повержен! Королевство свободно. Твоё имя войдёт в легенды. Но тьма всегда находит путь... (награда: +1000 золота, +200 репутации)',
+  beforeMap1: t('campaign_dialogue_before1'),
+  afterMap1: t('campaign_dialogue_after1'),
+  afterMap2: t('campaign_dialogue_after2'),
+  afterMap3: t('campaign_dialogue_after3'),
+  mageSaved: t('campaign_dialogue_mage'),
+  afterMap4: t('campaign_dialogue_after4'),
+  beforeBoss: t('campaign_dialogue_boss'),
+  victory: t('campaign_dialogue_victory'),
 };
 
 /* ---------- Карты кампании ---------- */
 const CAMPAIGN_MAPS = [
   {
     id: 1,
-    name: 'Проклятый склеп',
+    name: t('campaign_map1'),
     biome: 'crypt',
     objective: {
       type: 'activate',
-      description: 'Активировать рунные алтари',
+      description: t('campaign_obj_activate'),
       target: 2,
     },
     timeLimit: 0, // без лимита
@@ -38,11 +38,11 @@ const CAMPAIGN_MAPS = [
   },
   {
     id: 2,
-    name: 'Ледяной перевал',
+    name: t('campaign_map2'),
     biome: 'ice_caves',
     objective: {
       type: 'survive',
-      description: 'Продержаться',
+      description: t('campaign_obj_survive'),
       target: 480, // 8 минут в секундах
     },
     timeLimit: 480,
@@ -55,11 +55,11 @@ const CAMPAIGN_MAPS = [
   },
   {
     id: 3,
-    name: 'Огненные недра',
+    name: t('campaign_map3'),
     biome: 'fire_mines',
     objective: {
       type: 'kill_boss',
-      description: 'Убить Магма-гиганта',
+      description: t('campaign_obj_kill_boss'),
       target: 1,
     },
     timeLimit: 0,
@@ -72,11 +72,11 @@ const CAMPAIGN_MAPS = [
   },
   {
     id: 4,
-    name: 'Заросший храм',
+    name: t('campaign_map4'),
     biome: 'forest_ruins',
     objective: {
       type: 'rescue',
-      description: 'Спасти пленённого мага',
+      description: t('campaign_obj_rescue'),
       target: 1,
     },
     timeLimit: 0,
@@ -88,11 +88,11 @@ const CAMPAIGN_MAPS = [
   },
   {
     id: 5,
-    name: 'Цитадель тьмы',
+    name: t('campaign_map5'),
     biome: 'castle',
     objective: {
       type: 'kill_boss',
-      description: 'Победить Древнего дракона',
+      description: t('campaign_obj_kill_dragon'),
       target: 1,
     },
     timeLimit: 0,

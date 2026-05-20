@@ -7,7 +7,7 @@
 
 /* ===== ТИР 3 — опасные (51–60) ===== */
 ENEMY_TYPES.bone_golem = {
-  id: 'bone_golem', name: 'Костяной голем', letter: 'G',
+  id: 'bone_golem', name: t('enemy_bone_golem'), letter: 'G',
   shape: 'rect', color: '#f0f0f0', stroke: '#ffffff',
   w: 32, h: 32, hp: 45, speed: 28, damage: 15,
   xp: [20, 24], behavior: 'bone_golem', tier: 3, dropChance: 0.75,
@@ -17,7 +17,7 @@ ENEMY_TYPES.bone_golem = {
 };
 
 ENEMY_TYPES.phase_spider = {
-  id: 'phase_spider', name: 'Фазовый паук', letter: 'P',
+  id: 'phase_spider', name: t('enemy_phase_spider'), letter: 'P',
   shape: 'diamond', color: '#4488ff', stroke: '#aaddff',
   w: 26, h: 26, hp: 20, speed: 0, damage: 14,
   xp: [16, 20], behavior: 'phase_spider', tier: 3, dropChance: 0.65,
@@ -27,7 +27,7 @@ ENEMY_TYPES.phase_spider = {
 };
 
 ENEMY_TYPES.ettercap = {
-  id: 'ettercap', name: 'Эттеркап', letter: 'E',
+  id: 'ettercap', name: t('enemy_ettercap'), letter: 'E',
   shape: 'triangle', color: '#2d8b2d', stroke: '#80ff80',
   w: 24, h: 24, hp: 22, speed: 55, damage: 10,
   xp: [14, 16], behavior: 'ettercap', tier: 3, dropChance: 0.60,
@@ -36,7 +36,7 @@ ENEMY_TYPES.ettercap = {
 };
 
 ENEMY_TYPES.fungal_man = {
-  id: 'fungal_man', name: 'Грибной человек', letter: 'F',
+  id: 'fungal_man', name: t('enemy_fungal_man'), letter: 'F',
   shape: 'oval', color: '#8b6b3a', stroke: '#c9a060',
   w: 26, h: 18, hp: 25, speed: 30, damage: 0,
   xp: [12, 16], behavior: 'fungal_man', tier: 3, dropChance: 0.60,
@@ -45,7 +45,7 @@ ENEMY_TYPES.fungal_man = {
 };
 
 ENEMY_TYPES.troll = {
-  id: 'troll', name: 'Тролль', letter: 'T',
+  id: 'troll', name: t('enemy_troll'), letter: 'T',
   shape: 'rect', color: '#2e8b57', stroke: '#66ff99',
   w: 36, h: 36, hp: 70, speed: 50, damage: 20,
   xp: [28, 32], behavior: 'troll', tier: 3, dropChance: 0.80,
@@ -54,7 +54,7 @@ ENEMY_TYPES.troll = {
 };
 
 ENEMY_TYPES.cave_bear = {
-  id: 'cave_bear', name: 'Пещерный медведь', letter: 'B',
+  id: 'cave_bear', name: t('enemy_cave_bear'), letter: 'B',
   shape: 'oval', color: '#8b5a2b', stroke: '#d4a06a',
   w: 36, h: 24, hp: 50, speed: 55, damage: 18,
   xp: [23, 27], behavior: 'cave_bear', tier: 3, dropChance: 0.75,
@@ -63,7 +63,7 @@ ENEMY_TYPES.cave_bear = {
 };
 
 ENEMY_TYPES.ogre = {
-  id: 'ogre', name: 'Огр', letter: 'O',
+  id: 'ogre', name: t('enemy_ogre'), letter: 'O',
   shape: 'rect', color: '#daa520', stroke: '#ffcc00',
   w: 40, h: 40, hp: 80, speed: 28, damage: 25,
   xp: [32, 38], behavior: 'ogre', tier: 3, dropChance: 0.85,
@@ -72,7 +72,7 @@ ENEMY_TYPES.ogre = {
 };
 
 ENEMY_TYPES.pterodactyl = {
-  id: 'pterodactyl', name: 'Птеродактиль', letter: 'P',
+  id: 'pterodactyl', name: t('enemy_pterodactyl'), letter: 'P',
   shape: 'triangle', color: '#808080', stroke: '#c0c0c0',
   w: 28, h: 16, hp: 18, speed: 140, damage: 15,
   xp: [12, 16], behavior: 'harpy', tier: 3, dropChance: 0.55,
@@ -81,7 +81,7 @@ ENEMY_TYPES.pterodactyl = {
 };
 
 ENEMY_TYPES.giant_scorpion = {
-  id: 'giant_scorpion', name: 'Скорпион-гигант', letter: 'S',
+  id: 'giant_scorpion', name: t('enemy_giant_scorpion'), letter: 'S',
   shape: 'oval', color: '#b8860b', stroke: '#ffd700',
   w: 30, h: 18, hp: 28, speed: 55, damage: 12,
   xp: [14, 18], behavior: 'giant_scorpion', tier: 3, dropChance: 0.65,
@@ -91,7 +91,7 @@ ENEMY_TYPES.giant_scorpion = {
 };
 
 ENEMY_TYPES.lamia = {
-  id: 'lamia', name: 'Ламия', letter: 'L',
+  id: 'lamia', name: t('enemy_lamia'), letter: 'L',
   shape: 'oval', color: '#228b22', stroke: '#90ee90',
   w: 28, h: 20, hp: 30, speed: 50, damage: 14,
   xp: [18, 22], behavior: 'lamia', tier: 3, dropChance: 0.70,
@@ -103,7 +103,7 @@ ENEMY_TYPES.lamia = {
 
 /* ===== ТИР 4 — серьёзные угрозы (61–70) ===== */
 ENEMY_TYPES.dragon_wyrm = {
-  id: 'dragon_wyrm', name: 'Дракон-вирм', letter: 'W',
+  id: 'dragon_wyrm', name: t('enemy_dragon_wyrm'), letter: 'W',
   shape: 'oval', color: '#cc0000', stroke: '#ff6666',
   w: 32, h: 14, hp: 35, speed: 120, damage: 14,
   xp: [20, 24], behavior: 'dragon_wyrm', tier: 4, dropChance: 0.70,
@@ -112,7 +112,7 @@ ENEMY_TYPES.dragon_wyrm = {
 };
 
 ENEMY_TYPES.salamander = {
-  id: 'salamander', name: 'Саламандра', letter: 'S',
+  id: 'salamander', name: t('enemy_salamander'), letter: 'S',
   shape: 'oval', color: '#ff6600', stroke: '#ffcc00',
   w: 28, h: 16, hp: 30, speed: 55, damage: 16,
   xp: [18, 22], behavior: 'fire_elem', tier: 4, dropChance: 0.70,
@@ -124,7 +124,7 @@ ENEMY_TYPES.salamander = {
 };
 
 ENEMY_TYPES.water_elem_large = {
-  id: 'water_elem_large', name: 'Элементаль воды (большой)', letter: 'E',
+  id: 'water_elem_large', name: t('enemy_water_elem_large'), letter: 'E',
   shape: 'oval', color: '#4488cc', stroke: '#aaddff',
   w: 36, h: 24, hp: 50, speed: 28, damage: 16,
   xp: [23, 27], behavior: 'water_elem', tier: 4, dropChance: 0.80,
@@ -136,7 +136,7 @@ ENEMY_TYPES.water_elem_large = {
 };
 
 ENEMY_TYPES.air_elem = {
-  id: 'air_elem', name: 'Воздушный элементаль', letter: 'A',
+  id: 'air_elem', name: t('enemy_air_elem'), letter: 'A',
   shape: 'diamond', color: '#ddeeff', stroke: '#ffffff',
   w: 30, h: 30, hp: 25, speed: 130, damage: 10,
   xp: [16, 20], behavior: 'air_elem', tier: 4, dropChance: 0.65,
@@ -146,7 +146,7 @@ ENEMY_TYPES.air_elem = {
 };
 
 ENEMY_TYPES.gargoyle = {
-  id: 'gargoyle', name: 'Гаргулья', letter: 'G',
+  id: 'gargoyle', name: t('enemy_gargoyle'), letter: 'G',
   shape: 'rect', color: '#606060', stroke: '#b0b0b0',
   w: 26, h: 26, hp: 28, speed: 130, damage: 16,
   xp: [18, 22], behavior: 'gargoyle', tier: 4, dropChance: 0.70,
@@ -155,7 +155,7 @@ ENEMY_TYPES.gargoyle = {
 };
 
 ENEMY_TYPES.banshee = {
-  id: 'banshee', name: 'Баньши', letter: 'B',
+  id: 'banshee', name: t('enemy_banshee'), letter: 'B',
   shape: 'oval', color: '#ffffff', stroke: '#ccccff',
   w: 24, h: 24, hp: 22, speed: 60, damage: 8,
   xp: [23, 27], behavior: 'banshee', tier: 4, dropChance: 0.75,
@@ -165,7 +165,7 @@ ENEMY_TYPES.banshee = {
 };
 
 ENEMY_TYPES.vampire_spawn = {
-  id: 'vampire_spawn', name: 'Вампир-спавн', letter: 'V',
+  id: 'vampire_spawn', name: t('enemy_vampire_spawn'), letter: 'V',
   shape: 'rect', color: '#ffcccc', stroke: '#cc0000',
   w: 26, h: 26, hp: 30, speed: 120, damage: 15,
   xp: [20, 24], behavior: 'vampire_spawn', tier: 4, dropChance: 0.70,
@@ -174,7 +174,7 @@ ENEMY_TYPES.vampire_spawn = {
 };
 
 ENEMY_TYPES.doppelganger_mage = {
-  id: 'doppelganger_mage', name: 'Доппельгангер-маг', letter: 'D',
+  id: 'doppelganger_mage', name: t('enemy_doppelganger_mage'), letter: 'D',
   shape: 'rect', color: '#4444ff', stroke: '#aa00ff',
   w: 28, h: 28, hp: 35, speed: 180, damage: 0,
   xp: [28, 32], behavior: 'doppelganger_mage', tier: 4, dropChance: 0.80,
@@ -183,7 +183,7 @@ ENEMY_TYPES.doppelganger_mage = {
 };
 
 ENEMY_TYPES.owlbear = {
-  id: 'owlbear', name: 'Гибрид (сова-медведь)', letter: 'O',
+  id: 'owlbear', name: t('enemy_owlbear'), letter: 'O',
   shape: 'oval', color: '#8b5a2b', stroke: '#d4a06a',
   w: 32, h: 22, hp: 40, speed: 110, damage: 14,
   xp: [23, 27], behavior: 'owlbear', tier: 4, dropChance: 0.75,
@@ -192,7 +192,7 @@ ENEMY_TYPES.owlbear = {
 };
 
 ENEMY_TYPES.ice_elem = {
-  id: 'ice_elem', name: 'Элементаль льда', letter: 'E',
+  id: 'ice_elem', name: t('enemy_ice_elem'), letter: 'E',
   shape: 'rect', color: '#88ccff', stroke: '#ffffff',
   w: 32, h: 32, hp: 40, speed: 28, damage: 12,
   xp: [20, 24], behavior: 'ice_elem', tier: 4, dropChance: 0.75,
@@ -207,7 +207,7 @@ ENEMY_TYPES.ice_elem = {
 
 /* ===== ТИР 5 — редкие, сильные (71–80) ===== */
 ENEMY_TYPES.adult_dragon = {
-  id: 'adult_dragon', name: 'Взрослый дракон', letter: 'D',
+  id: 'adult_dragon', name: t('enemy_adult_dragon'), letter: 'D',
   shape: 'diamond', color: '#cc0000', stroke: '#ffd700',
   w: 56, h: 36, hp: 150, speed: 110, damage: 25,
   xp: [75, 85], behavior: 'adult_dragon', tier: 5, dropChance: 1.0,
@@ -219,7 +219,7 @@ ENEMY_TYPES.adult_dragon = {
 };
 
 ENEMY_TYPES.demon_destroyer = {
-  id: 'demon_destroyer', name: 'Демон-разрушитель', letter: 'D',
+  id: 'demon_destroyer', name: t('enemy_demon_destroyer'), letter: 'D',
   shape: 'rect', color: '#990000', stroke: '#ff3300',
   w: 48, h: 48, hp: 180, speed: 22, damage: 28,
   xp: [95, 105], behavior: 'demon_destroyer', tier: 5, dropChance: 1.0,
@@ -230,7 +230,7 @@ ENEMY_TYPES.demon_destroyer = {
 };
 
 ENEMY_TYPES.illithid_arcanist = {
-  id: 'illithid_arcanist', name: 'Иллитид-арканист', letter: 'I',
+  id: 'illithid_arcanist', name: t('enemy_illithid_arcanist'), letter: 'I',
   shape: 'rect', color: '#6600cc', stroke: '#cc99ff',
   w: 30, h: 30, hp: 45, speed: 50, damage: 25,
   xp: [42, 48], behavior: 'illithid_arcanist', tier: 5, dropChance: 0.90,
@@ -242,7 +242,7 @@ ENEMY_TYPES.illithid_arcanist = {
 };
 
 ENEMY_TYPES.rakshasa = {
-  id: 'rakshasa', name: 'Ракшаса', letter: 'R',
+  id: 'rakshasa', name: t('enemy_rakshasa'), letter: 'R',
   shape: 'rect', color: '#ff8c00', stroke: '#ffcc00',
   w: 34, h: 34, hp: 60, speed: 110, damage: 22,
   xp: [38, 42], behavior: 'rakshasa', tier: 5, dropChance: 0.90,
@@ -252,7 +252,7 @@ ENEMY_TYPES.rakshasa = {
 };
 
 ENEMY_TYPES.golem_colossus = {
-  id: 'golem_colossus', name: 'Голем-колосс', letter: 'C',
+  id: 'golem_colossus', name: t('enemy_golem_colossus'), letter: 'C',
   shape: 'rect', color: '#808080', stroke: '#d0d0d0',
   w: 52, h: 52, hp: 250, speed: 18, damage: 35,
   xp: [115, 125], behavior: 'golem_colossus', tier: 5, dropChance: 1.0,
@@ -264,7 +264,7 @@ ENEMY_TYPES.golem_colossus = {
 };
 
 ENEMY_TYPES.shadow_dragon = {
-  id: 'shadow_dragon', name: 'Тень дракона', letter: 'S',
+  id: 'shadow_dragon', name: t('enemy_shadow_dragon'), letter: 'S',
   shape: 'diamond', color: '#1a1a1a', stroke: '#666666',
   w: 44, h: 28, hp: 100, speed: 110, damage: 20,
   xp: [65, 75], behavior: 'shadow_dragon', tier: 5, dropChance: 1.0,
@@ -275,7 +275,7 @@ ENEMY_TYPES.shadow_dragon = {
 };
 
 ENEMY_TYPES.slime_queen = {
-  id: 'slime_queen', name: 'Королева слизней', letter: 'Q',
+  id: 'slime_queen', name: t('enemy_slime_queen'), letter: 'Q',
   shape: 'oval', color: '#00cc00', stroke: '#66ff66',
   w: 48, h: 32, hp: 120, speed: 18, damage: 0,
   xp: [55, 65], behavior: 'slime_queen', tier: 5, dropChance: 1.0,
@@ -288,7 +288,7 @@ ENEMY_TYPES.slime_queen = {
 };
 
 ENEMY_TYPES.iron_golem = {
-  id: 'iron_golem', name: 'Железный голем', letter: 'I',
+  id: 'iron_golem', name: t('enemy_iron_golem'), letter: 'I',
   shape: 'rect', color: '#708090', stroke: '#b0c4de',
   w: 38, h: 38, hp: 90, speed: 28, damage: 22,
   xp: [42, 48], behavior: 'iron_golem', tier: 5, dropChance: 0.90,
@@ -299,7 +299,7 @@ ENEMY_TYPES.iron_golem = {
 };
 
 ENEMY_TYPES.archdemon = {
-  id: 'archdemon', name: 'Архидемон', letter: 'A',
+  id: 'archdemon', name: t('enemy_archdemon'), letter: 'A',
   shape: 'rect', color: '#660000', stroke: '#ff0000',
   w: 50, h: 50, hp: 200, speed: 55, damage: 25,
   xp: [140, 160], behavior: 'archdemon', tier: 5, dropChance: 1.0,
@@ -311,7 +311,7 @@ ENEMY_TYPES.archdemon = {
 };
 
 ENEMY_TYPES.star_spawn = {
-  id: 'star_spawn', name: 'Звёздный отродье', letter: 'S',
+  id: 'star_spawn', name: t('enemy_star_spawn'), letter: 'S',
   shape: 'oval', color: '#330066', stroke: '#9933ff',
   w: 36, h: 24, hp: 65, speed: 50, damage: 20,
   xp: [48, 52], behavior: 'star_spawn', tier: 5, dropChance: 0.95,
@@ -325,7 +325,7 @@ ENEMY_TYPES.star_spawn = {
 
 /* ===== НОВЫЙ ТИР 6 (волны 10+) — легендарные (81–90) ===== */
 ENEMY_TYPES.ancient_dragon = {
-  id: 'ancient_dragon', name: 'Древний дракон', letter: 'A',
+  id: 'ancient_dragon', name: t('enemy_ancient_dragon'), letter: 'A',
   shape: 'diamond', color: '#ffd700', stroke: '#ff4500',
   w: 64, h: 40, hp: 300, speed: 60, damage: 35,
   xp: [190, 210], behavior: 'ancient_dragon', tier: 6, dropChance: 1.0,
@@ -336,7 +336,7 @@ ENEMY_TYPES.ancient_dragon = {
 };
 
 ENEMY_TYPES.kraken_tentacle = {
-  id: 'kraken_tentacle', name: 'Кракен (щупальце)', letter: 'K',
+  id: 'kraken_tentacle', name: t('enemy_kraken_tentacle'), letter: 'K',
   shape: 'rect', color: '#006633', stroke: '#00cc66',
   w: 20, h: 80, hp: 100, speed: 0, damage: 30,
   xp: [75, 85], behavior: 'kraken_tentacle', tier: 6, dropChance: 1.0,
@@ -345,7 +345,7 @@ ENEMY_TYPES.kraken_tentacle = {
 };
 
 ENEMY_TYPES.tarrasque_juv = {
-  id: 'tarrasque_juv', name: 'Терраска (ювенильный)', letter: 'T',
+  id: 'tarrasque_juv', name: t('enemy_tarrasque_juv'), letter: 'T',
   shape: 'rect', color: '#8b4513', stroke: '#daa520',
   w: 60, h: 60, hp: 500, speed: 15, damage: 50,
   xp: [280, 320], behavior: 'tarrasque', tier: 6, dropChance: 1.0,
@@ -356,7 +356,7 @@ ENEMY_TYPES.tarrasque_juv = {
 };
 
 ENEMY_TYPES.chaos_god = {
-  id: 'chaos_god', name: 'Бог хаоса (аватар)', letter: 'C',
+  id: 'chaos_god', name: t('enemy_chaos_god'), letter: 'C',
   shape: 'rect', color: '#ff00ff', stroke: '#00ffff',
   w: 44, h: 44, hp: 250, speed: 55, damage: 35,
   xp: [235, 265], behavior: 'chaos_god', tier: 6, dropChance: 1.0,
@@ -369,7 +369,7 @@ ENEMY_TYPES.chaos_god = {
 };
 
 ENEMY_TYPES.vampire_lord = {
-  id: 'vampire_lord', name: 'Лорд вампиров', letter: 'V',
+  id: 'vampire_lord', name: t('enemy_vampire_lord'), letter: 'V',
   shape: 'rect', color: '#1a0000', stroke: '#cc0000',
   w: 34, h: 34, hp: 120, speed: 120, damage: 28,
   xp: [85, 95], behavior: 'vampire_lord', tier: 6, dropChance: 1.0,
@@ -380,7 +380,7 @@ ENEMY_TYPES.vampire_lord = {
 };
 
 ENEMY_TYPES.demilich = {
-  id: 'demilich', name: 'Демилич', letter: 'D',
+  id: 'demilich', name: t('enemy_demilich'), letter: 'D',
   shape: 'circle', color: '#ffd700', stroke: '#ffffff',
   w: 20, h: 20, hp: 80, speed: 55, damage: 15,
   xp: [95, 105], behavior: 'demilich', tier: 6, dropChance: 1.0,
@@ -392,7 +392,7 @@ ENEMY_TYPES.demilich = {
 };
 
 ENEMY_TYPES.empyrean = {
-  id: 'empyrean', name: 'Эмпиреец', letter: 'E',
+  id: 'empyrean', name: t('enemy_empyrean'), letter: 'E',
   shape: 'diamond', color: '#ffffcc', stroke: '#ffd700',
   w: 36, h: 36, hp: 150, speed: 55, damage: 25,
   xp: [115, 125], behavior: 'empyrean', tier: 6, dropChance: 1.0,
@@ -403,7 +403,7 @@ ENEMY_TYPES.empyrean = {
 };
 
 ENEMY_TYPES.beast_lord = {
-  id: 'beast_lord', name: 'Повелитель зверей', letter: 'B',
+  id: 'beast_lord', name: t('enemy_beast_lord'), letter: 'B',
   shape: 'rect', color: '#2e8b2e', stroke: '#66ff66',
   w: 36, h: 36, hp: 70, speed: 55, damage: 22,
   xp: [50, 60], behavior: 'beast_lord', tier: 6, dropChance: 0.95,
@@ -413,7 +413,7 @@ ENEMY_TYPES.beast_lord = {
 };
 
 ENEMY_TYPES.titan_elem = {
-  id: 'titan_elem', name: 'Титановый элементаль', letter: 'E',
+  id: 'titan_elem', name: t('enemy_titan_elem'), letter: 'E',
   shape: 'rect', color: '#cc0000', stroke: '#ffcc00',
   w: 42, h: 42, hp: 180, speed: 28, damage: 25,
   xp: [125, 135], behavior: 'titan_elem', tier: 6, dropChance: 1.0,
@@ -429,7 +429,7 @@ ENEMY_TYPES.titan_elem = {
 };
 
 ENEMY_TYPES.night_walker = {
-  id: 'night_walker', name: 'Ночной ходок', letter: 'N',
+  id: 'night_walker', name: t('enemy_night_walker'), letter: 'N',
   shape: 'rect', color: '#0a0a0a', stroke: '#333333',
   w: 28, h: 28, hp: 35, speed: 120, damage: 20,
   xp: [38, 42], behavior: 'night_walker', tier: 6, dropChance: 0.85,
@@ -460,7 +460,7 @@ for (const ev of ELITE_VARIANTS) {
   if (!base) continue;
   ENEMY_TYPES[ev.eliteId] = Object.assign({}, base, {
     id: ev.eliteId,
-    name: base.name + ' (Элит)',
+    name: base.name + ' (Elite)',
     letter: '★',
     w: Math.round(base.w * 1.20),
     h: Math.round(base.h * 1.20),
