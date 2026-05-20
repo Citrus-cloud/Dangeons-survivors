@@ -122,8 +122,8 @@ const Game = {
     // Экспорт глобально для использования в sprites.js и других модулях
     window.BASE_SCALE = this.baseScale;
 
-    // Камера: приближенный зум (увеличен на 30% для лучшей видимости персонажа)
-    this.cameraScale = 0.845;
+    // Камера: приближенный зум (увеличен на 60% для лучшей видимости персонажа)
+    this.cameraScale = 1.1;
     this.cameraViewW = w / this.cameraScale;
     this.cameraViewH = h / this.cameraScale;
     this.canvas.width = Math.floor(w * this.dpr);
@@ -1048,7 +1048,7 @@ const Game = {
     if (roll <= 5) {
       const reward = {
         title: t('chest_mimic'),
-        desc: 'The chest turns into a mimic! Kill it for XP!',
+        desc: t('chest_mimic_desc'),
       };
       UI.showChestReward(roll, reward, () => {
         // Спавним усиленного мимика (+30% HP и урона)
@@ -1073,7 +1073,7 @@ const Game = {
     if (roll <= 10) {
       const xpAmount = Utils.randInt(1000, 4000);
       const reward = {
-        title: 'XP Surge!',
+        title: t('chest_xp_surge'),
         desc: `+${xpAmount} XP`,
       };
       player.xp += xpAmount;
@@ -1177,7 +1177,7 @@ const Game = {
     if (available.length === 0) return null;
     const info = available[Math.floor(Math.random() * available.length)];
     return {
-      title: `⭐ Легендарное: ${info.name}`,
+      title: t('chest_legendary', info.name),
       desc: info.desc,
       id: info.id,
       apply(p) {
@@ -1195,7 +1195,7 @@ const Game = {
       if (missingWeapons.length > 0) {
         const info = missingWeapons[Math.floor(Math.random() * missingWeapons.length)];
         return {
-          title: `Редкая находка: ${info.name}`,
+          title: `${t('chest_rare_find')}: ${info.name}`,
           desc: info.desc,
           apply(p) {
             const w = WEAPON_FACTORIES[info.id]();
@@ -1209,7 +1209,7 @@ const Game = {
       if (missingAbilities.length > 0) {
         const info = missingAbilities[Math.floor(Math.random() * missingAbilities.length)];
         return {
-          title: `Редкая находка: ${info.name}`,
+          title: `${t('chest_rare_find')}: ${info.name}`,
           desc: info.desc,
           apply(p) {
             const a = ABILITY_FACTORIES[info.id]();
@@ -1221,21 +1221,21 @@ const Game = {
     // Иначе — мощное разовое улучшение (rand один из вариантов)
     const variants = [
       {
-        title: 'Powerful Upgrade: HP',
-        desc: 'Max HP +30%, fully healed.',
+        title: t('chest_big_hp'),
+        desc: t('chest_big_hp_desc'),
         apply(p) {
           p.maxHp = Math.round(p.maxHp * 1.30);
           p.hp = p.maxHp;
         },
       },
       {
-        title: 'Powerful Upgrade: Damage',
-        desc: '+20% all damage (stacks).',
+        title: t('chest_big_damage'),
+        desc: t('chest_big_damage_desc'),
         apply(p) { p.damageMul *= 1.20; },
       },
       {
-        title: 'Powerful Upgrade: Speed',
-        desc: '+15% movement speed.',
+        title: t('chest_big_speed'),
+        desc: t('chest_big_speed_desc'),
         apply(p) { p.speedMul *= 1.15; },
       },
     ];
@@ -1756,7 +1756,7 @@ const Game = {
         kind: 'weapon',
         icon: r.resultIcon,
         id: r.resultId,
-        title: `Эволюция: ${r.resultName}`,
+        title: `${t('chest_evo_title')}: ${r.resultName}`,
         desc: r.desc,
         apply(player) { Evolutions.apply(player, r); },
       });

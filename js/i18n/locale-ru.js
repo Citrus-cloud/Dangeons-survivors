@@ -666,3 +666,17 @@ LOCALE.ru.boss_shadow_dragon = 'Теневой дракон';
 LOCALE.ru.weapon_phoenix_bow = 'Лук феникса';
 LOCALE.ru.weapon_beast_claw = 'Коготь зверя';
 LOCALE.ru.weapon_rune_shield = 'Рунный щит';
+
+
+// Дополнительные ключи локализации
+LOCALE.ru.chest_mimic_desc = 'Сундук оказался мимиком! Убей его за опыт!';
+LOCALE.ru.chest_xp_surge = 'Приток опыта!';
+LOCALE.ru.chest_big_hp = 'Мощное: HP';
+LOCALE.ru.chest_big_hp_desc = 'Макс. HP +30%, полное исцеление.';
+LOCALE.ru.chest_big_damage = 'Мощное: Урон';
+LOCALE.ru.chest_big_damage_desc = '+20% ко всему урону (стакается).';
+LOCALE.ru.chest_big_speed = 'Мощное: Скорость';
+LOCALE.ru.chest_big_speed_desc = '+15% к скорости передвижения.';
+LOCALE.ru.chest_rare_find = 'Редкая находка';
+LOCALE.ru.chest_legendary = '⭐ Легендарное: {0}';
+LOCALE.ru.transition_text = 'Спускаемся глубже...';

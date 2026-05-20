@@ -828,3 +828,17 @@ LOCALE.en.boss_shadow_dragon = 'Shadow Dragon';
 LOCALE.en.weapon_phoenix_bow = 'Phoenix Bow';
 LOCALE.en.weapon_beast_claw = 'Beast Claw';
 LOCALE.en.weapon_rune_shield = 'Rune Shield';
+
+
+// Additional missing locale keys
+LOCALE.en.chest_mimic_desc = 'The chest turns into a mimic! Kill it for XP!';
+LOCALE.en.chest_xp_surge = 'XP Surge!';
+LOCALE.en.chest_big_hp = 'Powerful: HP';
+LOCALE.en.chest_big_hp_desc = 'Max HP +30%, fully healed.';
+LOCALE.en.chest_big_damage = 'Powerful: Damage';
+LOCALE.en.chest_big_damage_desc = '+20% all damage (stacks).';
+LOCALE.en.chest_big_speed = 'Powerful: Speed';
+LOCALE.en.chest_big_speed_desc = '+15% movement speed.';
+LOCALE.en.chest_rare_find = 'Rare Find';
+LOCALE.en.chest_legendary = '⭐ Legendary: {0}';
+LOCALE.en.transition_text = 'Descending deeper...';
