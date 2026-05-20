@@ -29,17 +29,21 @@ const GOLD_CONFIG = {
 const Loot = {
   /**
  * Бросить кристалл опыта в точке (x, y).
- * Bug fix: перебалансировка множителей — старые значения (×10, ×100, ×1000)
- * были слишком высоки для кривой опыта (100 base, ×1.25 growth).
- * Новая система:
+ * Система фиксированных значений опыта для каждого типа кристалла:
  *
- * Тип        | Цвет    | Множитель | С волны | Шанс
- * Жёлтый     | Жёлтый  | ×5        | 20      | 5%
- * Синий       | Синий   | ×3        | 10      | 10%
- * Красный     | Красный | ×2        | 5       | 15%
- * Обычный     | Зелёный | ×1        | 1       | 100% (по умолчанию)
+ * Тип        | Цвет    | Опыт           | С волны | Шанс
+ * Жёлтый     | Жёлтый  | 100000-500000  | 20      | 5%
+ * Синий       | Синий   | 10000-40000    | 10      | 10%
+ * Красный     | Красный | 1000-2000      | 5       | 15%
+ * Обычный     | Зелёный | 10-50          | 1       | 100% (по умолчанию)
+ *
+ * @param {ObjectPool} pool
+ * @param {number} x
+ * @param {number} y
+ * @param {number} value — не используется напрямую (фиксированные значения)
+ * @param {object} [player] — если передан, применяется doubleXpChance
  */
-  dropXP(pool, x, y, value) {
+  dropXP(pool, x, y, value, player) {
     const xp = pool.spawn();
     if (!xp) return null;
     xp.x = x; xp.y = y;
@@ -48,30 +52,37 @@ const Loot = {
     const waveIndex = (window.Game && Game.waveIndex) || 0;
 
     // Каскадная проверка: от высшего типа к низшему
+    // Каждый тип имеет фиксированный диапазон опыта (не зависит от монстра)
     if (waveIndex >= 20 && Math.random() < 0.05) {
-      // Жёлтый кристалл (×5, 5% с 20-й волны)
+      // Жёлтый кристалл (100000-500000 XP, 5% с 20-й волны)
       xp.red = false;
       xp.blue = false;
       xp.yellow = true;
-      xp.value = value * 5;
+      xp.value = Utils.randInt(100000, 500000);
     } else if (waveIndex >= 10 && Math.random() < 0.10) {
-      // Синий кристалл (×3, 10% с 10-й волны)
+      // Синий кристалл (10000-40000 XP, 10% с 10-й волны)
       xp.red = false;
       xp.blue = true;
       xp.yellow = false;
-      xp.value = value * 3;
+      xp.value = Utils.randInt(10000, 40000);
     } else if (waveIndex >= 5 && Math.random() < 0.15) {
-      // Красный кристалл (×2, 15% с 5-й волны)
+      // Красный кристалл (1000-2000 XP, 15% с 5-й волны)
       xp.red = true;
       xp.blue = false;
       xp.yellow = false;
-      xp.value = value * 2;
+      xp.value = Utils.randInt(1000, 2000);
     } else {
-      // Обычный зелёный кристалл (×1)
+      // Обычный зелёный кристалл (10-50 XP)
       xp.red = false;
       xp.blue = false;
       xp.yellow = false;
-      xp.value = value;
+      xp.value = Utils.randInt(10, 50);
+    }
+
+    // Талант «Двойной опыт»: шанс удвоить значение кристалла
+    const p = player || (window.Game && Game.player);
+    if (p && p.doubleXpChance > 0 && Math.random() < p.doubleXpChance) {
+      xp.value *= 2;
     }
 
     return xp;
