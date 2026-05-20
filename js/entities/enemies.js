@@ -194,17 +194,24 @@ function _tryContactDamage(e, player, dt) {
 }
 
 /* Скорость врага с учётом dash, captain aura, и замедления от оружий. */
-/* Шаг 1: глобальное снижение скорости всех врагов на 20% (множитель 0.8). */
+const ENEMY_SPEED_GLOBAL_MUL = 0.8; // глобальное снижение скорости всех врагов на 20%
+
 function _currentSpeed(e) {
   const base = (e.cfg && e.cfg.speed) || 0;
-  let s = base * 0.8; // Шаг 1: -20% скорость всех врагов
+  let s = base * ENEMY_SPEED_GLOBAL_MUL;
   if (e.captainBuffed) s *= (ENEMY_TYPES.captain.auraSpeedMul || 1.20);
   if (e.dashing) s *= (e.cfg.dashMul || 2.0);
-  // Шаг 7: замедление от ледяной стрелы и т.п.
   if (e._slowFactor && e._slowTimer > 0) s *= (1 - e._slowFactor);
-  // Шаг 8: аура холода
   if (e.frostSlow && e.frostSlowTimer > 0) s *= (1 - e.frostSlow);
   return s;
+}
+
+/* Получить размер карты (часто используемый паттерн). */
+function _getMapSize() {
+  return {
+    w: (window.GameMap ? GameMap.mapW : CONFIG.MAP.W) || 2000,
+    h: (window.GameMap ? GameMap.mapH : CONFIG.MAP.H) || 2000,
+  };
 }
 
 /* Двинуть к/от точке (px-shift в этом кадре). С умным ИИ: A* pathfinding. */
