@@ -604,6 +604,20 @@ const Game = {
     }
     // Шаг 6: проверка мили-оружий на попадание в босса
     this.checkMeleeVsBoss();
+    // Шаг 1: проверка мили-оружий на попадание в урны
+    if (window.Urns && Urns.list.length > 0) {
+      for (const w of this.player.weaponSlots) {
+        if (!w) continue;
+        const isSwing = w.swing && w.swing.active && w.swing.t <= 0.05;
+        const isThrust = w.thrust && w.thrust.active && w.thrust.t <= 0.05;
+        const isSlam = w.slam && w.slam.active && w.slam.t <= 0.05;
+        const isWhip = w.whipAnim && w.whipAnim.active && w.whipAnim.t <= 0.05;
+        if (isSwing || isThrust || isSlam || isWhip) {
+          Urns.checkMeleeHits(this.player);
+          break; // one check per frame is enough
+        }
+      }
+    }
 
     // Встроенный Magic Missile (не в слотах)
     this.updateBuiltInMissile(dt);
@@ -855,6 +869,9 @@ const Game = {
     this.chest = null;
     this.secretChest = null;
     this.bossChest = null;
+
+    // Сброс урн при переходе на новую карту
+    if (window.Urns) Urns.init();
 
     // Генерируем новую карту
     if (window.GameMap && GameMap.generateDungeon) {
