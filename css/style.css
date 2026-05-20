@@ -1128,6 +1128,45 @@ html, body {
 .settings-reset-btn { background: #5a2020; border-color: #e74c3c; color: #ffaaaa; }
 .settings-reset-btn:hover { background: #7a3030; }
 
+/* Language switcher */
+.settings-row-lang { justify-content: space-between; }
+.lang-switcher {
+  display: flex; gap: 6px;
+}
+.lang-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-family: var(--font-title);
+  font-weight: bold;
+  letter-spacing: 1px;
+  background: var(--bg-button);
+  color: var(--text-muted);
+  border: 2px solid var(--border-dim);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  min-width: 48px;
+  text-align: center;
+}
+.lang-btn:hover {
+  background: #4a3020;
+  color: var(--text-light);
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 8px rgba(201,168,76,0.3);
+}
+.lang-btn-active {
+  background: linear-gradient(135deg, #4a3820, #3a2a14);
+  color: var(--accent-gold-bright);
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 10px rgba(240,208,96,0.25), inset 0 0 8px rgba(201,168,76,0.15);
+  text-shadow: 0 0 6px rgba(240,208,96,0.5);
+}
+.lang-btn-active:hover {
+  background: linear-gradient(135deg, #5a4828, #4a3a1c);
+  box-shadow: 0 0 14px rgba(240,208,96,0.4), inset 0 0 10px rgba(201,168,76,0.2);
+}
+
 /* ============================================================
    GOLD HUD (in-run)
    ============================================================ */
@@ -1540,35 +1579,4 @@ html, body {
 /* ============================================================
    Переключатель языка (Language Switcher)
    ============================================================ */
-.settings-row-lang {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.lang-switcher {
-  display: flex;
-  gap: 6px;
-}
-.lang-btn {
-  min-width: 48px;
-  padding: 6px 14px;
-  font-size: 0.9em;
-  font-weight: bold;
-  border: 2px solid #555;
-  border-radius: 6px;
-  background: rgba(30, 30, 30, 0.8);
-  color: #aaa;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-.lang-btn:hover {
-  border-color: #ffd700;
-  color: #fff;
-}
-.lang-btn-active {
-  border-color: #ffd700;
-  background: rgba(255, 215, 0, 0.15);
-  color: #ffd700;
-  box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
-}
+
