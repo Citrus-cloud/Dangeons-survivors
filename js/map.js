@@ -2049,20 +2049,66 @@ const GameMap = {
       }
     }
 
-    // Финальная проверка — если застряли, небольшое выталкивание
-    if (!this.rectIsWalkable(nx, ny, rad, sf)) {
-      const offsets = [
-        {dx: 0, dy: -2}, {dx: 0, dy: 2}, {dx: -2, dy: 0}, {dx: 2, dy: 0},
-        {dx: -2, dy: -2}, {dx: 2, dy: -2}, {dx: -2, dy: 2}, {dx: 2, dy: 2},
-        {dx: 0, dy: -4}, {dx: 0, dy: 4}, {dx: -4, dy: 0}, {dx: 4, dy: 0},
-      ];
-      for (const off of offsets) {
-        if (this.rectIsWalkable(nx + off.dx, ny + off.dy, rad, sf)) {
-          nx += off.dx;
-          ny += off.dy;
-          break;
+    // Если обе оси заблокированы, пробуем каждую ось отдельно от исходной
+    // позиции — это позволяет скользить вдоль стены при диагональном движении
+    if (blockedX && blockedY) {
+      // Попробуем двигаться только по X
+      let altX = x, altY = y;
+      if (dx !== 0) {
+        const tryX = x + dx;
+        if (this.rectIsWalkable(tryX, y, checkRad, sf)) {
+          altX = tryX;
+        } else {
+          const sign = Math.sign(dx);
+          const absDx = Math.abs(dx);
+          let stepped = 0;
+          while (stepped + 1 <= absDx) {
+            if (this.rectIsWalkable(x + sign * (stepped + 1), y, checkRad, sf)) {
+              stepped += 1;
+            } else break;
+          }
+          altX = x + sign * stepped;
         }
       }
+      // Попробуем двигаться только по Y
+      let altY2 = y;
+      if (dy !== 0) {
+        const tryY = y + dy;
+        if (this.rectIsWalkable(x, tryY, checkRad, sf)) {
+          altY2 = tryY;
+        } else {
+          const sign = Math.sign(dy);
+          const absDy = Math.abs(dy);
+          let stepped = 0;
+          while (stepped + 1 <= absDy) {
+            if (this.rectIsWalkable(x, y + sign * (stepped + 1), checkRad, sf)) {
+              stepped += 1;
+            } else break;
+          }
+          altY2 = y + sign * stepped;
+        }
+      }
+      // Выбираем вариант, который даёт большее смещение (лучшее скольжение)
+      const distXOnly = Math.abs(altX - x);
+      const distYOnly = Math.abs(altY2 - y);
+      if (distXOnly > 0 || distYOnly > 0) {
+        if (distXOnly >= distYOnly) {
+          nx = altX; ny = y;
+          blockedX = (altX === x && dx !== 0);
+          blockedY = true;
+        } else {
+          nx = x; ny = altY2;
+          blockedX = true;
+          blockedY = (altY2 === y && dy !== 0);
+        }
+      }
+    }
+
+    // Финальная проверка — если всё ещё невалидная позиция, остаёмся на месте
+    // (без выталкивания, чтобы не "отбрасывать" игрока)
+    if (!this.rectIsWalkable(nx, ny, rad, sf)) {
+      nx = x;
+      ny = y;
     }
     return { x: nx, y: ny, blockedX, blockedY };
   },
