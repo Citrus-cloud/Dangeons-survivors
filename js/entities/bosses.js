@@ -613,13 +613,23 @@ const Bosses = {
     }
   },
 
+  /** Shorthand: chase player (used by 14+ boss update methods). */
+  _chase(boss, player, dt) {
+    this._moveTowards(boss, player.x, player.y, dt, 1);
+  },
+
+  /** Shorthand: flee from player. */
+  _flee(boss, player, dt) {
+    this._moveTowards(boss, player.x, player.y, dt, -1);
+  },
+
 
   /* ============================================================
      Движение с коллизиями (общее)
      ============================================================ */
   _moveTowards(boss, tx, ty, dt, sign) {
     const cfg = boss.cfg;
-    let speed = cfg.speed * 0.8; // Шаг 1: -20% скорость всех боссов
+    let speed = cfg.speed * (window.ENEMY_SPEED_GLOBAL_MUL || 0.8);
     if (boss.phase >= 2 && cfg.phase2SpeedMul) speed *= cfg.phase2SpeedMul;
 
     const dx = tx - boss.x, dy = ty - boss.y;
@@ -661,7 +671,7 @@ const Bosses = {
      СКЕЛЕТ-РЫЦАРЬ
      ============================================================ */
   _updateSkeletonKnight(boss, player, dt) {
-    this._moveTowards(boss, player.x, player.y, dt, 1);
+    this._chase(boss, player, dt);
     const dx = player.x - boss.x, dy = player.y - boss.y;
     const dist = Math.hypot(dx, dy);
     const atk = boss.cfg.attacks;
@@ -704,8 +714,8 @@ const Bosses = {
     const dx = player.x - boss.x, dy = player.y - boss.y;
     const dist = Math.hypot(dx, dy) || 1;
 
-    if (dist < cfg.keepDist - 20) this._moveTowards(boss, player.x, player.y, dt, -1);
-    else if (dist > cfg.keepDist + 30) this._moveTowards(boss, player.x, player.y, dt, 1);
+    if (dist < cfg.keepDist - 20) this._flee(boss, player, dt);
+    else if (dist > cfg.keepDist + 30) this._chase(boss, player, dt);
     else { boss.vx = 0; boss.vy = 0; }
 
     const atk = cfg.attacks;
@@ -767,7 +777,7 @@ const Bosses = {
      ============================================================ */
   _updateSpiderQueen(boss, player, dt) {
     const cfg = boss.cfg;
-    this._moveTowards(boss, player.x, player.y, dt, 1);
+    this._chase(boss, player, dt);
     const dx = player.x - boss.x, dy = player.y - boss.y;
     const dist = Math.hypot(dx, dy) || 1;
 
@@ -816,7 +826,7 @@ const Bosses = {
      ============================================================ */
   _updateFireLord(boss, player, dt) {
     const cfg = boss.cfg;
-    this._moveTowards(boss, player.x, player.y, dt, 1);
+    this._chase(boss, player, dt);
     const dx = player.x - boss.x, dy = player.y - boss.y;
     const dist = Math.hypot(dx, dy) || 1;
 
@@ -862,7 +872,7 @@ const Bosses = {
      ============================================================ */
   _updateIceLord(boss, player, dt) {
     const cfg = boss.cfg;
-    this._moveTowards(boss, player.x, player.y, dt, 1);
+    this._chase(boss, player, dt);
     const dx = player.x - boss.x, dy = player.y - boss.y;
     const dist = Math.hypot(dx, dy) || 1;
 
@@ -911,7 +921,7 @@ const Bosses = {
      ============================================================ */
   _updateAncientEnt(boss, player, dt) {
     const cfg = boss.cfg;
-    this._moveTowards(boss, player.x, player.y, dt, 1);
+    this._chase(boss, player, dt);
     const dx = player.x - boss.x, dy = player.y - boss.y;
     const dist = Math.hypot(dx, dy) || 1;
 
@@ -959,7 +969,7 @@ const Bosses = {
      ============================================================ */
   _updateDarkKnight(boss, player, dt) {
     const cfg = boss.cfg;
-    this._moveTowards(boss, player.x, player.y, dt, 1);
+    this._chase(boss, player, dt);
     const dx = player.x - boss.x, dy = player.y - boss.y;
     const dist = Math.hypot(dx, dy) || 1;
 
@@ -1002,7 +1012,7 @@ const Bosses = {
   /* --- КОРОЛЬ УПЫРЕЙ --- */
   _updateGhoulKing(boss, player, dt) {
     const cfg = boss.cfg;
-    this._moveTowards(boss, player.x, player.y, dt, 1);
+    this._chase(boss, player, dt);
     const dx = player.x - boss.x, dy = player.y - boss.y;
     const dist = Math.hypot(dx, dy) || 1;
 
@@ -1047,7 +1057,7 @@ const Bosses = {
   /* --- ЛЕДЯНОЙ ЗМЕЙ --- */
   _updateIceSerpent(boss, player, dt) {
     const cfg = boss.cfg;
-    this._moveTowards(boss, player.x, player.y, dt, 1);
+    this._chase(boss, player, dt);
     const dx = player.x - boss.x, dy = player.y - boss.y;
     const dist = Math.hypot(dx, dy) || 1;
 
@@ -1109,7 +1119,7 @@ const Bosses = {
   /* --- МАГМА-ГИГАНТ --- */
   _updateMagmaGiant(boss, player, dt) {
     const cfg = boss.cfg;
-    this._moveTowards(boss, player.x, player.y, dt, 1);
+    this._chase(boss, player, dt);
     const dx = player.x - boss.x, dy = player.y - boss.y;
     const dist = Math.hypot(dx, dy) || 1;
 
@@ -1174,7 +1184,7 @@ const Bosses = {
   /* --- КОРОЛЕВА ПАУКОВ (новая, boss_spider_matriarch) --- */
   _updateSpiderMatriarch(boss, player, dt) {
     const cfg = boss.cfg;
-    this._moveTowards(boss, player.x, player.y, dt, 1);
+    this._chase(boss, player, dt);
     const dx = player.x - boss.x, dy = player.y - boss.y;
     const dist = Math.hypot(dx, dy) || 1;
 
@@ -1222,7 +1232,7 @@ const Bosses = {
   /* --- РЫЦАРЬ-КОМАНДОР --- */
   _updateKnightCommander(boss, player, dt) {
     const cfg = boss.cfg;
-    this._moveTowards(boss, player.x, player.y, dt, 1);
+    this._chase(boss, player, dt);
     const dx = player.x - boss.x, dy = player.y - boss.y;
     const dist = Math.hypot(dx, dy) || 1;
 
@@ -1274,7 +1284,7 @@ const Bosses = {
   /* --- ТЕНЕВОЙ ДРАКОН --- */
   _updateShadowDragon(boss, player, dt) {
     const cfg = boss.cfg;
-    this._moveTowards(boss, player.x, player.y, dt, 1);
+    this._chase(boss, player, dt);
     const dx = player.x - boss.x, dy = player.y - boss.y;
     const dist = Math.hypot(dx, dy) || 1;
 
@@ -1616,7 +1626,7 @@ const Bosses = {
     boss._lightningCd = Math.max(0, boss._lightningCd - dt);
 
     // Движение: медленно преследует
-    this._moveTowards(boss, player.x, player.y, dt, 1);
+    this._chase(boss, player, dt);
 
     // === ФАЗА 1 (100%-66%): Огонь и когти ===
     // Огненное дыхание (конус)
@@ -1835,7 +1845,7 @@ Bosses._updateWebArchitect = function(boss, player, dt) {
   const cdMul = phase2 ? (cfg.phase2CdMul || 0.70) : 1.0;
 
   // Движение к герою
-  Bosses._moveTowards(boss, player.x, player.y, dt, 1);
+  Bosses._chase(boss, player, dt);
 
   // Кулдауны
   boss._webWallCd = Math.max(0, (boss._webWallCd || 0) - dt);
@@ -1930,7 +1940,7 @@ Bosses._updateStormColossus = function(boss, player, dt) {
 
   // Движение
   const speedMul = phase2 ? (cfg.phase2SpeedMul || 1.50) : 1.0;
-  Bosses._moveTowards(boss, player.x, player.y, dt, 1);
+  Bosses._chase(boss, player, dt);
 
   // Кулдауны
   boss._chainCd = Math.max(0, (boss._chainCd || 0) - dt);
@@ -2053,7 +2063,7 @@ Bosses._updatePuzzleSphinx = function(boss, player, dt) {
   const phase2 = boss.phase >= 2;
 
   // Движение
-  Bosses._moveTowards(boss, player.x, player.y, dt, 1);
+  Bosses._chase(boss, player, dt);
 
   // Кулдауны
   boss._beamCd = Math.max(0, (boss._beamCd || 0) - dt);
@@ -2221,7 +2231,7 @@ Bosses._updateBoneHydra = function(boss, player, dt) {
 
   // Фаза 2: двигается к герою
   if (phase2) {
-    Bosses._moveTowards(boss, player.x, player.y, dt, 1);
+    Bosses._chase(boss, player, dt);
   }
 
   const dx = player.x - boss.x, dy = player.y - boss.y;
@@ -2349,7 +2359,7 @@ Bosses._updateMirrorKing = function(boss, player, dt) {
 
   // Движение
   const speedMul = phase3 ? (cfg.phase3SpeedMul || 2.0) : 1.0;
-  Bosses._moveTowards(boss, player.x, player.y, dt, 1);
+  Bosses._chase(boss, player, dt);
 
   // Кулдауны
   boss._slashCd = Math.max(0, (boss._slashCd || 0) - dt);

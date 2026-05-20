@@ -1149,6 +1149,7 @@ window._spawnGroundEffect = _spawnGroundEffect;
 window._moveTowards = _moveTowards;
 window._tryContactDamage = _tryContactDamage;
 window._currentSpeed = _currentSpeed;
+window.ENEMY_SPEED_GLOBAL_MUL = ENEMY_SPEED_GLOBAL_MUL;
 'use strict';
 /* ============================================================
    enemies_new.js — новые поведения врагов (Шаг 11).
