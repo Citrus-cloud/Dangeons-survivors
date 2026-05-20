@@ -382,37 +382,79 @@ const Player = {
   /** Отрисовка героя. ctx сдвинут на -cam. */
   render(ctx, player) {
     const ps = player.size;
+    const t = Date.now() * 0.001; // время для анимаций
 
-    // Шаг 8: аура холода — голубое свечение
+    // --- Аура холода: пульсирующее голубое кольцо с частицами ---
     if (player.frostAura) {
       const fa = player.frostAura;
+      const pulse = 1 + Math.sin(t * 3) * 0.05;
+      const r = fa.radius * pulse;
+      // Градиентное заполнение
       ctx.save();
-      ctx.globalAlpha = 0.12;
-      ctx.fillStyle = '#80d4ff';
+      const grad = ctx.createRadialGradient(player.x, player.y, r * 0.6, player.x, player.y, r);
+      grad.addColorStop(0, 'rgba(100, 200, 255, 0)');
+      grad.addColorStop(0.7, 'rgba(100, 200, 255, 0.06)');
+      grad.addColorStop(1, 'rgba(80, 180, 255, 0.15)');
+      ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.arc(player.x, player.y, fa.radius, 0, Math.PI * 2);
+      ctx.arc(player.x, player.y, r, 0, Math.PI * 2);
       ctx.fill();
-      ctx.globalAlpha = 0.3;
+      // Внешнее кольцо (пульсирующее)
+      ctx.globalAlpha = 0.35 + Math.sin(t * 4) * 0.1;
       ctx.strokeStyle = '#80d4ff';
       ctx.lineWidth = 1.5;
       ctx.stroke();
+      // Ледяные искры на краю ауры
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = '#aaeeff';
+      for (let s = 0; s < 4; s++) {
+        const a = t * 1.5 + s * Math.PI / 2;
+        const sx = player.x + Math.cos(a) * r * 0.9;
+        const sy = player.y + Math.sin(a) * r * 0.9;
+        ctx.fillRect(sx - 1, sy - 1, 2, 2);
+      }
       ctx.restore();
     }
 
-    // Шаг 8: щит маны — полупрозрачный пузырь когда готов
+    // --- Щит маны: энергетический пузырь с бликами ---
     if (player.manaShield && player.manaShield.shieldReady) {
       ctx.save();
-      ctx.globalAlpha = 0.25;
-      ctx.strokeStyle = '#66ccff';
-      ctx.lineWidth = 2.5;
+      const shieldR = ps * 0.75;
+      const pulse = 1 + Math.sin(t * 5) * 0.05;
+      // Градиентный пузырь
+      const sGrad = ctx.createRadialGradient(player.x, player.y, shieldR * 0.5, player.x, player.y, shieldR * pulse);
+      sGrad.addColorStop(0, 'rgba(100, 200, 255, 0)');
+      sGrad.addColorStop(0.8, 'rgba(100, 200, 255, 0.08)');
+      sGrad.addColorStop(1, 'rgba(100, 200, 255, 0.2)');
+      ctx.fillStyle = sGrad;
       ctx.beginPath();
-      ctx.arc(player.x, player.y, ps * 0.75, 0, Math.PI * 2);
+      ctx.arc(player.x, player.y, shieldR * pulse, 0, Math.PI * 2);
+      ctx.fill();
+      // Кольцо
+      ctx.globalAlpha = 0.4;
+      ctx.strokeStyle = '#66ccff';
+      ctx.lineWidth = 2;
       ctx.stroke();
-      ctx.globalAlpha = 0.08;
-      ctx.fillStyle = '#66ccff';
+      // Блик (перемещающийся огонёк)
+      ctx.globalAlpha = 0.6;
+      ctx.fillStyle = '#ffffff';
+      const bx = player.x + Math.cos(t * 3) * shieldR * 0.6;
+      const by = player.y + Math.sin(t * 3) * shieldR * 0.6;
+      ctx.beginPath();
+      ctx.arc(bx, by, 2, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
+
+    // Тень под игроком
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    ctx.beginPath();
+    if (ctx.ellipse) {
+      ctx.ellipse(player.x, player.y + ps * 0.4, ps * 0.35, ps * 0.1, 0, 0, Math.PI * 2);
+    } else {
+      ctx.arc(player.x, player.y + ps * 0.4, ps * 0.2, 0, Math.PI * 2);
+    }
+    ctx.fill();
 
     // Анимация ходьбы (2 кадра, управляется из update)
     const classId = player._classId || 'warrior';
@@ -460,9 +502,10 @@ const Player = {
       ctx.fillText(classLetter, player.x, player.y + 1);
     }
 
-    // Радиус подбора (тонкий ободок)
+    // Радиус подбора (мягкое пульсирующее свечение)
     const pickupR = CONFIG.PLAYER.PICKUP_RADIUS * player.pickupMul;
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    const pickupAlpha = 0.04 + Math.sin(t * 2) * 0.02;
+    ctx.strokeStyle = `rgba(255,255,200,${pickupAlpha})`;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.arc(player.x, player.y, pickupR, 0, Math.PI * 2);
