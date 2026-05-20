@@ -1971,17 +1971,10 @@ const GameMap = {
 
   /** Проверка, что прямоугольник (cx-rad..cx+rad) полностью на полу.
    *  Используется для движения сущностей. rad — половина ширины квадрата.
-   *  @param {number} shrinkFactor — отступ стены для «мягкой» коллизии (опц.) */
+   *  shrinkFactor параметр сохранён для совместимости вызовов, но игнорируется.
+   *  Стены — жёсткие прямоугольники по сетке (ровные поверхности для скольжения). */
   rectIsWalkable(cx, cy, rad, shrinkFactor) {
     if (!this.dungeon) return true;
-    // Если передан shrinkFactor — используем мягкую проверку
-    if (shrinkFactor !== undefined && shrinkFactor > 0) {
-      return this.isWalkableSoft(cx - rad, cy - rad, shrinkFactor) &&
-             this.isWalkableSoft(cx + rad, cy - rad, shrinkFactor) &&
-             this.isWalkableSoft(cx - rad, cy + rad, shrinkFactor) &&
-             this.isWalkableSoft(cx + rad, cy + rad, shrinkFactor) &&
-             this.isWalkableSoft(cx, cy, shrinkFactor);
-    }
     return this.isWalkable(cx - rad, cy - rad) &&
            this.isWalkable(cx + rad, cy - rad) &&
            this.isWalkable(cx - rad, cy + rad) &&
