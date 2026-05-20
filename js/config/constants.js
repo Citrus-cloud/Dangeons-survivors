@@ -2136,102 +2136,107 @@ ENEMY_TIERS[6] = {
 };
 
 // Обновляем _availableTierIds чтобы учитывать тир 6
-const _origAvailableTierIds = Enemies._availableTierIds;
-Enemies._availableTierIds = function(waveIndex) {
-  const out = [];
-  for (let t = 1; t <= 6; t++) {
-    const tier = ENEMY_TIERS[t];
-    if (tier && waveIndex >= tier.unlockWave) out.push(...tier.ids);
-  }
-  return out.length ? out : ENEMY_TIERS[1].ids.slice();
-};
-
-// Обновляем систему редких спавнов
+// DEFERRED: Enemies загружается позже — оборачиваем в функцию инициализации
 const _step12RareIds = ['adult_dragon', 'demon_destroyer', 'golem_colossus',
   'shadow_dragon', 'slime_queen', 'archdemon', 'tarrasque_juv', 'chaos_god'];
 
-// Merge into rare spawn state
-for (const rid of _step12RareIds) {
-  Enemies._rareSpawnState[rid] = 0;
-}
+window._initStep12EnemyPatches = function() {
+  if (!window.Enemies) return;
 
-const _origTryRareSpawn = Enemies.tryRareSpawn;
-Enemies.tryRareSpawn = function(player, runTime, waveIndex) {
-  _origTryRareSpawn.call(Enemies, player, runTime, waveIndex);
-  // Tier 5 rare spawns (wave 8+)
-  if (waveIndex < 8) return;
-  const tier5Rares = ['adult_dragon', 'demon_destroyer', 'golem_colossus',
-    'shadow_dragon', 'slime_queen', 'archdemon'];
-  for (const rid of tier5Rares) {
-    const cfg = ENEMY_TYPES[rid];
-    if (!cfg) continue;
-    const maxPer = cfg.maxPerRun || 1;
-    if ((Enemies._rareSpawnState[rid] || 0) >= maxPer) continue;
-    if (Math.random() > 0.02) continue;
-    let ex, ey;
-    if (window.GameMap && GameMap.dungeon) {
-      const pt = GameMap.randomEnemySpawnPoint(player, 400, 600);
-      if (!pt) continue;
-      ex = pt.x; ey = pt.y;
-    } else {
-      const ang = Math.random() * Math.PI * 2;
-      const dist = Utils.rand(400, 600);
-      ex = player.x + Math.cos(ang) * dist;
-      ey = player.y + Math.sin(ang) * dist;
+  const _origAvailableTierIds = Enemies._availableTierIds;
+  Enemies._availableTierIds = function(waveIndex) {
+    const out = [];
+    for (let t = 1; t <= 6; t++) {
+      const tier = ENEMY_TIERS[t];
+      if (tier && waveIndex >= tier.unlockWave) out.push(...tier.ids);
     }
-    const spawned = Enemies.spawnByType(Game.enemies, rid, ex, ey);
-    if (spawned) {
-      Enemies._rareSpawnState[rid] = (Enemies._rareSpawnState[rid] || 0) + 1;
-      if (window.Particles) {
-        Particles.ring(ex, ey, 60, 0.8, 'rgba(255,100,0,0.9)', 5);
-        Particles.burst(ex, ey, 10, {
-          color: '#ffd700', speedMin: 80, speedMax: 200,
-          lifeMin: 0.4, lifeMax: 0.8, sizeMin: 3, sizeMax: 6,
-        });
-      }
-    }
-  }
-  // Tier 6 rare spawns (wave 10+)
-  if (waveIndex < 10) return;
-  const tier6Rares = ['tarrasque_juv', 'chaos_god'];
-  for (const rid of tier6Rares) {
-    const cfg = ENEMY_TYPES[rid];
-    if (!cfg) continue;
-    const maxPer = cfg.maxPerRun || 1;
-    if ((Enemies._rareSpawnState[rid] || 0) >= maxPer) continue;
-    if (Math.random() > 0.01) continue;
-    let ex, ey;
-    if (window.GameMap && GameMap.dungeon) {
-      const pt = GameMap.randomEnemySpawnPoint(player, 400, 600);
-      if (!pt) continue;
-      ex = pt.x; ey = pt.y;
-    } else {
-      const ang = Math.random() * Math.PI * 2;
-      const dist = Utils.rand(400, 600);
-      ex = player.x + Math.cos(ang) * dist;
-      ey = player.y + Math.sin(ang) * dist;
-    }
-    const spawned = Enemies.spawnByType(Game.enemies, rid, ex, ey);
-    if (spawned) {
-      Enemies._rareSpawnState[rid] = (Enemies._rareSpawnState[rid] || 0) + 1;
-      if (window.Particles) {
-        Particles.ring(ex, ey, 80, 1.0, 'rgba(160,0,255,0.9)', 6);
-        Particles.burst(ex, ey, 12, {
-          color: '#ff00ff', speedMin: 100, speedMax: 250,
-          lifeMin: 0.5, lifeMax: 1.0, sizeMin: 3, sizeMax: 7,
-        });
-      }
-    }
-  }
-};
+    return out.length ? out : ENEMY_TIERS[1].ids.slice();
+  };
 
-// Patch initMimicState to reset all rare spawns
-const _origInitMimicState2 = Enemies.initMimicState;
-Enemies.initMimicState = function() {
+  // Merge into rare spawn state
+  if (!Enemies._rareSpawnState) Enemies._rareSpawnState = {};
   for (const rid of _step12RareIds) {
     Enemies._rareSpawnState[rid] = 0;
   }
-  return _origInitMimicState2.call(Enemies);
+
+  const _origTryRareSpawn = Enemies.tryRareSpawn;
+  Enemies.tryRareSpawn = function(player, runTime, waveIndex) {
+    if (_origTryRareSpawn) _origTryRareSpawn.call(Enemies, player, runTime, waveIndex);
+    // Tier 5 rare spawns (wave 8+)
+    if (waveIndex < 8) return;
+    const tier5Rares = ['adult_dragon', 'demon_destroyer', 'golem_colossus',
+      'shadow_dragon', 'slime_queen', 'archdemon'];
+    for (const rid of tier5Rares) {
+      const cfg = ENEMY_TYPES[rid];
+      if (!cfg) continue;
+      const maxPer = cfg.maxPerRun || 1;
+      if ((Enemies._rareSpawnState[rid] || 0) >= maxPer) continue;
+      if (Math.random() > 0.02) continue;
+      let ex, ey;
+      if (window.GameMap && GameMap.dungeon) {
+        const pt = GameMap.randomEnemySpawnPoint(player, 400, 600);
+        if (!pt) continue;
+        ex = pt.x; ey = pt.y;
+      } else {
+        const ang = Math.random() * Math.PI * 2;
+        const dist = Utils.rand(400, 600);
+        ex = player.x + Math.cos(ang) * dist;
+        ey = player.y + Math.sin(ang) * dist;
+      }
+      const spawned = Enemies.spawnByType(Game.enemies, rid, ex, ey);
+      if (spawned) {
+        Enemies._rareSpawnState[rid] = (Enemies._rareSpawnState[rid] || 0) + 1;
+        if (window.Particles) {
+          Particles.ring(ex, ey, 60, 0.8, 'rgba(255,100,0,0.9)', 5);
+          Particles.burst(ex, ey, 10, {
+            color: '#ffd700', speedMin: 80, speedMax: 200,
+            lifeMin: 0.4, lifeMax: 0.8, sizeMin: 3, sizeMax: 6,
+          });
+        }
+      }
+    }
+    // Tier 6 rare spawns (wave 10+)
+    if (waveIndex < 10) return;
+    const tier6Rares = ['tarrasque_juv', 'chaos_god'];
+    for (const rid of tier6Rares) {
+      const cfg = ENEMY_TYPES[rid];
+      if (!cfg) continue;
+      const maxPer = cfg.maxPerRun || 1;
+      if ((Enemies._rareSpawnState[rid] || 0) >= maxPer) continue;
+      if (Math.random() > 0.01) continue;
+      let ex, ey;
+      if (window.GameMap && GameMap.dungeon) {
+        const pt = GameMap.randomEnemySpawnPoint(player, 400, 600);
+        if (!pt) continue;
+        ex = pt.x; ey = pt.y;
+      } else {
+        const ang = Math.random() * Math.PI * 2;
+        const dist = Utils.rand(400, 600);
+        ex = player.x + Math.cos(ang) * dist;
+        ey = player.y + Math.sin(ang) * dist;
+      }
+      const spawned = Enemies.spawnByType(Game.enemies, rid, ex, ey);
+      if (spawned) {
+        Enemies._rareSpawnState[rid] = (Enemies._rareSpawnState[rid] || 0) + 1;
+        if (window.Particles) {
+          Particles.ring(ex, ey, 80, 1.0, 'rgba(160,0,255,0.9)', 6);
+          Particles.burst(ex, ey, 12, {
+            color: '#ff00ff', speedMin: 100, speedMax: 250,
+            lifeMin: 0.5, lifeMax: 1.0, sizeMin: 3, sizeMax: 7,
+          });
+        }
+      }
+    }
+  };
+
+  // Patch initMimicState to reset all rare spawns
+  const _origInitMimicState2 = Enemies.initMimicState;
+  Enemies.initMimicState = function() {
+    for (const rid of _step12RareIds) {
+      Enemies._rareSpawnState[rid] = 0;
+    }
+    return _origInitMimicState2 ? _origInitMimicState2.call(Enemies) : { count: 0, nextCheckTime: 180 };
+  };
 };
 'use strict';
 /* ============================================================
@@ -3043,7 +3048,9 @@ BOSS_CONFIG.SPAWN_TIMES.push(1500, 1680, 1860, 2040, 2220);
 BOSS_CONFIG.SLOT_DIFFICULTY.push(2.4, 2.8, 3.2, 3.6, 4.0);
 
 // Специальные враги — добавить в rareSpawn систему
-if (window.Enemies && Enemies._rareSpawnState) {
+window._initExpansionEnemyPatches = function() {
+  if (!window.Enemies) return;
+  if (!Enemies._rareSpawnState) Enemies._rareSpawnState = {};
   Enemies._rareSpawnState['doom_herald'] = 0;
   Enemies._rareSpawnState['treasure_golem'] = 0;
-}
+};

@@ -179,5 +179,3 @@ const Pathfinding = {
 window.Pathfinding = Pathfinding;
 
 window.GameMap = GameMap;
-
-'use strict';
