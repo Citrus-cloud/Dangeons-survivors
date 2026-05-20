@@ -29,13 +29,14 @@ const GOLD_CONFIG = {
 const Loot = {
   /**
  * Бросить кристалл опыта в точке (x, y).
- * Шаг 2 (обновлено): новая система из 4 типов кристаллов,
- * привязанная к волнам с каскадной проверкой от высшего к низшему.
+ * Bug fix: перебалансировка множителей — старые значения (×10, ×100, ×1000)
+ * были слишком высоки для кривой опыта (100 base, ×1.25 growth).
+ * Новая система:
  *
  * Тип        | Цвет    | Множитель | С волны | Шанс
- * Жёлтый     | Жёлтый  | ×1000     | 20      | 10%
- * Синий       | Синий   | ×100      | 10      | 20%
- * Красный     | Красный | ×10       | 5       | 30%
+ * Жёлтый     | Жёлтый  | ×5        | 20      | 5%
+ * Синий       | Синий   | ×3        | 10      | 10%
+ * Красный     | Красный | ×2        | 5       | 15%
  * Обычный     | Зелёный | ×1        | 1       | 100% (по умолчанию)
  */
   dropXP(pool, x, y, value) {
@@ -47,24 +48,24 @@ const Loot = {
     const waveIndex = (window.Game && Game.waveIndex) || 0;
 
     // Каскадная проверка: от высшего типа к низшему
-    if (waveIndex >= 20 && Math.random() < 0.10) {
-      // Жёлтый кристалл (×1000, 10% с 20-й волны)
+    if (waveIndex >= 20 && Math.random() < 0.05) {
+      // Жёлтый кристалл (×5, 5% с 20-й волны)
       xp.red = false;
       xp.blue = false;
       xp.yellow = true;
-      xp.value = value * 1000;
-    } else if (waveIndex >= 10 && Math.random() < 0.20) {
-      // Синий кристалл (×100, 20% с 10-й волны)
+      xp.value = value * 5;
+    } else if (waveIndex >= 10 && Math.random() < 0.10) {
+      // Синий кристалл (×3, 10% с 10-й волны)
       xp.red = false;
       xp.blue = true;
       xp.yellow = false;
-      xp.value = value * 100;
-    } else if (waveIndex >= 5 && Math.random() < 0.30) {
-      // Красный кристалл (×10, 30% с 5-й волны)
+      xp.value = value * 3;
+    } else if (waveIndex >= 5 && Math.random() < 0.15) {
+      // Красный кристалл (×2, 15% с 5-й волны)
       xp.red = true;
       xp.blue = false;
       xp.yellow = false;
-      xp.value = value * 10;
+      xp.value = value * 2;
     } else {
       // Обычный зелёный кристалл (×1)
       xp.red = false;
@@ -201,11 +202,12 @@ const Loot = {
    *  (используется эволюцией Soul Flame). */
   magnetizeAll(pool, player) {
     const items = pool.items;
+    const xpMul = player.xpBonusMul || 1;
     for (let i = 0; i < items.length; i++) {
       const x = items[i];
       if (!x.active) continue;
       // Эквивалент мгновенного подбора: засчитываем опыт и снимаем с поля.
-      player.xp += x.value;
+      player.xp += Math.floor(x.value * xpMul);
       x.active = false;
     }
   },
