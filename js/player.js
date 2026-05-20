@@ -293,12 +293,14 @@ const Player = {
       const dx = move.x * speed * dt;
       const dy = move.y * speed * dt;
       // Движение с коллизиями (стены/колонны/закрытые двери)
-      // Новая система: половинный хитбокс (shrinkFactor 0.25 = 50% ядро стены)
-      const rad = player.size * 0.35;
+      // Радиус коллизии 30% от размера, shrinkFactor 0.3 — мягкие края стен
+      const rad = player.size * 0.30;
       if (window.GameMap && GameMap.dungeon) {
-        const r = GameMap.moveWithCollision(player.x, player.y, dx, dy, rad, 0.25);
+        const r = GameMap.moveWithCollision(player.x, player.y, dx, dy, rad, 0.30);
         player.x = r.x;
         player.y = r.y;
+        // Страховка: если игрок каким-то образом попал в стену — вытолкнуть
+        GameMap.attractPlayerFromWalls(player, dt);
       } else {
         player.x += dx;
         player.y += dy;

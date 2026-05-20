@@ -1990,9 +1990,10 @@ const GameMap = {
   },
 
   /**
-   * Двинуть сущность по (dx, dy) с раздельной проверкой осей + субшаговое скольжение.
-   * Улучшенная система: при блокировке оси пробуем продвинуться частично (binary search),
-   * что даёт плавное скольжение вдоль стен без застревания в углах.
+   * Двинуть сущность по (dx, dy) с раздельной проверкой осей + скольжение.
+   * Исправленная система: при блокировке одной оси вторая ось продолжает
+   * свободно двигаться (классическое скольжение вдоль стен).
+   * Бинарный поиск с увеличенной точностью и без мёртвого порога.
    * Возвращает { x, y, blockedX, blockedY }.
    */
   moveWithCollision(x, y, dx, dy, rad, shrinkFactor) {
@@ -2001,17 +2002,17 @@ const GameMap = {
     let nx = x, ny = y;
     let blockedX = false, blockedY = false;
 
-    // --- Ось X с субшагами ---
+    // --- Ось X ---
     if (dx !== 0) {
       const tryX = x + dx;
       if (this.rectIsWalkable(tryX, y, rad, sf)) {
         nx = tryX;
       } else {
         blockedX = true;
-        // Бинарный поиск максимального продвижения по X
+        // Бинарный поиск максимального продвижения по X (8 итераций, порог 0.01px)
         let lo = 0, hi = Math.abs(dx);
         const sign = dx > 0 ? 1 : -1;
-        for (let step = 0; step < 4; step++) {
+        for (let step = 0; step < 8; step++) {
           const mid = (lo + hi) * 0.5;
           if (this.rectIsWalkable(x + sign * mid, y, rad, sf)) {
             lo = mid;
@@ -2019,24 +2020,23 @@ const GameMap = {
             hi = mid;
           }
         }
-        if (lo > 0.5) {
+        if (lo > 0.01) {
           nx = x + sign * lo;
-          blockedX = false;
         }
       }
     }
 
-    // --- Ось Y с субшагами (используем новую X-позицию) ---
+    // --- Ось Y (используем новую X-позицию для скольжения) ---
     if (dy !== 0) {
       const tryY = y + dy;
       if (this.rectIsWalkable(nx, tryY, rad, sf)) {
         ny = tryY;
       } else {
         blockedY = true;
-        // Бинарный поиск максимального продвижения по Y
+        // Бинарный поиск максимального продвижения по Y (8 итераций)
         let lo = 0, hi = Math.abs(dy);
         const sign = dy > 0 ? 1 : -1;
-        for (let step = 0; step < 4; step++) {
+        for (let step = 0; step < 8; step++) {
           const mid = (lo + hi) * 0.5;
           if (this.rectIsWalkable(nx, y + sign * mid, rad, sf)) {
             lo = mid;
@@ -2044,24 +2044,65 @@ const GameMap = {
             hi = mid;
           }
         }
-        if (lo > 0.5) {
+        if (lo > 0.01) {
           ny = y + sign * lo;
-          blockedY = false;
         }
       }
     }
 
-    // --- Если обе оси заблокированы, пробуем каждую отдельно от исходной позиции ---
-    if (blockedX && blockedY) {
-      // Пробуем только X от исходной Y
-      if (dx !== 0 && this.rectIsWalkable(x + dx, y, rad, sf)) {
+    // --- Скольжение: если ось заблокирована, другая ось должна продолжать движение ---
+    // Если X была заблокирована но Y свободна — пробуем Y с исходной X позицией
+    if (blockedX && !blockedY && ny === y && dy !== 0) {
+      if (this.rectIsWalkable(x, y + dy, rad, sf)) {
+        ny = y + dy;
+        blockedY = false;
+      }
+    }
+    // Если Y была заблокирована но X свободна — пробуем X с исходной Y позицией
+    if (blockedY && !blockedX && nx === x && dx !== 0) {
+      if (this.rectIsWalkable(x + dx, y, rad, sf)) {
         nx = x + dx;
         blockedX = false;
       }
-      // Пробуем только Y от исходной X
-      if (dy !== 0 && this.rectIsWalkable(x, y + dy, rad, sf)) {
+    }
+
+    // --- Если обе оси заблокированы — скольжение по каждой оси отдельно ---
+    if (blockedX && blockedY) {
+      // Пробуем только X (полное смещение)
+      if (dx !== 0 && this.rectIsWalkable(x + dx, y, rad, sf)) {
+        nx = x + dx;
+        blockedX = false;
+      } else if (dx !== 0) {
+        // Бинарный поиск по X от исходной позиции
+        let lo = 0, hi = Math.abs(dx);
+        const sign = dx > 0 ? 1 : -1;
+        for (let step = 0; step < 8; step++) {
+          const mid = (lo + hi) * 0.5;
+          if (this.rectIsWalkable(x + sign * mid, y, rad, sf)) {
+            lo = mid;
+          } else {
+            hi = mid;
+          }
+        }
+        if (lo > 0.01) { nx = x + sign * lo; blockedX = false; }
+      }
+      // Пробуем только Y (полное смещение)
+      if (dy !== 0 && this.rectIsWalkable(nx, y + dy, rad, sf)) {
         ny = y + dy;
         blockedY = false;
+      } else if (dy !== 0) {
+        // Бинарный поиск по Y
+        let lo = 0, hi = Math.abs(dy);
+        const sign = dy > 0 ? 1 : -1;
+        for (let step = 0; step < 8; step++) {
+          const mid = (lo + hi) * 0.5;
+          if (this.rectIsWalkable(nx, y + sign * mid, rad, sf)) {
+            lo = mid;
+          } else {
+            hi = mid;
+          }
+        }
+        if (lo > 0.01) { ny = y + sign * lo; blockedY = false; }
       }
     }
 
@@ -2189,11 +2230,22 @@ const GameMap = {
   },
 
   /**
-   * Вытащить игрока из стены — ОТКЛЮЧЕНО.
-   * Скольжение по стенам обеспечивается moveWithCollision (раздельные оси).
-   * Метод оставлен пустым для совместимости.
+   * Вытащить игрока из стены. Если центр игрока в непроходимой ячейке —
+   * мягко выталкиваем к ближайшей проходимой точке.
+   * Вызывается каждый кадр после движения.
    */
   attractPlayerFromWalls(player, dt) {
+    if (!this.dungeon || !player) return;
+    const rad = player.size * 0.30;
+    // Если текущая позиция валидна — ничего не делаем
+    if (this.rectIsWalkable(player.x, player.y, rad, 0.30)) return;
+    // Игрок застрял — ищем ближайшую проходимую точку
+    const target = this.findNearestWalkable(player.x, player.y, 4, 120);
+    if (target) {
+      // Мгновенно вытолкнуть (чтобы не мучиться)
+      player.x = target.x;
+      player.y = target.y;
+    }
   },
 
   /**
