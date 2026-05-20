@@ -1971,17 +1971,11 @@ const GameMap = {
 
   /** Проверка, что прямоугольник (cx-rad..cx+rad) полностью на полу.
    *  Используется для движения сущностей. rad — половина ширины квадрата.
-   *  @param {number} shrinkFactor — отступ стены для «мягкой» коллизии (опц.) */
+   *  shrinkFactor игнорируется — всегда строгая проверка (без захода в стену). */
   rectIsWalkable(cx, cy, rad, shrinkFactor) {
     if (!this.dungeon) return true;
-    // Если передан shrinkFactor — используем мягкую проверку
-    if (shrinkFactor !== undefined && shrinkFactor > 0) {
-      return this.isWalkableSoft(cx - rad, cy - rad, shrinkFactor) &&
-             this.isWalkableSoft(cx + rad, cy - rad, shrinkFactor) &&
-             this.isWalkableSoft(cx - rad, cy + rad, shrinkFactor) &&
-             this.isWalkableSoft(cx + rad, cy + rad, shrinkFactor) &&
-             this.isWalkableSoft(cx, cy, shrinkFactor);
-    }
+    // Строгая проверка по 4 углам + центр — сущности НЕ могут заходить в стену.
+    // Это гарантирует корректное скольжение вдоль стен (раздельные оси в moveWithCollision).
     return this.isWalkable(cx - rad, cy - rad) &&
            this.isWalkable(cx + rad, cy - rad) &&
            this.isWalkable(cx - rad, cy + rad) &&
@@ -1993,18 +1987,18 @@ const GameMap = {
    * Двинуть сущность по (dx, dy) с раздельной проверкой осей + скольжение вдоль стен.
    * Каждая ось обрабатывается независимо: если одна заблокирована, другая всё равно работает.
    * Это даёт плавное скольжение вдоль любой стены (горизонтальной/вертикальной/диагональной).
+   * shrinkFactor игнорируется — строгая коллизия (без захода в стену).
    * Возвращает { x, y, blockedX, blockedY }.
    */
   moveWithCollision(x, y, dx, dy, rad, shrinkFactor) {
     if (!this.dungeon) return { x: x + dx, y: y + dy, blockedX: false, blockedY: false };
-    const sf = (shrinkFactor !== undefined) ? shrinkFactor : 0.25;
     let nx = x, ny = y;
     let blockedX = false, blockedY = false;
 
     // --- Ось X: пробуем полный шаг, иначе бинарный поиск (8 итераций) ---
     if (dx !== 0) {
       const tryX = x + dx;
-      if (this.rectIsWalkable(tryX, y, rad, sf)) {
+      if (this.rectIsWalkable(tryX, y, rad)) {
         nx = tryX;
       } else {
         blockedX = true;
@@ -2013,7 +2007,7 @@ const GameMap = {
         const sign = dx > 0 ? 1 : -1;
         for (let step = 0; step < 8; step++) {
           const mid = (lo + hi) * 0.5;
-          if (this.rectIsWalkable(x + sign * mid, y, rad, sf)) {
+          if (this.rectIsWalkable(x + sign * mid, y, rad)) {
             lo = mid;
           } else {
             hi = mid;
@@ -2029,7 +2023,7 @@ const GameMap = {
     // --- Ось Y: пробуем полный шаг (от новой X), иначе бинарный поиск ---
     if (dy !== 0) {
       const tryY = y + dy;
-      if (this.rectIsWalkable(nx, tryY, rad, sf)) {
+      if (this.rectIsWalkable(nx, tryY, rad)) {
         ny = tryY;
       } else {
         blockedY = true;
@@ -2037,7 +2031,7 @@ const GameMap = {
         const sign = dy > 0 ? 1 : -1;
         for (let step = 0; step < 8; step++) {
           const mid = (lo + hi) * 0.5;
-          if (this.rectIsWalkable(nx, y + sign * mid, rad, sf)) {
+          if (this.rectIsWalkable(nx, y + sign * mid, rad)) {
             lo = mid;
           } else {
             hi = mid;
@@ -2052,12 +2046,12 @@ const GameMap = {
     // --- Если обе оси заблокированы, пробуем каждую отдельно от исходной позиции ---
     if (blockedX && blockedY) {
       // Пробуем только X от исходной Y
-      if (dx !== 0 && this.rectIsWalkable(x + dx, y, rad, sf)) {
+      if (dx !== 0 && this.rectIsWalkable(x + dx, y, rad)) {
         nx = x + dx;
         blockedX = false;
       }
       // Пробуем только Y от исходной X
-      if (dy !== 0 && this.rectIsWalkable(x, y + dy, rad, sf)) {
+      if (dy !== 0 && this.rectIsWalkable(x, y + dy, rad)) {
         ny = y + dy;
         blockedY = false;
       }
@@ -2187,11 +2181,18 @@ const GameMap = {
   },
 
   /**
-   * Вытащить игрока из стены — ОТКЛЮЧЕНО.
-   * Скольжение по стенам обеспечивается moveWithCollision (раздельные оси).
-   * Метод оставлен пустым для совместимости.
+   * Вытащить игрока из стены — если игрок каким-то образом оказался внутри стены,
+   * телепортируем его к ближайшей проходимой точке.
    */
   attractPlayerFromWalls(player, dt) {
+    if (!this.dungeon || !player) return;
+    if (this.isWalkable(player.x, player.y)) return;
+    // Игрок в стене — вытаскиваем
+    const target = this.findNearestWalkable(player.x, player.y, 8, 200);
+    if (target) {
+      player.x = target.x;
+      player.y = target.y;
+    }
   },
 
   /**
