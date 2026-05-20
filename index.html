@@ -10,8 +10,8 @@
   <meta name="description" content="Dungeon Survivors: D20 — Bullet Heaven в D&D-сеттинге" />
   <title>Dungeon Survivors — D20</title>
   <link rel="stylesheet" href="css/style.css" />
-  <link rel="icon" id="favicon" type="image/png" href="" />
-  <link rel="apple-touch-icon" id="touchIcon" href="" />
+  <link rel="icon" id="favicon" type="image/svg+xml" href="icon.svg" />
+  <link rel="apple-touch-icon" id="touchIcon" href="icon.svg" />
   <link rel="manifest" href="manifest.json" />
 </head>
 <body>
@@ -90,42 +90,43 @@
   </div>
 
   <!-- Скрипты -->
-  <script src="js/i18n.js"></script>
-  <script src="js/constants.js"></script>
-  <script src="js/audio.js"></script>
-  <script src="js/map.js"></script>
-  <script src="js/particles.js"></script>
-  <script src="js/metaprogress.js"></script>
-  <script src="js/loot.js"></script>
-  <script src="js/sprites.js"></script>
-  <script src="js/sprites_items.js"></script>
-  <script src="js/enemies.js"></script>
-  <script src="js/enemies_new.js"></script>
-  <script src="js/constants_step12.js"></script>
-  <script src="js/enemies_step12.js"></script>
-  <script src="js/bosses.js"></script>
-  <script src="js/constants_expansion.js"></script>
-  <script src="js/enemies_expansion.js"></script>
-  <script src="js/bosses_expansion.js"></script>
-  <script src="js/sprites_expansion.js"></script>
-  <script src="js/sprites_step12.js"></script>
-  <script src="js/weapons.js"></script>
-  <script src="js/abilities.js"></script>
-  <script src="js/evolutions.js"></script>
-  <script src="js/weapons_extended.js"></script>
-  <script src="js/puzzles.js"></script>
-  <script src="js/traps_extended.js"></script>
-  <script src="js/classes.js"></script>
-  <script src="js/bestiary.js"></script>
-  <script src="js/bestiary_expansion.js"></script>
-  <script src="js/codex.js"></script>
-  <script src="js/input.js"></script>
-  <script src="js/player.js"></script>
-  <script src="js/ui.js"></script>
-  <script src="js/ui_extended.js"></script>
-  <script src="js/campaign.js"></script>
-  <script src="js/urns.js"></script>
-  <script src="js/main.js"></script>
-  <script src="js/optimize.js"></script>
+  <script src="js/utils/error-handler.js"></script>
+  <script src="js/utils/safe-storage.js"></script>
+  <script src="js/i18n/engine.js"></script>
+  <script src="js/i18n/locale-ru.js"></script>
+  <script src="js/i18n/locale-en.js"></script>
+  <script src="js/config/constants.js"></script>
+  <script src="js/config/biome-fixes.js"></script>
+  <script src="js/utils/render-cache.js"></script>
+  <script src="js/utils/spatial-grid.js"></script>
+  <script src="js/utils/performance.js"></script>
+  <script src="js/audio/audio.js"></script>
+  <script src="js/map/dungeon-generator.js"></script>
+  <script src="js/map/traps.js"></script>
+  <script src="js/map/pathfinding.js"></script>
+  <script src="js/systems/particles.js"></script>
+  <script src="js/meta/metaprogress.js"></script>
+  <script src="js/systems/loot.js"></script>
+  <script src="js/render/sprites-enemies.js"></script>
+  <script src="js/render/sprites-items.js"></script>
+  <script src="js/render/sprites-expansion.js"></script>
+  <script src="js/entities/enemies.js"></script>
+  <script src="js/entities/bosses.js"></script>
+  <script src="js/systems/weapons.js"></script>
+  <script src="js/systems/abilities.js"></script>
+  <script src="js/systems/evolutions.js"></script>
+  <script src="js/systems/puzzles.js"></script>
+  <script src="js/meta/classes.js"></script>
+  <script src="js/meta/bestiary.js"></script>
+  <script src="js/meta/codex.js"></script>
+  <script src="js/input/input.js"></script>
+  <script src="js/entities/player.js"></script>
+  <script src="js/ui/hud.js"></script>
+  <script src="js/ui/overlays.js"></script>
+  <script src="js/meta/campaign.js"></script>
+  <script src="js/systems/urns.js"></script>
+  <script src="js/core/registry.js"></script>
+  <script src="js/core/game-loop.js"></script>
+  <script src="js/core/state-machine.js"></script>
 </body>
 </html>
