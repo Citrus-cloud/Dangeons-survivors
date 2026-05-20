@@ -145,8 +145,20 @@ const UI = {
       choices.forEach((c) => {
         const el = document.createElement('div');
         el.className = 'card ' + (c.kind || 'basic');
+        // Build card content
+        let levelHtml = '';
+        if (c.kind === 'weapon' || c.kind === 'ability') {
+          // Show level dots if it's an upgrade card
+          const isUpgrade = c.title && c.title.includes('→');
+          if (isUpgrade) {
+            levelHtml = '<div class="card-level-indicator">▲</div>';
+          } else {
+            levelHtml = '<div class="card-level-indicator card-new">НОВОЕ</div>';
+          }
+        }
         el.innerHTML =
           `<div class="card-icon">${c.icon || '★'}</div>` +
+          levelHtml +
           `<div class="card-title">${c.title}</div>` +
           `<div class="card-desc">${c.desc}</div>`;
         // Шаг 2: пиксельный спрайт в карте левелапа
@@ -520,11 +532,11 @@ const UI = {
       const p = readyList[i];
       const w = p.weapon, a = p.ability, r = p.recipe;
       html += `<div class="evo-choice-item" data-idx="${i}">` +
-        `<span class="evo-choice-icon">${w.icon}</span>` +
+        `<span class="evo-choice-icon" data-sprite-id="${w.id}">${w.icon}</span>` +
         `<span class="evo-choice-plus">+</span>` +
-        `<span class="evo-choice-icon">${a.icon}</span>` +
+        `<span class="evo-choice-icon" data-sprite-id="${a.id}">${a.icon}</span>` +
         `<span class="evo-choice-arrow">→</span>` +
-        `<span class="evo-choice-result-icon">${r.resultIcon}</span>` +
+        `<span class="evo-choice-result-icon" data-sprite-id="${r.resultId}">${r.resultIcon}</span>` +
         `<span class="evo-choice-name">${r.resultName}</span>` +
         `<span class="evo-choice-desc">${r.desc}</span>` +
       '</div>';
@@ -535,6 +547,9 @@ const UI = {
       '</div>';
     this.chestPanelEl.innerHTML = html;
     this.chestOverlay.classList.add('active');
+
+    // Apply sprites to evolution choice icons
+    this._applySpriteIcons(this.chestPanelEl);
 
     // Event listeners
     const list = this.chestPanelEl.querySelector('#evoChoiceList');
@@ -566,11 +581,11 @@ const UI = {
       const s = superReadyList[i];
       const excl = s.exclusive, evolved = s.evolved, r = s.recipe;
       html += `<div class="evo-choice-item super-evo-item" data-idx="${i}">` +
-        `<span class="evo-choice-icon">${excl.icon}</span>` +
+        `<span class="evo-choice-icon" data-sprite-id="${excl.id}">${excl.icon}</span>` +
         `<span class="evo-choice-plus">+</span>` +
-        `<span class="evo-choice-icon">${evolved.icon}</span>` +
+        `<span class="evo-choice-icon" data-sprite-id="${evolved.id}">${evolved.icon}</span>` +
         `<span class="evo-choice-arrow">→</span>` +
-        `<span class="evo-choice-result-icon">${r.resultIcon}</span>` +
+        `<span class="evo-choice-result-icon" data-sprite-id="${r.resultId}">${r.resultIcon}</span>` +
         `<span class="evo-choice-name">${r.resultName}</span>` +
         `<span class="evo-choice-desc">${r.desc}</span>` +
       '</div>';
@@ -581,6 +596,9 @@ const UI = {
       '</div>';
     this.chestPanelEl.innerHTML = html;
     this.chestOverlay.classList.add('active');
+
+    // Apply sprites to super-evolution choice icons
+    this._applySpriteIcons(this.chestPanelEl);
 
     const list = this.chestPanelEl.querySelector('#superEvoList');
     list.addEventListener('click', (e) => {
@@ -602,6 +620,30 @@ const UI = {
     if (roll >= 19) return 'crit';
     if (roll >= 11) return 'good';
     return 'low';
+  },
+
+  /** Apply pixel sprites to all elements with data-sprite-id within a container. */
+  _applySpriteIcons(container) {
+    const icons = container.querySelectorAll('[data-sprite-id]');
+    for (const iconEl of icons) {
+      const spriteId = iconEl.getAttribute('data-sprite-id');
+      if (!spriteId) continue;
+      const WS = window.WEAPON_SPRITES;
+      const AS = window.ABILITY_SPRITES;
+      const ES = window.EVOLUTION_SPRITES;
+      const spr = (ES && ES[spriteId]) || (WS && WS[spriteId]) || (AS && AS[spriteId]);
+      if (spr) {
+        iconEl.textContent = '';
+        iconEl.style.backgroundImage = 'url(' + spr.toDataURL() + ')';
+        iconEl.style.backgroundSize = 'contain';
+        iconEl.style.backgroundRepeat = 'no-repeat';
+        iconEl.style.backgroundPosition = 'center';
+        iconEl.style.imageRendering = 'pixelated';
+        iconEl.style.display = 'inline-block';
+        iconEl.style.minWidth = '24px';
+        iconEl.style.minHeight = '24px';
+      }
+    }
   },
 
   /* ============================================================
