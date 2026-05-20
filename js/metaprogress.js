@@ -698,6 +698,13 @@ const MetaProgress = {
     this.data.totalRuns += 1;
     if (runTime > this.data.bestTime) this.data.bestTime = runTime;
     if (kills > (this.data.bestKills || 0)) this.data.bestKills = kills;
+    // Bug fix: сохраняем killsByType для бестиария
+    if (!this.data.killsByType) this.data.killsByType = {};
+    if (window.Game && Game.killsByType) {
+      for (const [typeId, count] of Object.entries(Game.killsByType)) {
+        this.data.killsByType[typeId] = (this.data.killsByType[typeId] || 0) + count;
+      }
+    }
     // Обновляем guildStats
     if (!this.data.guildStats) this.data.guildStats = {};
     const gs = this.data.guildStats;

@@ -161,9 +161,14 @@ const Game = {
     this.goldDrops.clearAll();
     if (window.GameMap && GameMap.clearGroundEffects) GameMap.clearGroundEffects();
 
-    // Шаг 15: счётчики золота и боссов за забег
+    // Bug fix: полный сброс всех счётчиков забега
     this.runGold = 0;
     this.bossKills = 0;
+    this._chestsOpened = 0;
+    this._bestD20Roll = 0;
+    this._totalDamageDealt = 0;
+    this._totalDamageTaken = 0;
+    this._attractTimer = 0;
 
     // Шаг 13: бесконечный режим — инициализация
     this.mapNumber = 1;
@@ -391,6 +396,8 @@ const Game = {
     // Шаг 19: очистить все объекты для предотвращения утечек
     this.enemies.clearAll();
     this.projectiles.clearAll();
+    this.xpDrops.clearAll();
+    this.particles.clearAll();
     if (this.goldDrops) this.goldDrops.clearAll();
 
     // Шаг 15: сохранить мета-прогресс
@@ -477,9 +484,11 @@ const Game = {
     // Останавливаем музыку
     if (window.GameAudio) GameAudio.stopMusic();
 
-    // Очищаем объекты
+    // Очищаем ВСЕ объекты (bug fix: ранее xpDrops и particles не очищались)
     this.enemies.clearAll();
     this.projectiles.clearAll();
+    this.xpDrops.clearAll();
+    this.particles.clearAll();
     if (this.goldDrops) this.goldDrops.clearAll();
 
     // Сохраняем мета-прогресс
@@ -679,10 +688,15 @@ const Game = {
     }
 
     // Левелап (only trigger if still in playing state)
+    // Bug fix: cap excess XP to prevent instant multi-level chains
     if (this.state === 'playing' && this.player.xp >= this.player.xpNext) {
       this.player.xp -= this.player.xpNext;
+      // Ограничиваем остаток XP — не более 80% от следующего уровня
+      // Это предотвращает цепочку мгновенных повышений уровня
+      const nextXpNext = Math.floor(CONFIG.XP.BASE * Math.pow(CONFIG.XP.GROWTH, this.player.level));
+      this.player.xp = Math.min(this.player.xp, Math.floor(nextXpNext * 0.8));
       this.player.level += 1;
-      this.player.xpNext = Math.floor(CONFIG.XP.BASE * Math.pow(CONFIG.XP.GROWTH, this.player.level - 1));
+      this.player.xpNext = nextXpNext;
       // Шаг 18: звук повышения уровня
       if (window.GameAudio) GameAudio.playSfx('levelup');
       this.triggerLevelUp();
