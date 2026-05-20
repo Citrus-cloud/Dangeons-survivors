@@ -137,14 +137,10 @@ const Game = {
 
   /* ----- состояния ----- */
   startNewGame(biomeId) {
-    this.enemies.clearAll();
-    this.projectiles.clearAll();
-    this.xpDrops.clearAll();
-    this.particles.clearAll();
-    this.goldDrops.clearAll();
+    this._clearAllPools();
     if (window.GameMap && GameMap.clearGroundEffects) GameMap.clearGroundEffects();
 
-    // Bug fix: полный сброс всех счётчиков забега
+    // Полный сброс счётчиков забега
     this.runGold = 0;
     this.bossKills = 0;
     this._chestsOpened = 0;
@@ -153,16 +149,16 @@ const Game = {
     this._totalDamageTaken = 0;
     this._attractTimer = 0;
 
-    // Шаг 13: бесконечный режим — инициализация
+    // Бесконечный режим
     this.mapNumber = 1;
-    this.mapTime = 0;            // время на текущей карте
-    this.portalSpawned = false;  // портал уже появился?
-    this.guardianSpawned = false; // страж уже появился?
-    this.lastBiomeId = biomeId || 'crypt';  // запоминаем выбранный биом
-    this.transitioning = false;  // идёт переход?
+    this.mapTime = 0;
+    this.portalSpawned = false;
+    this.guardianSpawned = false;
+    this.lastBiomeId = biomeId || 'crypt';
+    this.transitioning = false;
     this.transitionTimer = 0;
 
-    // Шаг 5 (новый): генерируем подземелье в выбранном биоме
+    // Генерируем подземелье
     if (window.GameMap && GameMap.generateDungeon) {
       GameMap.generateDungeon(this.lastBiomeId, 1);
     }
@@ -173,39 +169,26 @@ const Game = {
     this.waveIndex = 0;
     this.waveTimer = CONFIG.WAVE.INITIAL_DELAY;
 
-    // Шаг 3: сундук
     this.chest = null;
     this.chestTimer = CONFIG.CHEST.FIRST_DELAY;
-    // Шаг 5: секретный сундук (даётся при открытии секретной комнаты)
     this.secretChest = null;
 
-    // Шаг 6: мини-боссы
-    this.bossChest = null;  // золотой сундук после убийства босса
+    this.bossChest = null;
     Bosses.init();
-
-    // Шаг 1: инициализация урн
     Urns.init();
 
-    // Шаг 4: мимик
     this.mimicState = (window.Enemies && Enemies.initMimicState)
       ? Enemies.initMimicState()
       : { count: 0, nextCheckTime: 180 };
 
-    // Стартовая позиция героя — центр стартовой комнаты подземелья
-    let startX = (window.GameMap ? GameMap.mapW : CONFIG.MAP.W) / 2;
-    let startY = (window.GameMap ? GameMap.mapH : CONFIG.MAP.H) / 2;
-    if (window.GameMap && GameMap.dungeon && GameMap.dungeon.startRoom) {
-      const sp = GameMap.randomPointInRoom(GameMap.dungeon.startRoom, 18);
-      if (sp) { startX = sp.x; startY = sp.y; }
-    }
-    this.player = Player.create(startX, startY);
+    // Стартовая позиция героя
+    const startPos = this._getStartPosition();
+    this.player = Player.create(startPos.x, startPos.y);
 
-    // Шаг 15: перестроить UI-слоты под динамическое количество
     UI.rebuildSlots(this.player.weaponSlots.length, this.player.abilitySlots.length);
 
     UI.hideAll();
     this.state = 'playing';
-    // Шаг 18: запуск музыки выбранного биома
     GameAudio.playMusic(this.lastBiomeId || 'crypt');
   },
 
@@ -366,113 +349,50 @@ const Game = {
     return out;
   },
 
-  triggerGameOver() {
-    this.state = 'gameover';
-    Input.releaseJoystick();
+  /* ============================================================
+     Утилитные методы (извлечены для устранения дублирования)
+     ============================================================ */
 
-    // Шаг 19: остановить музыку и очистить все таймеры
-    GameAudio.playSfx('death');
-    GameAudio.stopMusic();
-
-    // Шаг 19: очистить все объекты для предотвращения утечек
+  /** Очистить все объектные пулы. */
+  _clearAllPools() {
     this.enemies.clearAll();
     this.projectiles.clearAll();
     this.xpDrops.clearAll();
     this.particles.clearAll();
     if (this.goldDrops) this.goldDrops.clearAll();
-
-    // Шаг 15: сохранить мета-прогресс
-    if (window.MetaProgress && MetaProgress.data) {
-      const goldCollected = this.runGold || 0;
-      const goldBonus = (this.player ? this.player.level : 1) * 10;
-      const goldTotal = MetaProgress.calcEndOfRunGold(goldCollected, this.player ? this.player.level : 1);
-
-      MetaProgress.addGold(goldTotal);
-      MetaProgress.updateStats(this.kills, this.runTime);
-      const repGained = 10 + (this.bossKills || 0) * 5 + Math.floor(this.kills / 100);
-      MetaProgress.addRunReputation(this.bossKills || 0, this.kills);
-
-      // Собираем полную статистику забега
-      const runStats = {
-        time: Utils.formatTime(this.runTime),
-        kills: this.kills,
-        level: this.player ? this.player.level : 1,
-        wave: this.waveIndex,
-        mapsCleared: (this.mapNumber || 1) - 1,
-        goldCollected: goldCollected,
-        goldBonus: goldBonus,
-        goldTotal: goldTotal,
-        repGained: repGained,
-        bossKills: this.bossKills || 0,
-        chestsOpened: this._chestsOpened || 0,
-        bestRoll: this._bestD20Roll || 0,
-        damageDealt: this._totalDamageDealt || '—',
-        damageTaken: this._totalDamageTaken || '—',
-      };
-
-      // Показать окно статистики через UIExtended
-      if (window.UIExtended) {
-        UIExtended.showRunStats(runStats, () => {
-          this.state = 'camp';
-          UI.showCamp();
-          GameAudio.playMusic('camp');
-        });
-      } else {
-        // Фоллбэк: старое поведение
-        UI.showRunResults({
-          time: Utils.formatTime(this.runTime),
-          kills: this.kills,
-          level: this.player ? this.player.level : 1,
-          goldCollected: goldCollected,
-          goldBonus: goldBonus,
-          goldTotal: goldTotal,
-          repGained: repGained,
-        }, () => {
-          this.state = 'camp';
-          UI.showCamp();
-          GameAudio.playMusic('camp');
-        });
-      }
-    } else {
-      // Фоллбэк: старое поведение
-      UI.showGameOver({
-        time: Utils.formatTime(this.runTime),
-        kills: this.kills,
-        level: this.player.level,
-      });
-    }
   },
 
-  /** Шаг 15: обработчик кнопки рестарта (из старого Game Over). */
-  _handleRestartBtn() {
-    // Переход в лагерь вместо прямого рестарта
-    if (window.MetaProgress) {
-      this.state = 'camp';
-      UI.hideAll();
-      UI.showCamp();
-      // Шаг 18: музыка лагеря
-      GameAudio.playMusic('camp');
-    } else {
-      this.startNewGame();
-    }
+  /** Построить объект статистики забега. */
+  _buildRunStats(goldCollected, goldTotal) {
+    const goldBonus = (this.player ? this.player.level : 1) * 10;
+    const repGained = 10 + (this.bossKills || 0) * 5 + Math.floor(this.kills / 100);
+    return {
+      time: Utils.formatTime(this.runTime),
+      kills: this.kills,
+      level: this.player ? this.player.level : 1,
+      wave: this.waveIndex,
+      mapsCleared: (this.mapNumber || 1) - 1,
+      goldCollected: goldCollected,
+      goldBonus: goldBonus,
+      goldTotal: goldTotal,
+      repGained: repGained,
+      bossKills: this.bossKills || 0,
+      chestsOpened: this._chestsOpened || 0,
+      bestRoll: this._bestD20Roll || 0,
+      damageDealt: this._totalDamageDealt || '—',
+      damageTaken: this._totalDamageTaken || '—',
+    };
   },
 
-  /** Выход из забега в лагерь (из меню паузы или кнопки «назад»). */
-  exitToMenu() {
-    if (this.state !== 'paused' && this.state !== 'playing') return;
-    Input.releaseJoystick();
+  /** Переход в лагерь (общий для всех точек выхода). */
+  _returnToCamp() {
+    this.state = 'camp';
+    UI.showCamp();
+    GameAudio.playMusic('camp');
+  },
 
-    // Останавливаем музыку
-    GameAudio.stopMusic();
-
-    // Очищаем ВСЕ объекты (bug fix: ранее xpDrops и particles не очищались)
-    this.enemies.clearAll();
-    this.projectiles.clearAll();
-    this.xpDrops.clearAll();
-    this.particles.clearAll();
-    if (this.goldDrops) this.goldDrops.clearAll();
-
-    // Сохраняем мета-прогресс
+  /** Сохранить мета-прогресс в конце забега и показать статистику. */
+  _saveProgressAndShowStats() {
     const goldCollected = this.runGold || 0;
     const goldTotal = (window.MetaProgress && MetaProgress.calcEndOfRunGold)
       ? MetaProgress.calcEndOfRunGold(goldCollected, this.player ? this.player.level : 1)
@@ -484,38 +404,74 @@ const Game = {
       MetaProgress.addRunReputation(this.bossKills || 0, this.kills);
     }
 
-    // Собираем статистику забега
-    const runStats = {
-      time: Utils.formatTime(this.runTime),
-      kills: this.kills,
-      level: this.player ? this.player.level : 1,
-      wave: this.waveIndex,
-      mapsCleared: (this.mapNumber || 1) - 1,
-      goldCollected: goldCollected,
-      goldBonus: (this.player ? this.player.level : 1) * 10,
-      goldTotal: goldTotal,
-      bossKills: this.bossKills || 0,
-      chestsOpened: this._chestsOpened || 0,
-      bestRoll: this._bestD20Roll || 0,
-      damageDealt: this._totalDamageDealt || '—',
-      damageTaken: this._totalDamageTaken || '—',
-    };
+    const runStats = this._buildRunStats(goldCollected, goldTotal);
+
+    if (window.UIExtended) {
+      UIExtended.showRunStats(runStats, () => this._returnToCamp());
+    } else if (window.MetaProgress) {
+      UI.showRunResults({
+        time: runStats.time,
+        kills: runStats.kills,
+        level: runStats.level,
+        goldCollected: runStats.goldCollected,
+        goldBonus: runStats.goldBonus,
+        goldTotal: runStats.goldTotal,
+        repGained: runStats.repGained,
+      }, () => this._returnToCamp());
+    } else {
+      UI.showGameOver({
+        time: runStats.time,
+        kills: runStats.kills,
+        level: runStats.level,
+      });
+    }
+  },
+
+  /** Получить стартовую позицию в текущем подземелье. */
+  _getStartPosition() {
+    let x = (window.GameMap ? GameMap.mapW : CONFIG.MAP.W) / 2;
+    let y = (window.GameMap ? GameMap.mapH : CONFIG.MAP.H) / 2;
+    if (window.GameMap && GameMap.dungeon && GameMap.dungeon.startRoom) {
+      const sp = GameMap.randomPointInRoom(GameMap.dungeon.startRoom, 18);
+      if (sp) { x = sp.x; y = sp.y; }
+    }
+    return { x, y };
+  },
+
+  /* ============================================================ */
+
+  triggerGameOver() {
+    this.state = 'gameover';
+    Input.releaseJoystick();
+
+    GameAudio.playSfx('death');
+    GameAudio.stopMusic();
+
+    this._clearAllPools();
+    this._saveProgressAndShowStats();
+  },
+
+  /** Обработчик кнопки рестарта (из старого Game Over). */
+  _handleRestartBtn() {
+    if (window.MetaProgress) {
+      UI.hideAll();
+      this._returnToCamp();
+    } else {
+      this.startNewGame();
+    }
+  },
+
+  /** Выход из забега в лагерь (из меню паузы или кнопки «назад»). */
+  exitToMenu() {
+    if (this.state !== 'paused' && this.state !== 'playing') return;
+    Input.releaseJoystick();
+
+    GameAudio.stopMusic();
+    this._clearAllPools();
 
     this.state = 'gameover';
     UI.hideAll();
-
-    // Показать окно статистики
-    if (window.UIExtended) {
-      UIExtended.showRunStats(runStats, () => {
-        this.state = 'camp';
-        UI.showCamp();
-        GameAudio.playMusic('camp');
-      });
-    } else {
-      this.state = 'camp';
-      UI.showCamp();
-      GameAudio.playMusic('camp');
-    }
+    this._saveProgressAndShowStats();
   },
 
   /* ----- игровой цикл ----- */
@@ -844,10 +800,6 @@ const Game = {
     const player = this.player;
     if (!player) return;
 
-    // Сохраняем состояние игрока (HP, оружие, пассивки, уровень, опыт)
-    // — всё в объекте player, ничего не сбрасываем.
-
-    // Увеличиваем номер карты
     this.mapNumber += 1;
 
     // Выбираем биом (не повторять предыдущий)
@@ -859,29 +811,16 @@ const Game = {
     }
     this.lastBiomeId = newBiome.id;
 
-    // Шаг 18: смена музыки на новый биом
     GameAudio.playMusic(newBiome.id);
 
-    // Очистка объектов
-    this.enemies.clearAll();
-    this.projectiles.clearAll();
-    this.xpDrops.clearAll();
-    this.particles.clearAll();
-    if (this.goldDrops) this.goldDrops.clearAll();
+    // Очистка
+    this._clearAllPools();
     if (window.GameMap && GameMap.clearGroundEffects) GameMap.clearGroundEffects();
 
-    // Убираем активного босса
-    if (window.Bosses) {
-      Bosses.current = null;
-      Bosses.guardian = null;
-    }
-
-    // Убираем сундуки
+    if (window.Bosses) { Bosses.current = null; Bosses.guardian = null; }
     this.chest = null;
     this.secretChest = null;
     this.bossChest = null;
-
-    // Сброс урн при переходе на новую карту
     Urns.init();
 
     // Генерируем новую карту
@@ -889,34 +828,24 @@ const Game = {
       GameMap.generateDungeon(newBiome.id, this.mapNumber);
     }
 
-    // Размещаем героя в стартовой комнате новой карты
-    let startX = (window.GameMap ? GameMap.mapW : CONFIG.MAP.W) / 2;
-    let startY = (window.GameMap ? GameMap.mapH : CONFIG.MAP.H) / 2;
-    if (window.GameMap && GameMap.dungeon && GameMap.dungeon.startRoom) {
-      const sp = GameMap.randomPointInRoom(GameMap.dungeon.startRoom, 18);
-      if (sp) { startX = sp.x; startY = sp.y; }
-    }
-    player.x = startX;
-    player.y = startY;
+    // Размещаем героя
+    const startPos = this._getStartPosition();
+    player.x = startPos.x;
+    player.y = startPos.y;
 
     // Сброс таймеров карты
     this.mapTime = 0;
     this.portalSpawned = false;
     this.guardianSpawned = false;
-
-    // Волны продолжаются с текущего waveIndex (не сбрасываем)
     this.waveTimer = CONFIG.WAVE.INITIAL_DELAY;
-
-    // Сундук: сброс таймера
     this.chestTimer = CONFIG.CHEST.FIRST_DELAY;
 
-    // Визуальный эффект при выходе из перехода
+    // Визуальный эффект
     Particles.burst(player.x, player.y, 12, {
       color: '#f1c40f', speedMin: 60, speedMax: 180,
       lifeMin: 0.4, lifeMax: 0.8, sizeMin: 3, sizeMax: 5,
     });
     Particles.ring(player.x, player.y, 60, 0.5, 'rgba(155, 89, 182, 0.8)', 3);
-    // Шаг 20: скрыть экран загрузки
     if (window.LoadingScreen) LoadingScreen.hide();
   },
 
@@ -927,29 +856,16 @@ const Game = {
   /** Запуск карты кампании (вызывается из Campaign._loadCurrentMap). */
   _startCampaignMap(mapCfg) {
     // Очистка
-    this.enemies.clearAll();
-    this.projectiles.clearAll();
-    this.xpDrops.clearAll();
-    this.particles.clearAll();
-    if (this.goldDrops) this.goldDrops.clearAll();
+    this._clearAllPools();
     if (window.GameMap && GameMap.clearGroundEffects) GameMap.clearGroundEffects();
 
-    // Шаг 15: счётчики
     this.runGold = this.runGold || 0;
     this.bossKills = this.bossKills || 0;
 
-    // Сброс боссов
-    if (window.Bosses) {
-      Bosses.current = null;
-      Bosses.guardian = null;
-    }
-
-    // Сундуки
+    if (window.Bosses) { Bosses.current = null; Bosses.guardian = null; }
     this.chest = null;
     this.secretChest = null;
     this.bossChest = null;
-
-    // Бесконечный режим отключён для кампании
     this.portalSpawned = false;
     this.guardianSpawned = false;
     this.transitioning = false;
@@ -965,44 +881,22 @@ const Game = {
       GameMap.placeCampaignObjects(mapCfg);
     }
 
-    // Создаём игрока (если первая карта) или перемещаем
-    if (!this.player) {
-      let startX = (window.GameMap ? GameMap.mapW : CONFIG.MAP.W) / 2;
-      let startY = (window.GameMap ? GameMap.mapH : CONFIG.MAP.H) / 2;
-      if (window.GameMap && GameMap.dungeon && GameMap.dungeon.startRoom) {
-        const sp = GameMap.randomPointInRoom(GameMap.dungeon.startRoom, 18);
-        if (sp) { startX = sp.x; startY = sp.y; }
-      }
-      this.player = Player.create(startX, startY);
+    // Создаём/перемещаем игрока
+    if (!this.player || this.player.hp <= 0) {
+      const startPos = this._getStartPosition();
+      this.player = Player.create(startPos.x, startPos.y);
       UI.rebuildSlots(this.player.weaponSlots.length, this.player.abilitySlots.length);
-    } else {
-      // Bug fix #7: если HP <= 0 (после смерти), пересоздаём героя полностью
       if (this.player.hp <= 0) {
-        let startX = (window.GameMap ? GameMap.mapW : CONFIG.MAP.W) / 2;
-        let startY = (window.GameMap ? GameMap.mapH : CONFIG.MAP.H) / 2;
-        if (window.GameMap && GameMap.dungeon && GameMap.dungeon.startRoom) {
-          const sp = GameMap.randomPointInRoom(GameMap.dungeon.startRoom, 18);
-          if (sp) { startX = sp.x; startY = sp.y; }
-        }
-        this.player = Player.create(startX, startY);
-        UI.rebuildSlots(this.player.weaponSlots.length, this.player.abilitySlots.length);
-        // Сбрасываем счётчики забега
         this.kills = 0;
         this.runTime = 0;
         this.waveIndex = 0;
         this.runGold = 0;
         this.bossKills = 0;
-      } else {
-        // Перемещаем игрока в стартовую комнату новой карты
-        let startX = (window.GameMap ? GameMap.mapW : CONFIG.MAP.W) / 2;
-        let startY = (window.GameMap ? GameMap.mapH : CONFIG.MAP.H) / 2;
-        if (window.GameMap && GameMap.dungeon && GameMap.dungeon.startRoom) {
-          const sp = GameMap.randomPointInRoom(GameMap.dungeon.startRoom, 18);
-          if (sp) { startX = sp.x; startY = sp.y; }
-        }
-        this.player.x = startX;
-        this.player.y = startY;
       }
+    } else {
+      const startPos = this._getStartPosition();
+      this.player.x = startPos.x;
+      this.player.y = startPos.y;
     }
 
     // Применить благословение мага (если есть, карта 5)
@@ -1273,55 +1167,6 @@ const Game = {
       if (chosen) chosen.apply(player);
       this._afterChestClose();
     });
-  },
-
-  /** Проверить обычные эволюции или дать фоллбэк (эксклюзив/большая награда). */
-  _resolveChestEvolutionsOrFallback(roll, player) {
-    const ready = (window.Evolutions && Evolutions.findReady) ? Evolutions.findReady(player) : [];
-    if (ready.length > 0) {
-      // Если несколько — показываем окно выбора эволюции
-      if (ready.length === 1) {
-        const pair = ready[0];
-        UI.showEvolutionDialog(roll, pair, (accepted) => {
-          if (accepted) {
-            Evolutions.apply(player, pair.recipe);
-            this._afterChestClose();
-          } else {
-            this._resolveChestExclusiveOrFallback(roll, player);
-          }
-        });
-      } else {
-        // Множественный выбор
-        UI.showEvolutionChoice(roll, ready, (chosenPair) => {
-          if (chosenPair) {
-            Evolutions.apply(player, chosenPair.recipe);
-            this._afterChestClose();
-          } else {
-            this._resolveChestExclusiveOrFallback(roll, player);
-          }
-        });
-      }
-      return;
-    }
-
-    this._resolveChestExclusiveOrFallback(roll, player);
-  },
-
-  /** Эксклюзивное оружие или большая награда как фоллбэк при d20=20. */
-  _resolveChestExclusiveOrFallback(roll, player) {
-    // d20=20 и нет эволюций — шанс эксклюзивного оружия
-    if (roll >= 20 && Player.hasFreeWeaponSlot(player)) {
-      const excl = this._tryGetExclusiveWeapon(player);
-      if (excl) {
-        UI.showChestReward(roll, excl, () => this._afterChestClose());
-        excl.apply(player);
-        return;
-      }
-    }
-    // Большая награда
-    const reward = this._buildBigReward(player);
-    reward.apply(player);
-    UI.showChestReward(roll, reward, () => this._afterChestClose());
   },
 
   /** Попробовать выдать случайное эксклюзивное оружие. */

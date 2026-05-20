@@ -24,6 +24,33 @@ const UI = {
   weaponSlotEls: [],
   abilitySlotEls: [],
 
+  /* ---- Утилита: применить спрайт к DOM-элементу (убирает дублирование) ---- */
+  _applySprite(el, spriteCanvas, id) {
+    if (!el) return;
+    el.textContent = '';
+    el.style.backgroundImage = 'url(' + spriteCanvas.toDataURL() + ')';
+    el.style.backgroundSize = 'contain';
+    el.style.backgroundRepeat = 'no-repeat';
+    el.style.backgroundPosition = 'center';
+    el.style.imageRendering = 'pixelated';
+    el._spriteSet = id;
+  },
+
+  _clearSprite(el, fallbackIcon) {
+    if (!el) return;
+    el.style.backgroundImage = '';
+    el.textContent = fallbackIcon || '';
+    el._spriteSet = null;
+  },
+
+  /** Найти спрайт по id среди всех атласов. */
+  _findSprite(id) {
+    const ES = window.EVOLUTION_SPRITES;
+    const WS = window.WEAPON_SPRITES;
+    const AS = window.ABILITY_SPRITES;
+    return (ES && ES[id]) || (WS && WS[id]) || (AS && AS[id]) || null;
+  },
+
   init() {
     this.hpFill = document.querySelector('#hpBar .fill');
     this.hpLabel = document.querySelector('#hpBar .label');
@@ -164,17 +191,9 @@ const UI = {
         // Шаг 2: пиксельный спрайт в карте левелапа
         const cardIconEl = el.querySelector('.card-icon');
         const spriteId = c.weaponId || c.abilityId || c.resultId || c.id;
-        const WS = window.WEAPON_SPRITES;
-        const AS = window.ABILITY_SPRITES;
-        const ES = window.EVOLUTION_SPRITES;
-        const spr = (ES && ES[spriteId]) || (WS && WS[spriteId]) || (AS && AS[spriteId]);
+        const spr = this._findSprite(spriteId);
         if (spr && cardIconEl) {
-          cardIconEl.textContent = '';
-          cardIconEl.style.backgroundImage = 'url(' + spr.toDataURL() + ')';
-          cardIconEl.style.backgroundSize = 'contain';
-          cardIconEl.style.backgroundRepeat = 'no-repeat';
-          cardIconEl.style.backgroundPosition = 'center';
-          cardIconEl.style.imageRendering = 'pixelated';
+          this._applySprite(cardIconEl, spr, spriteId);
         }
         el.addEventListener('click', () => onPick(c));
         this.cardsEl.appendChild(el);
@@ -255,51 +274,27 @@ const UI = {
     const cdEl   = el.children[0];
     if (!weapon) {
       el.classList.remove('filled', 'exclusive-slot', 'super-evolved-slot');
-      iconEl.textContent = '';
-      iconEl.style.backgroundImage = '';
+      this._clearSprite(iconEl);
       levelEl.textContent = '';
       cdEl.style.height = '0%';
       return;
     }
     el.classList.add('filled');
-    // Exclusive/Super-evolved visual
     if (weapon.isSuperEvolved) { el.classList.add('super-evolved-slot'); el.classList.remove('exclusive-slot'); }
     else if (weapon.isExclusive) { el.classList.add('exclusive-slot'); el.classList.remove('super-evolved-slot'); }
     else { el.classList.remove('exclusive-slot', 'super-evolved-slot'); }
 
-    // Шаг 2: пиксельный спрайт оружия вместо эмодзи
-    const WS = window.WEAPON_SPRITES;
+    // Спрайт оружия
     const ES = window.EVOLUTION_SPRITES;
+    const WS = window.WEAPON_SPRITES;
     const sprite = (ES && ES[weapon.id]) || (WS && WS[weapon.id]);
-    if (sprite && !iconEl._spriteSet) {
-      iconEl.textContent = '';
-      iconEl.style.backgroundImage = 'url(' + sprite.toDataURL() + ')';
-      iconEl.style.backgroundSize = 'contain';
-      iconEl.style.backgroundRepeat = 'no-repeat';
-      iconEl.style.backgroundPosition = 'center';
-      iconEl.style.imageRendering = 'pixelated';
-      iconEl._spriteSet = weapon.id;
-    } else if (!sprite) {
-      iconEl.style.backgroundImage = '';
-      iconEl.textContent = weapon.icon || '?';
-      iconEl._spriteSet = null;
-    } else if (iconEl._spriteSet !== weapon.id) {
-      // Weapon changed (evolution) — update sprite
-      iconEl.textContent = '';
-      const newSprite = (ES && ES[weapon.id]) || (WS && WS[weapon.id]);
-      if (newSprite) {
-        iconEl.style.backgroundImage = 'url(' + newSprite.toDataURL() + ')';
-        iconEl.style.imageRendering = 'pixelated';
-        iconEl._spriteSet = weapon.id;
-      } else {
-        iconEl.style.backgroundImage = '';
-        iconEl.textContent = weapon.icon || '?';
-        iconEl._spriteSet = null;
-      }
+    if (sprite && iconEl._spriteSet !== weapon.id) {
+      this._applySprite(iconEl, sprite, weapon.id);
+    } else if (!sprite && iconEl._spriteSet) {
+      this._clearSprite(iconEl, weapon.icon || '?');
     }
 
     levelEl.textContent = Utils.roman(weapon.level);
-    // CD-заполнение: растёт от 0% до 100% по мере готовности
     const ready = weapon.readyProgress ? weapon.readyProgress(player) : 1;
     cdEl.style.height = (Utils.clamp(ready, 0, 1) * 100) + '%';
   },
@@ -309,41 +304,25 @@ const UI = {
     const levelEl = el.children[2];
     const cdEl   = el.children[0];
     if (!ability) {
-      el.classList.remove('filled');
-      el.classList.remove('slot-flash');
-      iconEl.textContent = '';
-      iconEl.style.backgroundImage = '';
-      iconEl._spriteSet = null;
+      el.classList.remove('filled', 'slot-flash');
+      this._clearSprite(iconEl);
       levelEl.textContent = '';
       cdEl.style.height = '0%';
       return;
     }
     el.classList.add('filled');
 
-    // Шаг 2: пиксельный спрайт пассивки вместо эмодзи
+    // Спрайт пассивки
     const AS = window.ABILITY_SPRITES;
     const sprite = AS ? AS[ability.id] : null;
-    if (sprite && !iconEl._spriteSet) {
-      iconEl.textContent = '';
-      iconEl.style.backgroundImage = 'url(' + sprite.toDataURL() + ')';
-      iconEl.style.backgroundSize = 'contain';
-      iconEl.style.backgroundRepeat = 'no-repeat';
-      iconEl.style.backgroundPosition = 'center';
-      iconEl.style.imageRendering = 'pixelated';
-      iconEl._spriteSet = ability.id;
-    } else if (!sprite) {
-      iconEl.style.backgroundImage = '';
-      iconEl.textContent = ability.icon || '?';
-      iconEl._spriteSet = null;
-    } else if (iconEl._spriteSet !== ability.id) {
-      iconEl.textContent = '';
-      iconEl.style.backgroundImage = 'url(' + sprite.toDataURL() + ')';
-      iconEl.style.imageRendering = 'pixelated';
-      iconEl._spriteSet = ability.id;
+    if (sprite && iconEl._spriteSet !== ability.id) {
+      this._applySprite(iconEl, sprite, ability.id);
+    } else if (!sprite && iconEl._spriteSet) {
+      this._clearSprite(iconEl, ability.icon || '?');
     }
 
     levelEl.textContent = Utils.roman(ability.level);
-    cdEl.style.height = '100%'; // пассивки всегда "активны"
+    cdEl.style.height = '100%';
 
     // Шаг 8: вспышка при повышении уровня (200 мс белая обводка)
     if (ability._flashUntil && ability._flashUntil > performance.now()) {
@@ -447,17 +426,9 @@ const UI = {
         // Применяем пиксельный спрайт (как в showLevelUp)
         const cardIconEl = el.querySelector('.card-icon');
         const spriteId = c.weaponId || c.abilityId || c.resultId || c.id;
-        const WS = window.WEAPON_SPRITES;
-        const AS = window.ABILITY_SPRITES;
-        const ES = window.EVOLUTION_SPRITES;
-        const spr = (ES && ES[spriteId]) || (WS && WS[spriteId]) || (AS && AS[spriteId]);
+        const spr = this._findSprite(spriteId);
         if (spr && cardIconEl) {
-          cardIconEl.textContent = '';
-          cardIconEl.style.backgroundImage = 'url(' + spr.toDataURL() + ')';
-          cardIconEl.style.backgroundSize = 'contain';
-          cardIconEl.style.backgroundRepeat = 'no-repeat';
-          cardIconEl.style.backgroundPosition = 'center';
-          cardIconEl.style.imageRendering = 'pixelated';
+          this._applySprite(cardIconEl, spr, spriteId);
         }
         el.addEventListener('click', () => { this.hideAll(); onPick && onPick(c); });
         row.appendChild(el);
