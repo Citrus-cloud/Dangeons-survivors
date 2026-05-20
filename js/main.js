@@ -655,11 +655,6 @@ const Game = {
     // Шаг 15: обновление золота
     if (this.goldDrops) Loot.updateGold(this.goldDrops, this.player, dt);
 
-    // Шаг 1: вытягивание игрока из стен КАЖДЫЙ кадр (быстро)
-    if (window.GameMap && GameMap.attractPlayerFromWalls) {
-      GameMap.attractPlayerFromWalls(this.player, dt);
-    }
-
     // Притяжение застрявших объектов к проходимой зоне (раз в 0.5 сек)
     if (!this._attractTimer) this._attractTimer = 0;
     this._attractTimer += dt;

@@ -176,25 +176,35 @@ function _moveTowards(e, tx, ty, dt, sign) {
   let dx = e.vx * dt;
   let dy = e.vy * dt;
   const rad = Math.max(e.cfg.w, e.cfg.h) * 0.35;
-  // Движение с учётом стен/колонн (половинный хитбокс — shrinkFactor 0.15 для врагов)
+  // Движение с учётом стен/колонн
   if (window.GameMap && GameMap.dungeon) {
     const res = GameMap.moveWithCollision(e.x, e.y, dx, dy, rad, 0.15);
-    // Обход препятствия: если упёрлись в одну ось, сместимся вдоль другой
-    let blockedAny = res.blockedX || res.blockedY;
-    if (blockedAny && (Math.abs(res.x - e.x) < Math.abs(dx) * 0.2) &&
-        (Math.abs(res.y - e.y) < Math.abs(dy) * 0.2)) {
-      // Тупик — выберем перпендикулярное направление
+    const movedX = Math.abs(res.x - e.x);
+    const movedY = Math.abs(res.y - e.y);
+    const wantedMove = Math.abs(dx) + Math.abs(dy);
+    const actualMove = movedX + movedY;
+
+    // Умный обход: если застряли (прошли менее 20% желаемого), пробуем обойти
+    if (wantedMove > 0.5 && actualMove < wantedMove * 0.2) {
+      // Выбираем перпендикулярное направление для обхода
       const perpX = -n.y, perpY = n.x;
-      const slide = (e._slideSign = e._slideSign || 1);
-      const sx = perpX * Math.abs(s) * dt * slide;
-      const sy = perpY * Math.abs(s) * dt * slide;
-      const res2 = GameMap.moveWithCollision(e.x, e.y, sx, sy, rad, 0.15);
-      e.x = res2.x; e.y = res2.y;
-      // Если и тут не получилось — поменяем знак
-      if (res2.blockedX && res2.blockedY) e._slideSign = -slide;
+      if (!e._pathTimer) e._pathTimer = 0;
+      if (!e._pathSign) e._pathSign = (Math.random() < 0.5) ? 1 : -1;
+      e._pathTimer += dt;
+      // Каждые 0.8 сек меняем направление обхода если не помогает
+      if (e._pathTimer > 0.8) {
+        e._pathSign = -e._pathSign;
+        e._pathTimer = 0;
+      }
+      const slideX = perpX * Math.abs(s) * dt * e._pathSign;
+      const slideY = perpY * Math.abs(s) * dt * e._pathSign;
+      const res2 = GameMap.moveWithCollision(e.x, e.y, slideX, slideY, rad, 0.15);
+      e.x = res2.x;
+      e.y = res2.y;
     } else {
       e.x = res.x;
       e.y = res.y;
+      e._pathTimer = 0;
     }
   } else {
     e.x += dx;

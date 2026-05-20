@@ -1991,125 +1991,36 @@ const GameMap = {
 
   /**
    * Двинуть сущность по (dx, dy) с раздельной проверкой осей.
-   * Если упёрлись — позволяет скользить вдоль стен.
-   * Шаг 1: улучшенная система — хитбокс стен чуть меньше визуала (2-4px),
-   * раздельные оси для естественного скольжения.
-   * @param {number} shrinkFactor — 0.25 для игрока (50% хитбокс),
-   *   0.15 для врагов (70% хитбокс). По умолчанию 0.25.
+   * Классическая система: сначала X, потом Y — даёт автоматическое скольжение.
+   * Без pushback, без финальной отмены — просто двигаем по каждой оси отдельно.
    * Возвращает { x, y, blockedX, blockedY }.
    */
   moveWithCollision(x, y, dx, dy, rad, shrinkFactor) {
     if (!this.dungeon) return { x: x + dx, y: y + dy, blockedX: false, blockedY: false };
     const sf = (shrinkFactor !== undefined) ? shrinkFactor : 0.25;
-    const checkRad = rad;
     let nx = x, ny = y;
     let blockedX = false, blockedY = false;
 
-    // --- Ось X (сначала двигаем по X) ---
+    // --- Ось X ---
     if (dx !== 0) {
       const tryX = x + dx;
-      if (this.rectIsWalkable(tryX, y, checkRad, sf)) {
+      if (this.rectIsWalkable(tryX, y, rad, sf)) {
         nx = tryX;
       } else {
-        // Пошагово ищем максимально возможное смещение (шаг 1px для плавности)
-        const sign = Math.sign(dx);
-        const absDx = Math.abs(dx);
-        let stepped = 0;
-        const stepSize = 1;
-        while (stepped + stepSize <= absDx) {
-          const next = stepped + stepSize;
-          if (this.rectIsWalkable(x + sign * next, y, checkRad, sf)) {
-            stepped = next;
-          } else break;
-        }
-        nx = x + sign * stepped;
         blockedX = true;
       }
     }
 
-    // --- Ось Y (двигаем по Y из новой X-позиции) ---
+    // --- Ось Y (используем новую X-позицию) ---
     if (dy !== 0) {
-      const tryY = ny + dy;
-      if (this.rectIsWalkable(nx, tryY, checkRad, sf)) {
+      const tryY = y + dy;
+      if (this.rectIsWalkable(nx, tryY, rad, sf)) {
         ny = tryY;
       } else {
-        // Пошагово ищем максимально возможное смещение (шаг 1px для плавности)
-        const sign = Math.sign(dy);
-        const absDy = Math.abs(dy);
-        let stepped = 0;
-        const stepSize = 1;
-        while (stepped + stepSize <= absDy) {
-          const next = stepped + stepSize;
-          if (this.rectIsWalkable(nx, ny + sign * next, checkRad, sf)) {
-            stepped = next;
-          } else break;
-        }
-        ny = ny + sign * stepped;
         blockedY = true;
       }
     }
 
-    // Если обе оси заблокированы, пробуем каждую ось отдельно от исходной
-    // позиции — это позволяет скользить вдоль стены при диагональном движении
-    if (blockedX && blockedY) {
-      // Попробуем двигаться только по X
-      let altX = x, altY = y;
-      if (dx !== 0) {
-        const tryX = x + dx;
-        if (this.rectIsWalkable(tryX, y, checkRad, sf)) {
-          altX = tryX;
-        } else {
-          const sign = Math.sign(dx);
-          const absDx = Math.abs(dx);
-          let stepped = 0;
-          while (stepped + 1 <= absDx) {
-            if (this.rectIsWalkable(x + sign * (stepped + 1), y, checkRad, sf)) {
-              stepped += 1;
-            } else break;
-          }
-          altX = x + sign * stepped;
-        }
-      }
-      // Попробуем двигаться только по Y
-      let altY2 = y;
-      if (dy !== 0) {
-        const tryY = y + dy;
-        if (this.rectIsWalkable(x, tryY, checkRad, sf)) {
-          altY2 = tryY;
-        } else {
-          const sign = Math.sign(dy);
-          const absDy = Math.abs(dy);
-          let stepped = 0;
-          while (stepped + 1 <= absDy) {
-            if (this.rectIsWalkable(x, y + sign * (stepped + 1), checkRad, sf)) {
-              stepped += 1;
-            } else break;
-          }
-          altY2 = y + sign * stepped;
-        }
-      }
-      // Выбираем вариант, который даёт большее смещение (лучшее скольжение)
-      const distXOnly = Math.abs(altX - x);
-      const distYOnly = Math.abs(altY2 - y);
-      if (distXOnly > 0 || distYOnly > 0) {
-        if (distXOnly >= distYOnly) {
-          nx = altX; ny = y;
-          blockedX = (altX === x && dx !== 0);
-          blockedY = true;
-        } else {
-          nx = x; ny = altY2;
-          blockedX = true;
-          blockedY = (altY2 === y && dy !== 0);
-        }
-      }
-    }
-
-    // Финальная проверка — если всё ещё невалидная позиция, остаёмся на месте
-    // (без выталкивания, чтобы не "отбрасывать" игрока)
-    if (!this.rectIsWalkable(nx, ny, rad, sf)) {
-      nx = x;
-      ny = y;
-    }
     return { x: nx, y: ny, blockedX, blockedY };
   },
 
@@ -2234,13 +2145,11 @@ const GameMap = {
   },
 
   /**
-   * Шаг 1: Вытащить игрока из стены каждый кадр (быстро, 150 px/sec).
-   * Вызывается из Game.update() КАЖДЫЙ кадр для игрока.
+   * Вытащить игрока из стены — ОТКЛЮЧЕНО.
+   * Скольжение по стенам обеспечивается moveWithCollision (раздельные оси).
+   * Метод оставлен пустым для совместимости.
    */
   attractPlayerFromWalls(player, dt) {
-    if (!this.dungeon || !player) return;
-    if (this.isWalkable(player.x, player.y)) return;
-    this.attractToWalkable(player, 150, dt);
   },
 
   /**
