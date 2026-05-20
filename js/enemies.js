@@ -121,8 +121,48 @@ function _emitDeathParticles(e) {
   if (!window.Particles) return;
   const cfg = e.cfg || {};
   const color = cfg.color || '#888';
-  // Шаг 3 (анимации): «dusting» — рассыпание в пыль при смерти
-  Particles.enemyDust(e.x, e.y, color);
+  const beh = cfg.behavior || 'chase';
+
+  // Разные эффекты смерти для разных типов
+  if (beh === 'gas' || e.type === 'gasspore') {
+    // Газовая спора — зелёное облако
+    Particles.burst(e.x, e.y, 12, {
+      color: '#88cc44', speedMin: 30, speedMax: 80,
+      lifeMin: 0.5, lifeMax: 1.0, sizeMin: 3, sizeMax: 6,
+    });
+  } else if (e.type === 'fire_elem' || e.type === 'hell_hound' || e.type === 'salamander') {
+    // Огненные — взрыв искр
+    Particles.burst(e.x, e.y, 10, {
+      color: '#ff6600', speedMin: 80, speedMax: 200,
+      lifeMin: 0.3, lifeMax: 0.6, sizeMin: 2, sizeMax: 4,
+    });
+    Particles.burst(e.x, e.y, 5, {
+      color: '#ffdd00', speedMin: 40, speedMax: 120,
+      lifeMin: 0.2, lifeMax: 0.4, sizeMin: 1, sizeMax: 3,
+    });
+  } else if (e.type === 'ice_elem') {
+    // Ледяные — осколки
+    Particles.burst(e.x, e.y, 8, {
+      color: '#aaeeff', speedMin: 60, speedMax: 150,
+      lifeMin: 0.4, lifeMax: 0.7, sizeMin: 2, sizeMax: 4,
+    });
+  } else if (e.type === 'ghost' || e.type === 'banshee' || e.type === 'shadow') {
+    // Призраки — медленное растворение
+    Particles.burst(e.x, e.y, 6, {
+      color: '#aaccff', speedMin: 20, speedMax: 50,
+      lifeMin: 0.6, lifeMax: 1.2, sizeMin: 2, sizeMax: 5,
+    });
+  } else if (e.type === 'skeleton' || e.type === 'archer' || e.type === 'captain' ||
+             e.type === 'death_knight' || e.type === 'mage') {
+    // Скелеты — рассыпание костей
+    Particles.burst(e.x, e.y, 8, {
+      color: '#e8dcc8', speedMin: 40, speedMax: 120,
+      lifeMin: 0.4, lifeMax: 0.8, sizeMin: 2, sizeMax: 3,
+    });
+  } else {
+    // Стандартное рассыпание
+    Particles.enemyDust(e.x, e.y, color);
+  }
 }
 
 /* Урон игроку при контакте (для тех behaviour'ов, где есть). */
@@ -901,7 +941,7 @@ const Enemies = {
 
 
   /* ============================================================
-     Render — пиксельные спрайты (sprites.js)
+     Render — редизайн: тени, анимации idle/атаки, flash, свечения
      ============================================================ */
   render(ctx, pool, cam, viewW, viewH) {
     ctx.imageSmoothingEnabled = false;
@@ -915,78 +955,177 @@ const Enemies = {
       if (!e.active || !e.cfg) continue;
       const cfg = e.cfg;
       const w = cfg.w, h = cfg.h;
-      const halfMaxR = Math.max(w, h);
+      const halfMaxR = Math.max(w, h) * 1.5;
       if (e.x + halfMaxR < minX || e.x - halfMaxR > maxX ||
           e.y + halfMaxR < minY || e.y - halfMaxR > maxY) continue;
 
-      // Покачивание (по высоте) — всегда ±1px синусоида для оживления
-      const bobAmount = cfg.wobble || 1;
-      const renderY = e.y + Math.sin(e.bobPhase) * bobAmount;
-      const renderX = e.x;
+      // --- Анимация idle: разные паттерны по типу ---
+      const beh = cfg.behavior || 'chase';
+      let bobY = 0, bobX = 0, tilt = 0;
+      const phase = e.bobPhase;
 
-      // Пульсация атаки: до +20% размера в течение 0.1 сек
-      const punch = e.attackPunch > 0 ? 1 + 0.20 * (e.attackPunch / 0.10) : 1;
-
-      // Прозрачность (мерцание — теневой убийца, призраки)
-      let prevAlpha = ctx.globalAlpha;
-      if (cfg.behavior === 'shadow') {
-        ctx.globalAlpha = e.invisible ? 0.20 : 1.0;
-      } else if (cfg.behavior === 'ghost' || cfg.id === 'ghost') {
-        ctx.globalAlpha = 0.7;
+      // Слизни — вертикальная пульсация (сжатие/растяжение)
+      if (beh === 'ooze' || e.type === 'ooze' || e.type === 'slimeling' ||
+          e.type === 'acid_slug') {
+        bobY = Math.sin(phase * 1.5) * 1.5;
+      }
+      // Летающие — плавное парение вверх-вниз с лёгким покачиванием
+      else if (beh === 'bat' || e.type === 'ghost' || e.type === 'banshee' ||
+               e.type === 'harpy' || e.type === 'gasspore' ||
+               e.type === 'beholder_spore' || e.type === 'observer') {
+        bobY = Math.sin(phase) * 2.5;
+        bobX = Math.cos(phase * 0.7) * 0.8;
+      }
+      // Пауки — нервная вибрация
+      else if (beh === 'spider' || e.type === 'spider' || e.type === 'spiderling' ||
+               e.type === 'scorpion') {
+        bobY = Math.sin(phase * 3) * 0.5;
+        bobX = Math.cos(phase * 4) * 0.3;
+      }
+      // Скелеты — лёгкий наклон + покачивание
+      else if (e.type === 'skeleton' || e.type === 'archer' || e.type === 'mage' ||
+               e.type === 'captain' || e.type === 'death_knight') {
+        bobY = Math.sin(phase) * 0.8;
+        tilt = Math.sin(phase * 0.6) * 0.02; // лёгкий наклон
+      }
+      // Элементали — дрожание
+      else if (e.type === 'fire_elem' || e.type === 'ice_elem' ||
+               e.type === 'air_elem' || e.type === 'water_elem') {
+        bobY = Math.sin(phase * 2) * 1.2;
+        bobX = Math.cos(phase * 2.5) * 0.6;
+      }
+      // Стандарт — мягкое покачивание
+      else {
+        bobY = Math.sin(phase) * (cfg.wobble || 1);
       }
 
-      // Размер спрайта на экране
-      const spriteSize = (window.getSpriteDisplaySize ? getSpriteDisplaySize(e.type) : Math.max(w, h)) * punch;
+      const renderY = e.y + bobY;
+      const renderX = e.x + bobX;
 
-      // Получаем спрайт
+      // --- Пульсация атаки: +25% размера + наклон вперёд ---
+      const punch = e.attackPunch > 0 ? 1 + 0.25 * (e.attackPunch / 0.12) : 1;
+      const attackTilt = e.attackPunch > 0 ? 0.1 * (e.attackPunch / 0.12) : 0;
+
+      // --- Прозрачность (теневой убийца, призраки, мерцание при уроне) ---
+      let prevAlpha = ctx.globalAlpha;
+      if (beh === 'shadow') {
+        ctx.globalAlpha = e.invisible ? 0.15 : 1.0;
+      } else if (e.type === 'ghost' || e.type === 'banshee' || e.type === 'night_walker') {
+        ctx.globalAlpha = 0.65 + Math.sin(phase * 2) * 0.1;
+      }
+      // Мерцание при получении урона (flash)
+      if (e.flash > 0) {
+        ctx.globalAlpha = Math.max(ctx.globalAlpha, 0.5 + Math.sin(e.flash * 30) * 0.3);
+      }
+
+      // --- Размер спрайта ---
+      const baseSize = window.getSpriteDisplaySize ? getSpriteDisplaySize(e.type) : Math.max(w, h);
+      const spriteSize = baseSize * punch;
+
+      // --- Получаем спрайт ---
       const sprite = hasSprites ? getEnemySprite(e.type) : null;
 
       if (sprite) {
-        // Мимик в idle — рисуем спрайт сундука с подсветкой
-        if (cfg.behavior === 'mimic' && !e.activated) {
-          ctx.shadowColor = 'rgba(255, 215, 80, 0.7)';
-          ctx.shadowBlur = 10;
-          ctx.drawImage(sprite, renderX - spriteSize / 2, renderY - spriteSize / 2, spriteSize, spriteSize);
+        const half = spriteSize / 2;
+
+        // Тень под врагом (эллипс)
+        ctx.fillStyle = 'rgba(0,0,0,0.25)';
+        ctx.beginPath();
+        if (ctx.ellipse) {
+          ctx.ellipse(renderX, e.y + baseSize * 0.38, baseSize * 0.3, baseSize * 0.1, 0, 0, Math.PI * 2);
+        } else {
+          ctx.arc(renderX, e.y + baseSize * 0.38, baseSize * 0.2, 0, Math.PI * 2);
+        }
+        ctx.fill();
+
+        // Мимик idle — сундук с золотым свечением
+        if (beh === 'mimic' && !e.activated) {
+          ctx.shadowColor = 'rgba(255, 215, 80, 0.8)';
+          ctx.shadowBlur = 8 + Math.sin(phase * 2) * 3;
+          ctx.drawImage(sprite, renderX - half, renderY - half, spriteSize, spriteSize);
           ctx.shadowBlur = 0;
           ctx.globalAlpha = prevAlpha;
           continue;
         }
 
-        // Аура капитана (до спрайта)
-        if (cfg.behavior === 'captain') {
-          ctx.fillStyle = 'rgba(255, 215, 0, 0.18)';
+        // Аура капитана (пульсирующая)
+        if (beh === 'captain') {
+          const aR = (cfg.auraRadius || 100) * (0.95 + Math.sin(phase) * 0.05);
+          ctx.fillStyle = 'rgba(255, 215, 0, 0.12)';
           ctx.beginPath();
-          ctx.arc(renderX, renderY, cfg.auraRadius || 100, 0, Math.PI * 2);
+          ctx.arc(renderX, renderY, aR, 0, Math.PI * 2);
           ctx.fill();
         }
 
-        // Обычная отрисовка спрайта
-        ctx.drawImage(sprite, renderX - spriteSize / 2, renderY - spriteSize / 2, spriteSize, spriteSize);
+        // Огненные/ледяные — свечение под спрайтом
+        if (e.type === 'fire_elem' || e.type === 'hell_hound') {
+          ctx.shadowColor = 'rgba(255, 100, 0, 0.6)';
+          ctx.shadowBlur = 8;
+        } else if (e.type === 'ice_elem') {
+          ctx.shadowColor = 'rgba(100, 180, 255, 0.5)';
+          ctx.shadowBlur = 6;
+        }
 
-        // Элитные (captainBuffed) — без обводки, только мягкая аура (glow через shadowBlur)
+        // --- Отрисовка спрайта с наклоном (tilt + attackTilt) ---
+        const totalTilt = tilt + attackTilt;
+        if (totalTilt !== 0) {
+          ctx.save();
+          ctx.translate(renderX, renderY);
+          ctx.rotate(totalTilt);
+          ctx.drawImage(sprite, -half, -half, spriteSize, spriteSize);
+          ctx.restore();
+        } else {
+          ctx.drawImage(sprite, renderX - half, renderY - half, spriteSize, spriteSize);
+        }
+
+        ctx.shadowBlur = 0;
+
+        // Flash при получении урона — белый оверлей поверх спрайта
+        if (e.flash > 0) {
+          ctx.globalAlpha = Math.min(e.flash * 3, 0.6);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(renderX - half, renderY - half, spriteSize, spriteSize);
+          ctx.globalAlpha = prevAlpha;
+        }
+
+        // Баффнутые капитаном — золотистая аура
         if (e.captainBuffed) {
           ctx.shadowColor = 'rgba(255, 215, 0, 0.5)';
-          ctx.shadowBlur = 6;
-          ctx.drawImage(sprite, renderX - spriteSize / 2, renderY - spriteSize / 2, spriteSize, spriteSize);
+          ctx.shadowBlur = 5;
+          ctx.globalAlpha = 0.4;
+          ctx.drawImage(sprite, renderX - half, renderY - half, spriteSize, spriteSize);
+          ctx.globalAlpha = prevAlpha;
           ctx.shadowBlur = 0;
         }
 
+        // Замедленные враги — синий оттенок
+        if (e._slowTimer > 0 || (e.frostSlowTimer && e.frostSlowTimer > 0)) {
+          ctx.globalAlpha = 0.25;
+          ctx.fillStyle = 'rgba(100, 180, 255, 0.5)';
+          ctx.fillRect(renderX - half, renderY - half, spriteSize, spriteSize);
+          ctx.globalAlpha = prevAlpha;
+        }
+
       } else {
-        // Fallback: минимальный цветной квадрат (если спрайта нет — не должно происходить)
+        // Fallback: цветной квадрат
         const drawW = w * punch, drawH = h * punch;
-        const fillColor = cfg.color || '#888';
-        ctx.fillStyle = fillColor;
+        ctx.fillStyle = cfg.color || '#888';
         ctx.fillRect(renderX - drawW / 2, renderY - drawH / 2, drawW, drawH);
       }
 
-      // HP-бар (всегда показываем при повреждении)
+      // --- HP-бар (при повреждении) с плавным заполнением ---
       if (e.hp < e.maxHp) {
-        const barW = spriteSize || w, barH = 3;
-        const barY = renderY - (spriteSize || h) / 2 - 6;
-        ctx.fillStyle = 'rgba(0,0,0,0.6)';
-        ctx.fillRect(renderX - barW / 2, barY, barW, barH);
-        ctx.fillStyle = '#e74c3c';
-        ctx.fillRect(renderX - barW / 2, barY, barW * (e.hp / e.maxHp), barH);
+        const barW = baseSize * 0.8, barH = 3;
+        const barX = renderX - barW / 2;
+        const barY = renderY - baseSize * 0.5 - 7;
+        const hpRatio = Math.max(0, e.hp / e.maxHp);
+        // Фон
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(barX - 1, barY - 1, barW + 2, barH + 2);
+        // Полоса HP (градиент от зелёного к красному)
+        const hpColor = hpRatio > 0.5 ? '#4caf50' : hpRatio > 0.25 ? '#ff9800' : '#e74c3c';
+        ctx.fillStyle = hpColor;
+        ctx.fillRect(barX, barY, barW * hpRatio, barH);
       }
 
       ctx.globalAlpha = prevAlpha;

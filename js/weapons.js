@@ -261,93 +261,167 @@ const Projectiles = {
     }
   },
 
-  /** Отрисовка снарядов (Шаг 2: пиксельные спрайты). */
+  /** Отрисовка снарядов — редизайн: градиенты, свечения, хвосты */
   render(ctx, pool, cam, viewW, viewH) {
     ctx.imageSmoothingEnabled = false;
     const minX = cam.x, minY = cam.y;
     const maxX = cam.x + viewW, maxY = cam.y + viewH;
     const items = pool.items;
     const PS = window.PROJECTILE_SPRITES;
+    const t = Date.now() * 0.001; // для анимаций
 
     for (let i = 0; i < items.length; i++) {
       const m = items[i];
       if (!m.active) continue;
-      if (m.x < minX - 30 || m.x > maxX + 30 || m.y < minY - 30 || m.y > maxY + 30) continue;
+      if (m.x < minX - 40 || m.x > maxX + 40 || m.y < minY - 40 || m.y > maxY + 40) continue;
 
-      // Попробовать отрисовать пиксельный спрайт
+      // Пиксельный спрайт (если есть) — с добавлением свечения
       const sprite = PS ? PS[m.kind] : null;
       if (sprite) {
-        // Шаг 3: масштаб снаряда кратный BASE_SCALE (8×BASE_SCALE)
         const drawSize = Math.max(m.radius * 2.5, 16);
         const half = drawSize / 2;
+        // Мягкое свечение для снарядов игрока
+        if (m.owner === 'player') {
+          ctx.shadowColor = 'rgba(200, 220, 255, 0.5)';
+          ctx.shadowBlur = 4;
+        }
         ctx.save();
         ctx.translate(m.x, m.y);
         if (m.angle) ctx.rotate(m.angle);
         ctx.drawImage(sprite, -half, -half, drawSize, drawSize);
         ctx.restore();
+        ctx.shadowBlur = 0;
         continue;
       }
 
-      // Фолбэк для снарядов без пиксельных спрайтов (boss, arrow_e, magebolt, breath)
+      // --- Улучшенные fallback-рендеры ---
       switch (m.kind) {
         case 'arrow_e': {
+          // Стрела врага: деревянное древко + металлический наконечник
           ctx.save(); ctx.translate(m.x, m.y); ctx.rotate(m.angle);
-          ctx.fillStyle = '#cfcfcf'; ctx.fillRect(-9, -2, 18, 4);
-          ctx.fillStyle = '#7d3a1f'; ctx.fillRect(-9, -1, 18, 1);
+          // Древко
+          ctx.fillStyle = '#8b5a2b'; ctx.fillRect(-8, -1, 14, 2);
+          // Наконечник (треугольник)
+          ctx.fillStyle = '#c0c8d0';
+          ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(5, -2); ctx.lineTo(5, 2); ctx.closePath(); ctx.fill();
+          // Оперение
+          ctx.fillStyle = '#aaa'; ctx.fillRect(-8, -2, 3, 1); ctx.fillRect(-8, 1, 3, 1);
           ctx.restore(); break;
         }
         case 'magebolt': {
-          ctx.shadowColor = 'rgba(180, 90, 255, 0.95)'; ctx.shadowBlur = 14;
-          ctx.fillStyle = '#7e57c2';
-          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2); ctx.fill();
-          ctx.shadowBlur = 0;
-          ctx.fillStyle = '#e0c8ff';
-          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius * 0.45, 0, Math.PI * 2); ctx.fill();
+          // Магическая сфера: фиолетовый градиент + пульсация
+          const pulse = 1 + Math.sin(t * 8 + i) * 0.12;
+          const r = m.radius * pulse;
+          const grad = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, r * 1.5);
+          grad.addColorStop(0, '#e0c8ff');
+          grad.addColorStop(0.4, '#9955dd');
+          grad.addColorStop(1, 'rgba(100,30,180,0)');
+          ctx.fillStyle = grad;
+          ctx.beginPath(); ctx.arc(m.x, m.y, r * 1.5, 0, Math.PI * 2); ctx.fill();
+          // Ядро
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath(); ctx.arc(m.x, m.y, r * 0.35, 0, Math.PI * 2); ctx.fill();
           break;
         }
         case 'breath': {
-          ctx.shadowColor = 'rgba(255, 160, 60, 0.7)'; ctx.shadowBlur = 10;
-          ctx.fillStyle = '#ff8a3a';
-          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2); ctx.fill();
-          ctx.shadowBlur = 0;
-          ctx.fillStyle = '#ffe28a';
-          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius * 0.55, 0, Math.PI * 2); ctx.fill();
+          // Дыхание дракона: оранжевый конус с частицами
+          const pulse = 1 + Math.sin(t * 10 + i * 2) * 0.1;
+          const r = m.radius * pulse;
+          const grad = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, r * 1.3);
+          grad.addColorStop(0, '#ffee88');
+          grad.addColorStop(0.5, '#ff8800');
+          grad.addColorStop(1, 'rgba(200,60,0,0)');
+          ctx.fillStyle = grad;
+          ctx.beginPath(); ctx.arc(m.x, m.y, r * 1.3, 0, Math.PI * 2); ctx.fill();
           break;
         }
         case 'boss_bolt': {
-          ctx.shadowColor = 'rgba(160, 0, 255, 0.95)'; ctx.shadowBlur = 16;
-          ctx.fillStyle = '#8b00ff';
-          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2); ctx.fill();
+          // Тёмный болт босса: чёрное ядро + фиолетовая аура
+          const pulse = 1 + Math.sin(t * 6 + i) * 0.1;
+          const r = m.radius * pulse;
+          ctx.shadowColor = 'rgba(140, 0, 255, 0.9)'; ctx.shadowBlur = 16;
+          ctx.fillStyle = '#4400aa';
+          ctx.beginPath(); ctx.arc(m.x, m.y, r, 0, Math.PI * 2); ctx.fill();
           ctx.shadowBlur = 0;
-          ctx.fillStyle = '#1a001a';
-          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius * 0.4, 0, Math.PI * 2); ctx.fill();
+          // Тёмное ядро
+          ctx.fillStyle = '#0a001a';
+          ctx.beginPath(); ctx.arc(m.x, m.y, r * 0.4, 0, Math.PI * 2); ctx.fill();
+          // Искры
+          ctx.fillStyle = '#cc66ff';
+          for (let s = 0; s < 3; s++) {
+            const a = t * 4 + s * 2.09;
+            ctx.fillRect(m.x + Math.cos(a) * r * 0.7, m.y + Math.sin(a) * r * 0.7, 2, 2);
+          }
           break;
         }
         case 'boss_web': {
-          ctx.shadowColor = 'rgba(220, 220, 240, 0.8)'; ctx.shadowBlur = 8;
-          ctx.fillStyle = '#e8e8f0';
+          // Паутина босса: белый клубок с нитями
+          ctx.globalAlpha = 0.85;
+          ctx.fillStyle = '#f0f0f8';
           ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2); ctx.fill();
-          ctx.shadowBlur = 0;
-          ctx.strokeStyle = 'rgba(180, 180, 200, 0.7)'; ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(m.x - m.radius * 0.6, m.y); ctx.lineTo(m.x + m.radius * 0.6, m.y);
-          ctx.moveTo(m.x, m.y - m.radius * 0.6); ctx.lineTo(m.x, m.y + m.radius * 0.6);
-          ctx.stroke(); break;
+          ctx.globalAlpha = 1;
+          // Нити
+          ctx.strokeStyle = 'rgba(200, 200, 220, 0.6)'; ctx.lineWidth = 0.8;
+          for (let s = 0; s < 4; s++) {
+            const a = s * Math.PI / 2 + t * 2;
+            ctx.beginPath();
+            ctx.moveTo(m.x, m.y);
+            ctx.lineTo(m.x + Math.cos(a) * m.radius * 1.2, m.y + Math.sin(a) * m.radius * 1.2);
+            ctx.stroke();
+          }
+          break;
         }
         case 'boss_fireball': {
-          const fbPulse = 1 + Math.sin(Date.now() * 0.01) * 0.15;
-          ctx.shadowColor = 'rgba(255, 80, 0, 0.95)'; ctx.shadowBlur = 22;
-          ctx.fillStyle = '#ff4500';
-          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius * fbPulse, 0, Math.PI * 2); ctx.fill();
-          ctx.shadowBlur = 0;
-          ctx.fillStyle = '#ffcc00';
-          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius * 0.5 * fbPulse, 0, Math.PI * 2); ctx.fill();
+          // Огненный шар босса: большой, с пульсацией и хвостом
+          const pulse = 1 + Math.sin(t * 8) * 0.15;
+          const r = m.radius * pulse;
+          // Хвост (затухающий след)
+          ctx.globalAlpha = 0.3;
+          const tailX = m.x - Math.cos(m.angle) * r * 2;
+          const tailY = m.y - Math.sin(m.angle) * r * 2;
+          const tGrad = ctx.createRadialGradient(tailX, tailY, 0, tailX, tailY, r);
+          tGrad.addColorStop(0, '#ff6600'); tGrad.addColorStop(1, 'rgba(200,60,0,0)');
+          ctx.fillStyle = tGrad;
+          ctx.beginPath(); ctx.arc(tailX, tailY, r, 0, Math.PI * 2); ctx.fill();
+          ctx.globalAlpha = 1;
+          // Основной шар
+          const fGrad = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, r);
+          fGrad.addColorStop(0, '#ffffff');
+          fGrad.addColorStop(0.3, '#ffcc00');
+          fGrad.addColorStop(0.7, '#ff4400');
+          fGrad.addColorStop(1, 'rgba(150,20,0,0)');
+          ctx.fillStyle = fGrad;
+          ctx.beginPath(); ctx.arc(m.x, m.y, r, 0, Math.PI * 2); ctx.fill();
+          break;
+        }
+        case 'fireball': {
+          // Огненный шар игрока: яркий, с градиентом
+          const pulse = 1 + Math.sin(t * 10 + i) * 0.1;
+          const r = m.radius * pulse;
+          const fGrad = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, r);
+          fGrad.addColorStop(0, '#fff8e0');
+          fGrad.addColorStop(0.4, '#ffaa00');
+          fGrad.addColorStop(1, 'rgba(200,60,0,0)');
+          ctx.fillStyle = fGrad;
+          ctx.beginPath(); ctx.arc(m.x, m.y, r, 0, Math.PI * 2); ctx.fill();
+          break;
+        }
+        case 'sling_stone': {
+          // Камень пращи: серый с тенью
+          ctx.fillStyle = '#6a6a5a';
+          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#999';
+          ctx.beginPath(); ctx.arc(m.x - 1, m.y - 1, m.radius * 0.5, 0, Math.PI * 2); ctx.fill();
           break;
         }
         default: {
-          // Универсальный фолбэк: цветной кружок
-          ctx.fillStyle = '#a259ff';
-          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2); ctx.fill();
+          // Универсальный: градиентный кружок с свечением
+          const grad = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, m.radius);
+          grad.addColorStop(0, '#ffffff');
+          grad.addColorStop(0.5, '#a0b0ff');
+          grad.addColorStop(1, 'rgba(100,120,255,0)');
+          ctx.fillStyle = grad;
+          ctx.beginPath(); ctx.arc(m.x, m.y, m.radius * 1.2, 0, Math.PI * 2); ctx.fill();
           break;
         }
       }
