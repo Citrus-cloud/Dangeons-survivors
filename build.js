@@ -78,24 +78,15 @@ function build() {
 
   let bundle = parts.join('\n');
 
-  // Production: минификация (удаление однострочных комментариев, пустых строк, лишних пробелов)
-  const isProd = !process.argv.includes('--watch');
-  if (isProd) {
-    bundle = bundle
-      // Удаляем строки-комментарии (// ...) но НЕ URL-ы (http://) и НЕ строковые литералы
-      .replace(/^[ \t]*\/\/(?!\!).*$/gm, '')
-      // Удаляем блочные комментарии /* ... */
-      .replace(/\/\*[\s\S]*?\*\//g, '')
-      // Удаляем пустые строки (больше 1 подряд)
-      .replace(/\n{3,}/g, '\n\n')
-      // Удаляем trailing whitespace
-      .replace(/[ \t]+$/gm, '');
-  }
+  // Лёгкая оптимизация: убираем пустые строки (безопасно, не трогает строковые литералы)
+  bundle = bundle
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]+$/gm, '');
 
   fs.writeFileSync(OUT_FILE, bundle, 'utf-8');
 
   const sizeKB = (Buffer.byteLength(bundle, 'utf-8') / 1024).toFixed(1);
-  console.log(`✓ Bundle: dist/bundle.js (${sizeKB} KB, ${FILES.length} files${isProd ? ', minified' : ''})`);
+  console.log(`✓ Bundle: dist/bundle.js (${sizeKB} KB, ${FILES.length} files)`);
 }
 
 // Watch mode
