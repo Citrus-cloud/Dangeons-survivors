@@ -735,13 +735,10 @@ const Enemies = {
     if (window.Bosses && Bosses.isAlive()) {
       count = Math.max(1, Math.round(count * (1 - BOSS_CONFIG.WAVE_REDUCTION)));
     }
-    // Шаг 19: формула количества врагов из спеки
-    const waveCount = 3 + waveIndex * 2 + Math.floor(waveIndex / 5) * 3;
-    count = Math.max(count, waveCount);
-    // Снижение при живом боссе (повторно, если waveCount больше)
-    if (window.Bosses && Bosses.isAlive()) {
-      count = Math.max(1, Math.round(count * (1 - BOSS_CONFIG.WAVE_REDUCTION)));
-    }
+    // Ограничиваем максимальное количество врагов за волну
+    // (предотвращает переполнение пула и лаги)
+    const maxPerWave = Math.min(count, 20);
+    count = maxPerWave;
 
     let ids = this._availableTierIds(waveIndex);
     // Шаг 13: фильтрация по биому
@@ -4528,11 +4525,25 @@ Behaviors.bone_hydra_enemy = function(e, player, dt) {
 Behaviors.dream_weaver = function(e, player, dt) {
   _moveTowards(e, player.x, player.y, dt, +1);
   _tryContactDamage(e, player, dt);
+  // Иллюзии не создают новые иллюзии — предотвращаем бесконечное размножение
+  if (e._isIllusion) return;
   e.specialCooldown -= dt;
   if (e.specialCooldown <= 0) {
     e.specialCooldown = e.cfg.illusionCooldown || 6.0;
     const count = e.cfg.illusionCount || 2;
-    for (let i = 0; i < count; i++) {
+    // Ограничиваем общее число иллюзий: максимум 4 одновременно
+    let existingIllusions = 0;
+    if (window.Game && Game.enemies) {
+      const items = Game.enemies.items;
+      for (let k = 0; k < items.length; k++) {
+        if (items[k].active && items[k]._isIllusion && items[k].type === 'dream_weaver') {
+          existingIllusions++;
+        }
+      }
+    }
+    if (existingIllusions >= 4) return;
+    const toSpawn = Math.min(count, 4 - existingIllusions);
+    for (let i = 0; i < toSpawn; i++) {
       if (window.Enemies && window.Game && Game.enemies) {
         const ang = (Math.PI * 2 / count) * i + Math.random() * 0.5;
         const sx = e.x + Math.cos(ang) * 40;
@@ -4542,6 +4553,8 @@ Behaviors.dream_weaver = function(e, player, dt) {
           illusion.hp = e.cfg.illusionHp || 1;
           illusion.maxHp = illusion.hp;
           illusion._isIllusion = true;
+          // Иллюзия не даёт опыт и не дропает лут
+          illusion._noXpDrop = true;
         }
       }
     }
