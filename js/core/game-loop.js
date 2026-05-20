@@ -122,8 +122,8 @@ const Game = {
     // Экспорт глобально для использования в sprites.js и других модулях
     window.BASE_SCALE = this.baseScale;
 
-    // Камера: приближенный зум (увеличен на 30% для лучшей видимости персонажа)
-    this.cameraScale = 0.845;
+    // Камера: приближенный зум (30% ближе к игроку для лучшей видимости персонажа)
+    this.cameraScale = 0.65; // 1 / 1.54 — показываем ~154% области (вместо 200%)
     this.cameraViewW = w / this.cameraScale;
     this.cameraViewH = h / this.cameraScale;
     this.canvas.width = Math.floor(w * this.dpr);

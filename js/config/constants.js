@@ -10,7 +10,7 @@ const CONFIG = {
 
   PLAYER: {
     SIZE: 24,               // Уменьшен в 2 раза (было 48)
-    SPEED: 108,             // px/sec (снижено на 40%, было 180)
+    SPEED: 180,             // px/sec
     MAX_HP: 100,
     PICKUP_RADIUS: 40,
     TRAIL_INTERVAL: 0.05,
