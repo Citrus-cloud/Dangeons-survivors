@@ -62,7 +62,7 @@ const CONFIG = {
 
   XP: {
     BASE: 100,
-    GROWTH: 1.35,
+    GROWTH: 1.20,           // +20% к предыдущему уровню (100 → 120 → 144 → ...)
     MAGNET_SPEED: 360,
   },
 

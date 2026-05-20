@@ -688,12 +688,14 @@ const Game = {
     }
 
     // Левелап (only trigger if still in playing state)
-    // Bug fix: cap excess XP to prevent instant multi-level chains
+    // Формула прогресса: каждый следующий уровень = предыдущий + 20%
+    // Уровень 1→2: 100, уровень 2→3: 120, уровень 3→4: 144 и т.д.
     if (this.state === 'playing' && this.player.xp >= this.player.xpNext) {
       this.player.xp -= this.player.xpNext;
+      // Следующий уровень = текущий порог × 1.20 (прирост 20%)
+      const nextXpNext = Math.floor(this.player.xpNext * 1.20);
       // Ограничиваем остаток XP — не более 80% от следующего уровня
       // Это предотвращает цепочку мгновенных повышений уровня
-      const nextXpNext = Math.floor(CONFIG.XP.BASE * Math.pow(CONFIG.XP.GROWTH, this.player.level));
       this.player.xp = Math.min(this.player.xp, Math.floor(nextXpNext * 0.8));
       this.player.level += 1;
       this.player.xpNext = nextXpNext;
@@ -1532,15 +1534,7 @@ const Game = {
     // Шаг 6: увеличение выпадения кристаллов на 100% (удвоение шанса, макс 1.0)
     const finalDropChance = Math.min(1.0, dropChance * 2);
     if (Math.random() < finalDropChance) {
-      let xpMin = (cfg && cfg.xp) ? cfg.xp[0] : CONFIG.ENEMY.XP_MIN;
-      let xpMax = (cfg && cfg.xp) ? cfg.xp[1] : CONFIG.ENEMY.XP_MAX;
-      let value = Utils.randInt(xpMin, xpMax);
-      // Шаг 8: удвоение опыта
-      if (this.player && this.player.doubleXpChance > 0 &&
-          Math.random() < this.player.doubleXpChance) {
-        value *= 2;
-      }
-      Loot.dropXP(this.xpDrops, e.x, e.y, value);
+      Loot.dropXP(this.xpDrops, e.x, e.y, 0, this.player);
     }
 
     // Шаг 15: выпадение золота
