@@ -138,7 +138,7 @@ const UI = {
       // На случай форс-мажора — кнопка "Продолжить"
       const el = document.createElement('div');
       el.className = 'card basic';
-      el.innerHTML = '<div class="card-icon">★</div><div class="card-title">Продолжить</div><div class="card-desc">Все улучшения максимальны.</div>';
+      el.innerHTML = '<div class="card-icon">★</div><div class="card-title">' + t('levelup_continue') + '</div><div class="card-desc">' + t('levelup_all_max') + '</div>';
       el.addEventListener('click', () => onPick(null));
       this.cardsEl.appendChild(el);
     } else {
@@ -153,7 +153,7 @@ const UI = {
           if (isUpgrade) {
             levelHtml = '<div class="card-level-indicator">▲</div>';
           } else {
-            levelHtml = '<div class="card-level-indicator card-new">НОВОЕ</div>';
+            levelHtml = '<div class="card-level-indicator card-new">' + t('levelup_new') + '</div>';
           }
         }
         el.innerHTML =
@@ -191,12 +191,12 @@ const UI = {
     // HP
     const hpPct = Utils.clamp(p.hp / p.maxHp, 0, 1);
     this.hpFill.style.width = (hpPct * 100) + '%';
-    this.hpLabel.textContent = `HP: ${Math.ceil(p.hp)}/${Math.ceil(p.maxHp)}`;
+    this.hpLabel.textContent = t('hud_hp', Math.ceil(p.hp), Math.ceil(p.maxHp));
 
     // XP
     const xpPct = Utils.clamp(p.xp / p.xpNext, 0, 1);
     this.xpFill.style.width = (xpPct * 100) + '%';
-    this.xpLabel.textContent = `Ур. ${p.level || 1}`;
+    this.xpLabel.textContent = t('hud_level', p.level || 1);
 
     // Magic Missile cd (встроенная способность) — только если не отключена
     if (p._noBuiltInMissile) {
@@ -218,7 +218,7 @@ const UI = {
     }
 
     // Счётчики
-    this.killCount.textContent = `Убийств: ${game.kills}`;
+    this.killCount.textContent = t('hud_kills', game.kills);
     this.runTimer.textContent  = Utils.formatTime(game.runTime);
 
     // Шаг 15: золото в HUD
@@ -227,23 +227,23 @@ const UI = {
     this._updateCampaignObjectiveHUD(game);
     if (game.state === 'playing' || game.state === 'paused' || game.state === 'levelup') {
       const next = Math.max(0, Math.ceil(game.waveTimer));
-      this.waveInfo.textContent = `Волна ${game.waveIndex + 1} через ${next}с`;
+      this.waveInfo.textContent = t('hud_wave', game.waveIndex + 1, next);
       // Шаг 6: информация о боссе (Шаг 14: поддержка обоих боссов)
       if (window.Bosses && Bosses.isAlive()) {
-        this.waveInfo.textContent = `⚔ БОСС ⚔`;
+        this.waveInfo.textContent = t('hud_boss');
       } else if (window.Bosses && !Bosses.current && Bosses.bossIndex < BOSS_CONFIG.SPAWN_TIMES.length) {
         const bossIn = Math.max(0, Math.ceil(Bosses.nextSpawnTime - game.runTime));
         if (bossIn <= 30) {
-          this.waveInfo.textContent += ` | Босс: ${bossIn}с`;
+          this.waveInfo.textContent += ` | ${t('hud_boss_in', bossIn)}`;
         }
       }
       // Шаг 13: информация о портале
       if (game.portalSpawned && window.GameMap && GameMap.portal && GameMap.portal.active) {
-        this.waveInfo.textContent = `⟐ ПОРТАЛ ОТКРЫТ ⟐`;
+        this.waveInfo.textContent = t('hud_portal_open');
       } else if (window.PORTAL_CONFIG && game.mapTime != null) {
         const portalIn = Math.max(0, Math.ceil(PORTAL_CONFIG.APPEAR_TIME - game.mapTime));
         if (portalIn <= 60 && portalIn > 0) {
-          this.waveInfo.textContent += ` | Портал: ${portalIn}с`;
+          this.waveInfo.textContent += ` | ${t('hud_portal_in', portalIn)}`;
         }
       }
     }
@@ -366,8 +366,8 @@ const UI = {
   showD20Roll(finalRoll, onDone) {
     this.hideAll();
     this.chestPanelEl.innerHTML =
-      '<div class="d20-title">СУНДУК</div>' +
-      '<div class="d20-sub">Бросок d20…</div>' +
+      '<div class="d20-title">' + t('chest_title') + '</div>' +
+      '<div class="d20-sub">' + t('chest_rolling') + '</div>' +
       '<div id="d20Die" class="d20-die">?</div>';
     this.chestOverlay.classList.add('active');
     const dieEl = this.chestPanelEl.querySelector('#d20Die');
@@ -407,10 +407,10 @@ const UI = {
   showChestReward(roll, reward, onAccept) {
     this.hideAll();
     this.chestPanelEl.innerHTML =
-      `<div class="d20-title">${reward.title || 'Награда'}</div>` +
-      `<div class="d20-sub">Бросок: <span class="d20-mini ${this._rollClass(roll)}">${roll}</span></div>` +
+      `<div class="d20-title">${reward.title || t('chest_reward_title')}</div>` +
+      `<div class="d20-sub">${t('chest_roll_label')} <span class="d20-mini ${this._rollClass(roll)}">${roll}</span></div>` +
       `<div class="reward-desc">${reward.desc || ''}</div>` +
-      '<button id="chestOk" class="btn">Забрать</button>';
+      '<button id="chestOk" class="btn">' + t('chest_accept') + '</button>';
     this.chestOverlay.classList.add('active');
     this.chestPanelEl.querySelector('#chestOk').addEventListener('click', () => {
       this.hideAll();
@@ -425,15 +425,15 @@ const UI = {
   showChestPick(roll, choices, onPick) {
     this.hideAll();
     let html =
-      '<div class="d20-title">УЛУЧШЕНИЕ</div>' +
-      `<div class="d20-sub">Бросок: <span class="d20-mini ${this._rollClass(roll)}">${roll}</span> — выберите карту</div>` +
+      '<div class="d20-title">' + t('chest_upgrade_title') + '</div>' +
+      `<div class="d20-sub">${t('chest_roll_label')} <span class="d20-mini ${this._rollClass(roll)}">${roll}</span> ${t('chest_pick_sub')}</div>` +
       '<div id="chestCards" class="cards-row"></div>';
     this.chestPanelEl.innerHTML = html;
     const row = this.chestPanelEl.querySelector('#chestCards');
     if (!choices || choices.length === 0) {
       const el = document.createElement('div');
       el.className = 'card basic';
-      el.innerHTML = '<div class="card-icon">★</div><div class="card-title">Продолжить</div><div class="card-desc">Нет доступных улучшений.</div>';
+      el.innerHTML = '<div class="card-icon">★</div><div class="card-title">' + t('levelup_continue') + '</div><div class="card-desc">' + t('chest_no_upgrades') + '</div>';
       el.addEventListener('click', () => { this.hideAll(); onPick && onPick(null); });
       row.appendChild(el);
     } else {
@@ -474,8 +474,8 @@ const UI = {
     this.hideAll();
     const w = pair.weapon, a = pair.ability, r = pair.recipe;
     this.chestPanelEl.innerHTML =
-      '<div class="d20-title">ЭВОЛЮЦИЯ!</div>' +
-      `<div class="d20-sub">Бросок: <span class="d20-mini crit">${roll}</span></div>` +
+      '<div class="d20-title">' + t('chest_evo_title') + '</div>' +
+      `<div class="d20-sub">${t('chest_roll_label')} <span class="d20-mini crit">${roll}</span></div>` +
       '<div class="evo-row">' +
         `<div class="evo-card"><div class="evo-icon" data-sprite-id="${w.id}">${w.icon}</div><div class="evo-name">${w.name}</div><div class="evo-lvl">ур. ${Utils.roman(w.level)}</div></div>` +
         '<div class="evo-plus">+</div>' +
@@ -484,8 +484,8 @@ const UI = {
         `<div class="evo-card evo-result"><div class="evo-icon" data-sprite-id="${r.resultId || ''}">${r.resultIcon}</div><div class="evo-name">${r.resultName}</div><div class="evo-desc">${r.desc}</div></div>` +
       '</div>' +
       '<div class="evo-buttons">' +
-        '<button id="evoAccept" class="btn">Принять</button>' +
-        '<button id="evoDecline" class="btn btn-secondary">Отказаться</button>' +
+        '<button id="evoAccept" class="btn">' + t('chest_evo_accept') + '</button>' +
+        '<button id="evoDecline" class="btn btn-secondary">' + t('chest_evo_decline') + '</button>' +
       '</div>';
     // Применяем спрайты к иконкам эволюции
     const evoIcons = this.chestPanelEl.querySelectorAll('.evo-icon[data-sprite-id]');
@@ -525,8 +525,8 @@ const UI = {
   showEvolutionChoice(roll, readyList, onChoice) {
     this.hideAll();
     let html =
-      '<div class="d20-title">ЭВОЛЮЦИЯ!</div>' +
-      `<div class="d20-sub">Бросок: <span class="d20-mini crit">${roll}</span> — выберите эволюцию</div>` +
+      '<div class="d20-title">' + t('chest_evo_title') + '</div>' +
+      `<div class="d20-sub">${t('chest_roll_label')} <span class="d20-mini crit">${roll}</span> ${t('chest_evo_choose')}</div>` +
       '<div id="evoChoiceList" class="evo-choice-list">';
     for (let i = 0; i < readyList.length; i++) {
       const p = readyList[i];
@@ -543,7 +543,7 @@ const UI = {
     }
     html += '</div>' +
       '<div class="evo-buttons">' +
-        '<button id="evoDeclineAll" class="btn btn-secondary">Отказаться</button>' +
+        '<button id="evoDeclineAll" class="btn btn-secondary">' + t('chest_evo_decline') + '</button>' +
       '</div>';
     this.chestPanelEl.innerHTML = html;
     this.chestOverlay.classList.add('active');
@@ -574,8 +574,8 @@ const UI = {
   showSuperEvolutionDialog(roll, superReadyList, onChoice) {
     this.hideAll();
     let html =
-      '<div class="d20-title super-evo-title">⭐ СУПЕР-ЭВОЛЮЦИЯ! ⭐</div>' +
-      `<div class="d20-sub">Бросок: <span class="d20-mini crit">${roll}</span></div>` +
+      '<div class="d20-title super-evo-title">' + t('chest_super_evo_title') + '</div>' +
+      `<div class="d20-sub">${t('chest_roll_label')} <span class="d20-mini crit">${roll}</span></div>` +
       '<div id="superEvoList" class="evo-choice-list super-evo-list">';
     for (let i = 0; i < superReadyList.length; i++) {
       const s = superReadyList[i];
@@ -592,7 +592,7 @@ const UI = {
     }
     html += '</div>' +
       '<div class="evo-buttons">' +
-        '<button id="superEvoDecline" class="btn btn-secondary">Отказаться</button>' +
+        '<button id="superEvoDecline" class="btn btn-secondary">' + t('chest_evo_decline') + '</button>' +
       '</div>';
     this.chestPanelEl.innerHTML = html;
     this.chestOverlay.classList.add('active');
@@ -684,26 +684,26 @@ const UI = {
     ov.className = 'overlay camp-overlay';
     ov.innerHTML = `
       <div class="camp-bg">
-        <h1 class="camp-title">DUNGEON SURVIVORS: D20</h1>
-        <div class="camp-tavern-name">Таверна «Последний бросок»</div>
+        <h1 class="camp-title">${t('camp_title')}</h1>
+        <div class="camp-tavern-name">${t('camp_tavern')}</div>
         <div class="camp-resources">
           <div class="camp-gold"><span class="gold-icon">🪙</span> <span id="campGoldVal">0</span></div>
-          <div class="camp-rep"><span class="rep-icon">⚜</span> <span id="campRepVal">0</span> <span id="campGuildLvl">(Ур. 0)</span></div>
+          <div class="camp-rep"><span class="rep-icon">⚜</span> <span id="campRepVal">0</span> <span id="campGuildLvl">(${t('level_short')} 0)</span></div>
         </div>
         <div class="camp-buttons">
-          <button id="campStartBtn" class="btn camp-btn camp-btn-main">⚔ В ПОДЗЕМЕЛЬЕ</button>
-          <button id="campCampaignBtn" class="btn camp-btn camp-btn-campaign">📜 СЮЖЕТ</button>
-          <button id="campHeroBtn" class="btn camp-btn">🛡 Выбор героя</button>
-          <button id="campTalentsBtn" class="btn camp-btn">🌟 Таланты</button>
-          <button id="campGuildBtn" class="btn camp-btn">🛡 Гильдия</button>
-          <button id="campBestiaryBtn" class="btn camp-btn">📕 Бестиарий</button>
-          <button id="campCodexBtn" class="btn camp-btn">📖 Книга</button>
-          <button id="campSettingsBtn" class="btn camp-btn">⚙ Настройки</button>
+          <button id="campStartBtn" class="btn camp-btn camp-btn-main">${t('camp_start')}</button>
+          <button id="campCampaignBtn" class="btn camp-btn camp-btn-campaign">${t('camp_campaign')}</button>
+          <button id="campHeroBtn" class="btn camp-btn">${t('camp_hero')}</button>
+          <button id="campTalentsBtn" class="btn camp-btn">${t('camp_talents')}</button>
+          <button id="campGuildBtn" class="btn camp-btn">${t('camp_guild')}</button>
+          <button id="campBestiaryBtn" class="btn camp-btn">${t('camp_bestiary')}</button>
+          <button id="campCodexBtn" class="btn camp-btn">${t('camp_codex')}</button>
+          <button id="campSettingsBtn" class="btn camp-btn">${t('camp_settings')}</button>
         </div>
         <div class="camp-stats">
-          <div>Забегов: <span id="campTotalRuns">0</span></div>
-          <div>Убийств: <span id="campTotalKills">0</span></div>
-          <div>Лучшее: <span id="campBestTime">00:00</span></div>
+          <div>${t('camp_runs', '<span id="campTotalRuns">0</span>')}</div>
+          <div>${t('camp_total_kills', '<span id="campTotalKills">0</span>')}</div>
+          <div>${t('camp_best_time', '<span id="campBestTime">00:00</span>')}</div>
         </div>
       </div>
     `;
@@ -762,11 +762,11 @@ const UI = {
     if (campBtn && window.Campaign) {
       const progress = Campaign.loadProgress();
       if (progress.completed) {
-        campBtn.textContent = '📜 НОВАЯ ИГРА+';
+        campBtn.textContent = t('camp_campaign_plus');
       } else if (progress.currentMap > 1) {
-        campBtn.textContent = `📜 СЮЖЕТ (карта ${progress.currentMap}/5)`;
+        campBtn.textContent = t('camp_campaign_map', progress.currentMap);
       } else {
-        campBtn.textContent = '📜 СЮЖЕТ';
+        campBtn.textContent = t('camp_campaign');
       }
     }
   },
@@ -844,11 +844,11 @@ const UI = {
 
     ov.innerHTML = `
       <div class="camp-bg map-select-bg">
-        <h1 class="camp-title map-select-title">ВЫБЕРИТЕ КАРТУ</h1>
+        <h1 class="camp-title map-select-title">${t('map_select_title')}</h1>
         <div class="map-grid">${cardsHTML}</div>
         <div class="map-select-buttons">
-          <button id="mapRandomBtn" class="btn camp-btn">🎲 Случайная карта</button>
-          <button id="mapBackBtn" class="btn camp-btn">↩ Назад</button>
+          <button id="mapRandomBtn" class="btn camp-btn">${t('map_random')}</button>
+          <button id="mapBackBtn" class="btn camp-btn">${t('map_back')}</button>
         </div>
       </div>
     `;
@@ -926,12 +926,12 @@ const UI = {
     ov.className = 'overlay talent-overlay';
     ov.innerHTML = `
       <div class="talent-panel">
-        <h1 class="talent-title">⚜ ТАЛАНТЫ ⚜</h1>
+        <h1 class="talent-title">${t('talents_title')}</h1>
         <div class="talent-gold"><span class="gold-icon">🪙</span> <span id="talentGoldVal">0</span></div>
         <div id="talentGrid" class="talent-grid"></div>
         <div class="talent-footer">
-          <button id="talentResetBtn" class="btn btn-secondary">Сбросить (80%)</button>
-          <button id="talentBackBtn" class="btn">↩ Назад</button>
+          <button id="talentResetBtn" class="btn btn-secondary">${t('talents_reset')}</button>
+          <button id="talentBackBtn" class="btn">${t('talents_back')}</button>
         </div>
       </div>
     `;
@@ -944,7 +944,7 @@ const UI = {
     });
     ov.querySelector('#talentResetBtn').addEventListener('click', () => {
       if (!window.MetaProgress) return;
-      if (confirm('Сбросить все таланты? 80% золота будет возвращено.')) {
+      if (confirm(t('talents_reset_confirm'))) {
         MetaProgress.resetTalents();
         this._updateTalentData();
       }
@@ -983,7 +983,7 @@ const UI = {
         <div class="talent-card-stars">${starsHtml}</div>
         <div class="talent-card-effect">${lvl > 0 ? def.effects[lvl - 1] : def.description}</div>
         <button class="btn talent-buy-btn ${canBuy ? '' : 'btn-disabled'}">
-          ${maxed ? 'МАКС' : '🪙 ' + cost}
+          ${maxed ? t('talents_max') : '🪙 ' + cost}
         </button>
       `;
       container.appendChild(card);
@@ -1016,7 +1016,7 @@ const UI = {
       <div class="guild-panel-v2">
         <div class="guild-header-v2">
           <div class="guild-emblem">⚜</div>
-          <h1 class="guild-title-v2">Гильдия искателей приключений</h1>
+          <h1 class="guild-title-v2">${t('guild_title')}</h1>
         </div>
 
         <div class="guild-rank-section">
@@ -1031,15 +1031,15 @@ const UI = {
         </div>
 
         <div class="guild-tabs">
-          <button class="guild-tab active" data-tab="ranks">Ранги</button>
-          <button class="guild-tab" data-tab="stats">Статистика</button>
-          <button class="guild-tab" data-tab="quests">Задания</button>
+          <button class="guild-tab active" data-tab="ranks">${t('guild_tab_ranks')}</button>
+          <button class="guild-tab" data-tab="stats">${t('guild_tab_stats')}</button>
+          <button class="guild-tab" data-tab="quests">${t('guild_tab_quests')}</button>
         </div>
 
         <div class="guild-content" id="guildContent"></div>
 
         <div class="guild-footer-v2">
-          <button id="guildBackBtnV2" class="btn">↩ Назад</button>
+          <button id="guildBackBtnV2" class="btn">${t('guild_back')}</button>
         </div>
       </div>
     `;
@@ -1594,27 +1594,34 @@ const UI = {
     ov.className = 'overlay settings-overlay';
     ov.innerHTML = `
       <div class="settings-panel">
-        <h1 class="settings-title">⚙ НАСТРОЙКИ</h1>
+        <h1 class="settings-title">${t('settings_title')}</h1>
         <div class="settings-section">
           <div class="settings-row">
-            <span class="settings-label">Эффекты</span>
+            <span class="settings-label">${t('settings_sfx')}</span>
             <input type="range" id="sfxVolumeSlider" class="settings-slider" min="0" max="100" value="70">
             <span id="sfxVolumeVal" class="settings-value">70%</span>
           </div>
           <div class="settings-row">
-            <span class="settings-label">Музыка</span>
+            <span class="settings-label">${t('settings_music')}</span>
             <input type="range" id="musicVolumeSlider" class="settings-slider" min="0" max="100" value="25">
             <span id="musicVolumeVal" class="settings-value">25%</span>
           </div>
           <div class="settings-row settings-row-btn">
-            <button id="muteToggleBtn" class="btn settings-mute-btn">🔊 Звук ВКЛ</button>
+            <button id="muteToggleBtn" class="btn settings-mute-btn">🔊</button>
+          </div>
+          <div class="settings-row settings-row-lang">
+            <span class="settings-label">${t('settings_lang')}</span>
+            <div class="lang-switcher">
+              <button id="langRuBtn" class="btn lang-btn ${getLang() === 'ru' ? 'lang-btn-active' : ''}">RU</button>
+              <button id="langEnBtn" class="btn lang-btn ${getLang() === 'en' ? 'lang-btn-active' : ''}">EN</button>
+            </div>
           </div>
           <div class="settings-row settings-row-btn">
-            <button id="resetProgressBtn" class="btn settings-reset-btn">🗑 Сбросить прогресс</button>
+            <button id="resetProgressBtn" class="btn settings-reset-btn">🗑 ${t('settings_reset')}</button>
           </div>
         </div>
         <div class="settings-footer">
-          <button id="settingsBackBtn" class="btn">↩ Назад</button>
+          <button id="settingsBackBtn" class="btn">${t('settings_back')}</button>
         </div>
       </div>
     `;
@@ -1647,9 +1654,25 @@ const UI = {
       }
     });
 
+    // Переключатель языка
+    ov.querySelector('#langRuBtn').addEventListener('click', () => {
+      setLang('ru');
+      // Перестроить настройки для обновления текстов
+      this._settingsOverlay.remove();
+      this._settingsOverlay = null;
+      this.showSettings();
+    });
+    ov.querySelector('#langEnBtn').addEventListener('click', () => {
+      setLang('en');
+      // Перестроить настройки для обновления текстов
+      this._settingsOverlay.remove();
+      this._settingsOverlay = null;
+      this.showSettings();
+    });
+
     // Reset progress
     ov.querySelector('#resetProgressBtn').addEventListener('click', () => {
-      if (confirm('Вы уверены? Весь прогресс будет потерян!')) {
+      if (confirm(t('settings_reset_confirm'))) {
         localStorage.clear();
         if (window.MetaProgress) MetaProgress.load();
         location.reload();
@@ -1686,10 +1709,10 @@ const UI = {
     if (!this._settingsOverlay || !window.GameAudio) return;
     const btn = this._settingsOverlay.querySelector('#muteToggleBtn');
     if (GameAudio.muted) {
-      btn.textContent = '🔇 Звук ВЫКЛ';
+      btn.textContent = '🔇';
       btn.classList.add('muted');
     } else {
-      btn.textContent = '🔊 Звук ВКЛ';
+      btn.textContent = '🔊';
       btn.classList.remove('muted');
     }
   },

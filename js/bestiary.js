@@ -207,25 +207,25 @@ const BESTIARY_ABILITIES = {
 
 /** Категория скорости для отображения в бестиарии. */
 function _getSpeedCategory(speed) {
-  if (speed <= 0) return 'Неподвижный';
-  if (speed <= 35) return 'Очень медленная';
-  if (speed <= 55) return 'Медленная';
-  if (speed <= 80) return 'Средняя';
-  if (speed <= 110) return 'Быстрая';
-  return 'Очень быстрая';
+  if (speed <= 0) return t('bestiary_speed_immobile');
+  if (speed <= 35) return t('bestiary_speed_very_slow');
+  if (speed <= 55) return t('bestiary_speed_slow');
+  if (speed <= 80) return t('bestiary_speed_medium');
+  if (speed <= 110) return t('bestiary_speed_fast');
+  return t('bestiary_speed_very_fast');
 }
 
 /** Название тира для отображения. */
 function _getTierLabel(tier) {
   switch (tier) {
-    case 1: return 'Обычный';
-    case 2: return 'Необычный';
-    case 3: return 'Опасный';
-    case 4: return 'Серьёзный';
-    case 5: return 'Редкий';
-    case 6: return 'Легендарный';
-    case 0: return 'Особый';
-    default: return 'Неизвестный';
+    case 1: return t('bestiary_tier_common');
+    case 2: return t('bestiary_tier_uncommon');
+    case 3: return t('bestiary_tier_dangerous');
+    case 4: return t('bestiary_tier_serious');
+    case 5: return t('bestiary_tier_rare');
+    case 6: return t('bestiary_tier_legendary');
+    case 0: return t('bestiary_tier_special');
+    default: return t('bestiary_tier_unknown');
   }
 }
 
@@ -289,11 +289,19 @@ const Bestiary = {
 
   /** Получить описание врага. */
   getDescription(enemyId) {
-    return BESTIARY_DESCRIPTIONS[enemyId] || 'Таинственное существо из глубин подземелья.';
+    // Проверяем локализованный ключ, затем русский hardcoded
+    const locKey = 'bestiary_desc_' + enemyId;
+    const localized = LOCALE[getLang()] && LOCALE[getLang()][locKey];
+    if (localized) return localized;
+    return BESTIARY_DESCRIPTIONS[enemyId] || t('bestiary_unknown_creature');
   },
 
   /** Получить способности врага. */
   getAbilities(enemyId) {
+    // Проверяем локализованный ключ
+    const locKey = 'bestiary_ability_' + enemyId;
+    const localized = LOCALE[getLang()] && LOCALE[getLang()][locKey];
+    if (localized) return localized;
     return BESTIARY_ABILITIES[enemyId] || null;
   },
 

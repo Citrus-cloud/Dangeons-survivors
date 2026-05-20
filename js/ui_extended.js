@@ -26,7 +26,7 @@ const UIExtended = {
     ov.className = 'overlay camp-overlay';
     ov.innerHTML = `
       <div class="camp-bg">
-        <h1 class="camp-title" style="font-size:1.4em;">ВЫБОР ГЕРОЯ</h1>
+        <h1 class="camp-title" style="font-size:1.4em;">${t('class_select_title')}</h1>
         <div id="classGrid" class="class-grid"></div>
         <button id="classBackBtn" class="btn" style="margin-top:16px;">↩ Назад</button>
       </div>
@@ -93,9 +93,9 @@ const UIExtended = {
     ov.innerHTML = `
       <div class="bestiary-layout">
         <div class="bestiary-header">
-          <h1 class="bestiary-title">📕 БЕСТИАРИЙ</h1>
+          <h1 class="bestiary-title">${t('bestiary_title')}</h1>
           <div id="bestiaryStats" class="bestiary-stats-header"></div>
-          <button id="bestiaryBackBtn" class="btn bestiary-back-btn">↩ Назад</button>
+          <button id="bestiaryBackBtn" class="btn bestiary-back-btn">${t('bestiary_back')}</button>
         </div>
         <div class="bestiary-body">
           <div class="bestiary-left" id="bestiaryLeft">
@@ -105,7 +105,7 @@ const UIExtended = {
             <div id="bestiaryDetail" class="bestiary-detail">
               <div class="bestiary-detail-empty">
                 <div class="bestiary-detail-empty-icon">🔍</div>
-                <div class="bestiary-detail-empty-text">Выберите врага для просмотра</div>
+                <div class="bestiary-detail-empty-text">${t('bestiary_select_enemy')}</div>
               </div>
             </div>
           </div>
@@ -124,7 +124,7 @@ const UIExtended = {
   _updateBestiaryGrid() {
     const stats = Bestiary.getStats();
     this._bestiaryOverlay.querySelector('#bestiaryStats').textContent =
-      `Открыто: ${stats.unlocked} / ${stats.total}`;
+      t('bestiary_unlocked', stats.unlocked, stats.total);
     const grid = this._bestiaryOverlay.querySelector('#bestiaryGrid');
     grid.innerHTML = '';
     const enemies = Bestiary.getAllEnemies();
@@ -194,7 +194,7 @@ const UIExtended = {
       detail.innerHTML = `
         <div class="bestiary-detail-empty">
           <div class="bestiary-detail-empty-icon">🔍</div>
-          <div class="bestiary-detail-empty-text">Выберите врага для просмотра</div>
+          <div class="bestiary-detail-empty-text">${t('bestiary_select_enemy')}</div>
         </div>`;
       return;
     }
@@ -288,14 +288,14 @@ const UIExtended = {
     ov.className = 'overlay camp-overlay';
     ov.innerHTML = `
       <div class="camp-bg" style="max-height:95vh;overflow-y:auto;">
-        <h1 class="camp-title" style="font-size:1.3em;">📖 КНИГА</h1>
+        <h1 class="camp-title" style="font-size:1.3em;">${t('codex_title')}</h1>
         <div class="codex-tabs">
-          <button class="codex-tab active" data-tab="weapons">Оружие</button>
-          <button class="codex-tab" data-tab="abilities">Способности</button>
-          <button class="codex-tab" data-tab="evolutions">Эволюции</button>
+          <button class="codex-tab active" data-tab="weapons">${t('codex_tab_weapons')}</button>
+          <button class="codex-tab" data-tab="abilities">${t('codex_tab_abilities')}</button>
+          <button class="codex-tab" data-tab="evolutions">${t('codex_tab_evolutions')}</button>
         </div>
         <div id="codexContent" class="codex-content"></div>
-        <button id="codexBackBtn" class="btn" style="margin-top:12px;">↩ Назад</button>
+        <button id="codexBackBtn" class="btn" style="margin-top:12px;">${t('codex_back')}</button>
       </div>
     `;
     document.body.appendChild(ov);
@@ -444,9 +444,9 @@ const UIExtended = {
     ov.className = 'overlay camp-overlay';
     ov.innerHTML = `
       <div class="camp-bg">
-        <h1 class="camp-title" style="font-size:1.4em;">📊 СТАТИСТИКА ЗАБЕГА</h1>
+        <h1 class="camp-title" style="font-size:1.4em;">${t('stats_title')}</h1>
         <div id="runStatsContent" class="run-stats-content"></div>
-        <button id="runStatsContinueBtn" class="btn" style="margin-top:16px;">Продолжить</button>
+        <button id="runStatsContinueBtn" class="btn" style="margin-top:16px;">${t('stats_continue')}</button>
       </div>
     `;
     document.body.appendChild(ov);
@@ -461,19 +461,19 @@ const UIExtended = {
     const content = this._runStatsOverlay.querySelector('#runStatsContent');
     // Строим список статистик
     const items = [
-      { label: 'Время', value: stats.time || '00:00' },
-      { label: 'Убийств', value: stats.kills || 0 },
-      { label: 'Уровень', value: stats.level || 1 },
-      { label: 'Волна', value: stats.wave || 0 },
-      { label: 'Карт пройдено', value: stats.mapsCleared || 0 },
-      { label: 'Золото собрано', value: stats.goldCollected || 0 },
-      { label: 'Золото (бонус)', value: stats.goldBonus || 0 },
-      { label: 'Золото (итого)', value: stats.goldTotal || 0 },
-      { label: 'Урон нанесён', value: stats.damageDealt || '—' },
-      { label: 'Урон получен', value: stats.damageTaken || '—' },
-      { label: 'Боссов убито', value: stats.bossKills || 0 },
-      { label: 'Сундуков открыто', value: stats.chestsOpened || 0 },
-      { label: 'Лучший бросок d20', value: stats.bestRoll || '—' },
+      { label: t('stats_time'), value: stats.time || '00:00' },
+      { label: t('stats_kills'), value: stats.kills || 0 },
+      { label: t('stats_level'), value: stats.level || 1 },
+      { label: t('stats_wave'), value: stats.wave || 0 },
+      { label: t('stats_maps'), value: stats.mapsCleared || 0 },
+      { label: t('stats_gold_collected'), value: stats.goldCollected || 0 },
+      { label: t('stats_gold_bonus'), value: stats.goldBonus || 0 },
+      { label: t('stats_gold_total'), value: stats.goldTotal || 0 },
+      { label: t('stats_damage_dealt'), value: stats.damageDealt || '—' },
+      { label: t('stats_damage_taken'), value: stats.damageTaken || '—' },
+      { label: t('stats_bosses'), value: stats.bossKills || 0 },
+      { label: t('stats_chests'), value: stats.chestsOpened || 0 },
+      { label: t('stats_best_roll'), value: stats.bestRoll || '—' },
     ];
     let html = '<div class="run-stats-grid">';
     for (const item of items) {
@@ -493,7 +493,7 @@ const UIExtended = {
     const btn = document.createElement('button');
     btn.id = 'pauseExitBtn';
     btn.className = 'btn btn-secondary';
-    btn.textContent = '🚪 Выйти в лагерь';
+    btn.textContent = t('pause_exit');
     btn.style.marginTop = '12px';
     btn.addEventListener('click', () => {
       if (window.Game) {

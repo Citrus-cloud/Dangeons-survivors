@@ -72,11 +72,11 @@ const Loot = {
       xp.yellow = false;
       xp.value = Utils.randInt(1000, 2000);
     } else {
-      // Обычный зелёный кристалл (10-50 XP)
+      // Обычный зелёный кристалл (5-15 XP) — Bug fix: было 10-50, слишком много
       xp.red = false;
       xp.blue = false;
       xp.yellow = false;
-      xp.value = Utils.randInt(10, 50);
+      xp.value = Utils.randInt(5, 15);
     }
 
     // Талант «Двойной опыт»: шанс удвоить значение кристалла

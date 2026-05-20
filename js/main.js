@@ -13,21 +13,21 @@
    а HP — тоже всегда).
    ============================================================ */
 const BASIC_UPGRADES = [
-  { id: 'b_maxhp',     icon: '❤', title: 'Здоровье +20',     desc: 'Макс. HP +20 (восполняется на ту же величину).',
+  { id: 'b_maxhp',     icon: '❤', title: t('upgrade_maxhp'),     desc: t('upgrade_maxhp_desc'),
     apply(p) { p.bonusMaxHp = (p.bonusMaxHp || 0) + 20; p.maxHp += 20; p.hp = Math.min(p.maxHp, p.hp + 20); }, available() { return true; } },
-  { id: 'b_damage',    icon: '⚔', title: 'Урон +15%',         desc: 'Весь урон увеличен на 15%.',
+  { id: 'b_damage',    icon: '⚔', title: t('upgrade_damage'),         desc: t('upgrade_damage_desc'),
     apply(p) { p.damageMul *= 1.15; }, available() { return true; } },
-  { id: 'b_speed',     icon: '➤', title: 'Скорость +10%',     desc: 'Скорость передвижения +10%.',
+  { id: 'b_speed',     icon: '➤', title: t('upgrade_speed'),     desc: t('upgrade_speed_desc'),
     apply(p) { p.speedMul *= 1.10; }, available() { return true; } },
-  { id: 'b_weapon_cd', icon: '⏱', title: 'Скорострельность',  desc: 'Кулдаун всех оружий -10%.',
+  { id: 'b_weapon_cd', icon: '⏱', title: t('upgrade_weapon_cd'),  desc: t('upgrade_weapon_cd_desc'),
     apply(p) { p.weaponCdMul *= 0.90; }, available() { return true; } },
-  { id: 'b_missile_cd',icon: '✦', title: 'Магия чаще',        desc: 'Кулдаун магического снаряда -25%.',
+  { id: 'b_missile_cd',icon: '✦', title: t('upgrade_missile_cd'),        desc: t('upgrade_missile_cd_desc'),
     apply(p) { p.missileCdMul *= 0.75; }, available() { return true; } },
-  { id: 'b_pickup',    icon: '◎', title: 'Радиус подбора +30%', desc: 'Радиус притяжения опыта +30%.',
+  { id: 'b_pickup',    icon: '◎', title: t('upgrade_pickup'), desc: t('upgrade_pickup_desc'),
     apply(p) { p.pickupMul *= 1.30; }, available() { return true; } },
-  { id: 'b_multishot', icon: '✶', title: '+1 снаряд',          desc: 'Magic Missile выпускает +1 снаряд.',
+  { id: 'b_multishot', icon: '✶', title: t('upgrade_multishot'),          desc: t('upgrade_multishot_desc'),
     apply(p) { p.missileCount += 1; }, available() { return true; } },
-  { id: 'b_heal',      icon: '✚', title: 'Восстановление 30%', desc: 'Мгновенно восстанавливает 30% макс. HP.',
+  { id: 'b_heal',      icon: '✚', title: t('upgrade_heal'), desc: t('upgrade_heal_desc'),
     apply(p) { p.hp = Math.min(p.maxHp, p.hp + p.maxHp * 0.30); }, available() { return true; } },
 ];
 
@@ -280,7 +280,7 @@ const Game = {
           kind: 'weapon',
           icon: info.icon,
           id: info.id,
-          title: `Новое: ${info.name}`,
+          title: t('levelup_new_weapon', info.name),
           desc: info.desc,
           apply(player) {
             const w = WEAPON_FACTORIES[info.id]();
@@ -303,7 +303,7 @@ const Game = {
         id: w.id,
         weaponId: w.id,
         title: `${w.name} ${Utils.roman(w.level)} → ${Utils.roman(next)}`,
-        desc: `Урон +12%, кулдаун -5%. (Ур. ${next}/${w.maxLevel})`,
+        desc: t('levelup_upgrade_desc', next, w.maxLevel),
         apply(player) {
           const tgt = Player.findWeapon(player, w.id);
           if (tgt) tgt.upgrade();
@@ -319,7 +319,7 @@ const Game = {
           kind: 'ability',
           icon: info.icon,
           id: info.id,
-          title: `Новая: ${info.name}`,
+          title: t('levelup_new_ability', info.name),
           desc: info.desc,
           apply(player) {
             const a = ABILITY_FACTORIES[info.id]();
@@ -717,7 +717,7 @@ const Game = {
             color: '#ffd700', speedMin: 80, speedMax: 200,
             lifeMin: 0.5, lifeMax: 1.0, sizeMin: 4, sizeMax: 8,
           });
-          Particles.text(this.player.x, this.player.y - 40, 'ВОЗРОЖДЕНИЕ!', 2.0, '#ffd700', 18);
+          Particles.text(this.player.x, this.player.y - 40, t('campaign_resurrect'), 2.0, '#ffd700', 18);
         }
         // Шаг 19: I-frames после воскрешения (2 сек)
         this.player._iFrameTimer = 2.0;
@@ -821,7 +821,7 @@ const Game = {
       }
       // Уведомление
       if (window.Particles && this.player) {
-        Particles.text(this.player.x, this.player.y - 40, 'ПОРТАЛ ОТКРЫТ!', 2.0, '#9b59b6', 16);
+        Particles.text(this.player.x, this.player.y - 40, t('campaign_portal_open'), 2.0, '#9b59b6', 16);
       }
     }
 
@@ -1681,7 +1681,7 @@ const Game = {
       ctx.font = 'bold 20px ui-monospace, monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('Переход в следующее подземелье...', this.viewW / 2, this.viewH / 2);
+      ctx.fillText(t('transition_text'), this.viewW / 2, this.viewH / 2);
     }
 
     // Шаг 13: индикатор биома и номера карты
