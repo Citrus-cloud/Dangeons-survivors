@@ -58,6 +58,10 @@ const Registry = {
       UIExtended.addPauseExitButton();
       UIExtended.initBackButton();
     }
+
+    // 9. Deferred enemy patches (from constants_step12)
+    if (window._initStep12EnemyPatches) _initStep12EnemyPatches();
+    if (window._initExpansionEnemyPatches) _initExpansionEnemyPatches();
   }
 };
 
