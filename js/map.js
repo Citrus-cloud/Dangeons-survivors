@@ -1990,9 +1990,9 @@ const GameMap = {
   },
 
   /**
-   * Двинуть сущность по (dx, dy) с раздельной проверкой осей + субшаговое скольжение.
-   * Улучшенная система: при блокировке оси пробуем продвинуться частично (binary search),
-   * что даёт плавное скольжение вдоль стен без застревания в углах.
+   * Двинуть сущность по (dx, dy) с раздельной проверкой осей + скольжение вдоль стен.
+   * Каждая ось обрабатывается независимо: если одна заблокирована, другая всё равно работает.
+   * Это даёт плавное скольжение вдоль любой стены (горизонтальной/вертикальной/диагональной).
    * Возвращает { x, y, blockedX, blockedY }.
    */
   moveWithCollision(x, y, dx, dy, rad, shrinkFactor) {
@@ -2001,17 +2001,17 @@ const GameMap = {
     let nx = x, ny = y;
     let blockedX = false, blockedY = false;
 
-    // --- Ось X с субшагами ---
+    // --- Ось X: пробуем полный шаг, иначе бинарный поиск (8 итераций) ---
     if (dx !== 0) {
       const tryX = x + dx;
       if (this.rectIsWalkable(tryX, y, rad, sf)) {
         nx = tryX;
       } else {
         blockedX = true;
-        // Бинарный поиск максимального продвижения по X
+        // Бинарный поиск: находим максимально возможное продвижение по X
         let lo = 0, hi = Math.abs(dx);
         const sign = dx > 0 ? 1 : -1;
-        for (let step = 0; step < 4; step++) {
+        for (let step = 0; step < 8; step++) {
           const mid = (lo + hi) * 0.5;
           if (this.rectIsWalkable(x + sign * mid, y, rad, sf)) {
             lo = mid;
@@ -2019,24 +2019,23 @@ const GameMap = {
             hi = mid;
           }
         }
-        if (lo > 0.5) {
+        // Применяем любое ненулевое продвижение (порог ~0.01px)
+        if (lo > 0.01) {
           nx = x + sign * lo;
-          blockedX = false;
         }
       }
     }
 
-    // --- Ось Y с субшагами (используем новую X-позицию) ---
+    // --- Ось Y: пробуем полный шаг (от новой X), иначе бинарный поиск ---
     if (dy !== 0) {
       const tryY = y + dy;
       if (this.rectIsWalkable(nx, tryY, rad, sf)) {
         ny = tryY;
       } else {
         blockedY = true;
-        // Бинарный поиск максимального продвижения по Y
         let lo = 0, hi = Math.abs(dy);
         const sign = dy > 0 ? 1 : -1;
-        for (let step = 0; step < 4; step++) {
+        for (let step = 0; step < 8; step++) {
           const mid = (lo + hi) * 0.5;
           if (this.rectIsWalkable(nx, y + sign * mid, rad, sf)) {
             lo = mid;
@@ -2044,9 +2043,8 @@ const GameMap = {
             hi = mid;
           }
         }
-        if (lo > 0.5) {
+        if (lo > 0.01) {
           ny = y + sign * lo;
-          blockedY = false;
         }
       }
     }
