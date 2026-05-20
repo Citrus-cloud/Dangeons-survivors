@@ -23,13 +23,13 @@
       <div class="title-main">Dungeon Survivors</div>
       <div class="title-sub">D20</div>
     </div>
-    <div class="title-tap">Нажмите, чтобы начать</div>
+    <div class="title-tap" data-i18n="title_tap">Нажмите, чтобы начать</div>
   </div>
 
   <!-- Loading Screen -->
   <div id="loadingScreen">
     <div class="loading-die" id="loadingDie">20</div>
-    <div class="loading-text">Загрузка...</div>
+    <div class="loading-text" data-i18n="loading">Загрузка...</div>
   </div>
 
   <!-- Canvas -->
@@ -46,7 +46,7 @@
     </div>
     <div class="hud-top-right">
       <button id="pauseBtn" title="Пауза">⏸</button>
-      <div id="killCount">Убийств: 0</div>
+      <div id="killCount" data-i18n="hud_kills">Убийств: 0</div>
       <div id="runTimer">00:00</div>
       <div id="waveInfo">Волна 1 через 20с</div>
     </div>
@@ -63,33 +63,34 @@
   <div id="menuOverlay" class="overlay">
     <h1>DUNGEON SURVIVORS</h1>
     <h2>D20</h2>
-    <p>Касание — динамический джойстик. ПК: WASD/стрелки.</p>
-    <button id="startBtn" class="btn">НАЧАТЬ</button>
+    <p data-i18n="menu_controls">Касание — динамический джойстик. ПК: WASD/стрелки.</p>
+    <button id="startBtn" class="btn" data-i18n="menu_start">НАЧАТЬ</button>
   </div>
 
   <!-- Пауза -->
   <div id="pauseOverlay" class="overlay">
-    <h1>ПАУЗА</h1>
-    <button id="resumeBtn" class="btn">Продолжить</button>
+    <h1 data-i18n="pause_title">ПАУЗА</h1>
+    <button id="resumeBtn" class="btn" data-i18n="pause_resume">Продолжить</button>
   </div>
 
   <!-- Левелап -->
   <div id="levelOverlay" class="overlay">
-    <h1>УРОВЕНЬ <span id="lvlNum">2</span>!</h1>
-    <h2>Выберите улучшение</h2>
+    <h1><span data-i18n="levelup_title">УРОВЕНЬ</span> <span id="lvlNum">2</span></h1>
+    <h2 data-i18n="levelup_choose">Выберите улучшение</h2>
     <div id="cards"></div>
   </div>
 
   <!-- Game Over -->
   <div id="gameOverOverlay" class="overlay">
-    <h1>ВЫ ПОГИБЛИ</h1>
-    <p>Время: <span id="goTime">00:00</span></p>
-    <p>Убийств: <span id="goKills">0</span></p>
-    <p>Уровень: <span id="goLevel">1</span></p>
-    <button id="restartBtn" class="btn">В лагерь</button>
+    <h1 data-i18n="death_title">ВЫ ПОГИБЛИ</h1>
+    <p><span data-i18n="stats_time">Время</span>: <span id="goTime">00:00</span></p>
+    <p><span data-i18n="stats_kills">Убийств</span>: <span id="goKills">0</span></p>
+    <p><span data-i18n="stats_level">Уровень</span>: <span id="goLevel">1</span></p>
+    <button id="restartBtn" class="btn" data-i18n="death_restart">В лагерь</button>
   </div>
 
   <!-- Скрипты -->
+  <script src="js/i18n.js"></script>
   <script src="js/constants.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/map.js"></script>
@@ -125,5 +126,6 @@
   <script src="js/campaign.js"></script>
   <script src="js/urns.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/optimize.js"></script>
 </body>
 </html>

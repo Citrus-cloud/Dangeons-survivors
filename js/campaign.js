@@ -304,7 +304,7 @@ const Campaign = {
   onKeyPickedUp() {
     this.hasKey = true;
     if (window.Particles && window.Game && Game.player) {
-      Particles.text(Game.player.x, Game.player.y - 30, 'КЛЮЧ ПОЛУЧЕН!', 1.5, '#ffd700', 14);
+      Particles.text(Game.player.x, Game.player.y - 30, t('campaign_key_obtained'), 1.5, '#ffd700', 14);
     }
   },
 
@@ -338,7 +338,7 @@ const Campaign = {
       this._completeObjective();
     }
     if (window.Particles && window.Game && Game.player) {
-      Particles.text(Game.player.x, Game.player.y - 30, 'ОГНЕННОЕ СЕРДЦЕ!', 2.0, '#ff6600', 16);
+      Particles.text(Game.player.x, Game.player.y - 30, t('campaign_fire_heart'), 2.0, '#ff6600', 16);
     }
   },
 
@@ -349,7 +349,7 @@ const Campaign = {
     this.objective.completed = true;
 
     if (window.Particles && window.Game && Game.player) {
-      Particles.text(Game.player.x, Game.player.y - 40, 'ЦЕЛЬ ВЫПОЛНЕНА!', 2.0, '#2ecc71', 18);
+      Particles.text(Game.player.x, Game.player.y - 40, t('campaign_objective_done'), 2.0, '#2ecc71', 18);
       Particles.burst(Game.player.x, Game.player.y, 15, {
         color: '#2ecc71', speedMin: 80, speedMax: 200,
         lifeMin: 0.5, lifeMax: 1.0, sizeMin: 3, sizeMax: 6,

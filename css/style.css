@@ -1534,3 +1534,41 @@ html, body {
   justify-content: center;
   flex-wrap: wrap;
 }
+
+
+
+/* ============================================================
+   Переключатель языка (Language Switcher)
+   ============================================================ */
+.settings-row-lang {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.lang-switcher {
+  display: flex;
+  gap: 6px;
+}
+.lang-btn {
+  min-width: 48px;
+  padding: 6px 14px;
+  font-size: 0.9em;
+  font-weight: bold;
+  border: 2px solid #555;
+  border-radius: 6px;
+  background: rgba(30, 30, 30, 0.8);
+  color: #aaa;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.lang-btn:hover {
+  border-color: #ffd700;
+  color: #fff;
+}
+.lang-btn-active {
+  border-color: #ffd700;
+  background: rgba(255, 215, 0, 0.15);
+  color: #ffd700;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+}
