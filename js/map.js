@@ -2236,10 +2236,17 @@ const GameMap = {
   /**
    * Шаг 1: Вытащить игрока из стены каждый кадр (быстро, 150 px/sec).
    * Вызывается из Game.update() КАЖДЫЙ кадр для игрока.
+   * Используем мягкую проверку (rectIsWalkable с shrinkFactor), чтобы
+   * не конфликтовать с moveWithCollision, который тоже использует мягкую
+   * проверку и позволяет игроку стоять на "мягком краю" стены.
    */
   attractPlayerFromWalls(player, dt) {
     if (!this.dungeon || !player) return;
-    if (this.isWalkable(player.x, player.y)) return;
+    const rad = player.size * 0.35;
+    // Используем ту же мягкую проверку что и moveWithCollision (shrinkFactor=0.25)
+    // Это позволяет игроку стоять на мягком краю стены без дёрганья
+    if (this.rectIsWalkable(player.x, player.y, rad, 0.25)) return;
+    // Игрок реально застрял в жёстком ядре стены — вытаскиваем
     this.attractToWalkable(player, 150, dt);
   },
 
