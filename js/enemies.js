@@ -235,7 +235,7 @@ function _moveTowards(e, tx, ty, dt, sign) {
         let dx = e.vx * dt;
         let dy = e.vy * dt;
         if (window.GameMap && GameMap.dungeon) {
-          const res = GameMap.moveWithCollision(e.x, e.y, dx, dy, rad, 0.25);
+          const res = GameMap.moveWithCollision(e.x, e.y, dx, dy, rad, 0.15);
           e.x = res.x;
           e.y = res.y;
         } else {
@@ -264,7 +264,7 @@ function _moveTowards(e, tx, ty, dt, sign) {
   let dx = e.vx * dt;
   let dy = e.vy * dt;
   if (window.GameMap && GameMap.dungeon) {
-    const res = GameMap.moveWithCollision(e.x, e.y, dx, dy, rad, 0.25);
+    const res = GameMap.moveWithCollision(e.x, e.y, dx, dy, rad, 0.15);
     e.x = res.x;
     e.y = res.y;
   } else {
@@ -469,7 +469,7 @@ const Behaviors = {
     let mx = e.vx * dt, my = e.vy * dt;
     const rad = Math.max(e.cfg.w, e.cfg.h) * 0.35;
     if (window.GameMap && GameMap.dungeon) {
-      const r = GameMap.moveWithCollision(e.x, e.y, mx, my, rad, 0.25);
+      const r = GameMap.moveWithCollision(e.x, e.y, mx, my, rad, 0.15);
       e.x = r.x; e.y = r.y;
     } else {
       e.x += mx; e.y += my;
