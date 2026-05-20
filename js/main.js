@@ -195,6 +195,9 @@ const Game = {
     this.bossChest = null;  // золотой сундук после убийства босса
     if (window.Bosses) Bosses.init();
 
+    // Шаг 1: инициализация урн
+    if (window.Urns) Urns.init();
+
     // Шаг 4: мимик
     this.mimicState = (window.Enemies && Enemies.initMimicState)
       ? Enemies.initMimicState()
@@ -638,6 +641,11 @@ const Game = {
     // Шаг 15: обновление золота
     if (this.goldDrops) Loot.updateGold(this.goldDrops, this.player, dt);
 
+    // Шаг 1: вытягивание игрока из стен КАЖДЫЙ кадр (быстро)
+    if (window.GameMap && GameMap.attractPlayerFromWalls) {
+      GameMap.attractPlayerFromWalls(this.player, dt);
+    }
+
     // Притяжение застрявших объектов к проходимой зоне (раз в 0.5 сек)
     if (!this._attractTimer) this._attractTimer = 0;
     this._attractTimer += dt;
@@ -651,6 +659,13 @@ const Game = {
     this.updateChest(dt);
     this.updateBossChest(dt);
     this.updateParticles(dt);
+
+    // Шаг 1: обновление урн и яблок
+    if (window.Urns) {
+      Urns.update(dt, this.player);
+      // Проверка попадания снарядов игрока в урны
+      Urns.checkProjectileHits(this.projectiles);
+    }
 
     // Левелап (only trigger if still in playing state)
     if (this.state === 'playing' && this.player.xp >= this.player.xpNext) {
@@ -1568,6 +1583,11 @@ const Game = {
     if (this.goldDrops) Loot.renderGold(ctx, this.goldDrops, cam, camViewW, camViewH);
     // Шаг 4: лужи и следы под врагами/героем
     if (GameMap.renderGroundEffects) GameMap.renderGroundEffects(ctx, cam, camViewW, camViewH);
+    // Шаг 1: рендер урн и яблок
+    if (window.Urns) {
+      Urns.render(ctx, cam, camViewW, camViewH);
+      Urns.renderHP(ctx);
+    }
     // Шаг 3: сундук рисуется в мире
     if (this.chest) Chest.render(ctx, this.chest, cam, camViewW, camViewH);
     if (this.secretChest) Chest.render(ctx, this.secretChest, cam, camViewW, camViewH);

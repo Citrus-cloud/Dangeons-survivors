@@ -217,6 +217,15 @@ html, body {
 #hpBar .fill { background: linear-gradient(90deg, #8b3a3a, #c0392b); width: 100%; }
 #xpBar .fill { background: linear-gradient(90deg, #1a5276, #2980d9); width: 0%; }
 
+/* Шаг 1: Стилизованная цифра уровня на XP-баре */
+.xp-level-label {
+  font-size: 11px;
+  font-weight: bold;
+  color: #ffd700;
+  text-shadow: 1px 1px 2px #000, 0 0 4px rgba(255, 215, 0, 0.4);
+  letter-spacing: 1px;
+}
+
 /* HP icon */
 #hpBar::before {
   content: '♥';
