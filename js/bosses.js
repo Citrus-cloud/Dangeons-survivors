@@ -619,7 +619,7 @@ const Bosses = {
      ============================================================ */
   _moveTowards(boss, tx, ty, dt, sign) {
     const cfg = boss.cfg;
-    let speed = cfg.speed;
+    let speed = cfg.speed * 0.8; // Шаг 1: -20% скорость всех боссов
     if (boss.phase >= 2 && cfg.phase2SpeedMul) speed *= cfg.phase2SpeedMul;
 
     const dx = tx - boss.x, dy = ty - boss.y;

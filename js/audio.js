@@ -374,6 +374,8 @@ const GameAudio = {
       case 'enemy_hit':   this._sfxEnemyHit(opts); break;
       case 'enemy_death': this._sfxEnemyDeath(); break;
       case 'step':        this._sfxStep(); break;
+      case 'apple_crunch': this._sfxAppleCrunch(); break;
+      case 'urn_break':    this._sfxUrnBreak(); break;
     }
   },
 
@@ -1199,6 +1201,62 @@ const GameAudio = {
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume().catch(() => {});
     }
+  },
+
+  /* ============================================================
+     Шаг 1: Звуки урн и яблок
+     ============================================================ */
+
+  /** Яблоко: сочный хруст (шум + low sine + bandpass) */
+  _sfxAppleCrunch() {
+    const ctx = this.ctx, t = ctx.currentTime;
+    // Хруст (шум через bandpass)
+    const nBuf = this._noiseBuffer(0.12);
+    const nSrc = ctx.createBufferSource(); nSrc.buffer = nBuf;
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass'; bp.frequency.value = 2000; bp.Q.value = 2;
+    const nGain = ctx.createGain();
+    nGain.gain.setValueAtTime(0.4, t);
+    nGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    nSrc.connect(bp); bp.connect(nGain); nGain.connect(this.sfxGain);
+    nSrc.start(t); nSrc.stop(t + 0.13);
+    this._trackOsc(nSrc);
+    // Сочный тон (sine 300 Hz, короткий)
+    const osc = ctx.createOscillator();
+    osc.type = 'sine'; osc.frequency.value = 300;
+    osc.frequency.exponentialRampToValueAtTime(200, t + 0.08);
+    const oGain = ctx.createGain();
+    oGain.gain.setValueAtTime(0.25, t);
+    oGain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+    osc.connect(oGain); oGain.connect(this.sfxGain);
+    osc.start(t); osc.stop(t + 0.09);
+    this._trackOsc(osc);
+  },
+
+  /** Урна: глухой удар + осколки (шум + low thud) */
+  _sfxUrnBreak() {
+    const ctx = this.ctx, t = ctx.currentTime;
+    // Глухой удар (sine 100 Hz)
+    const osc = ctx.createOscillator();
+    osc.type = 'sine'; osc.frequency.value = 100;
+    osc.frequency.exponentialRampToValueAtTime(50, t + 0.1);
+    const oGain = ctx.createGain();
+    oGain.gain.setValueAtTime(0.4, t);
+    oGain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+    osc.connect(oGain); oGain.connect(this.sfxGain);
+    osc.start(t); osc.stop(t + 0.11);
+    this._trackOsc(osc);
+    // Осколки (шум через highpass)
+    const nBuf = this._noiseBuffer(0.1);
+    const nSrc = ctx.createBufferSource(); nSrc.buffer = nBuf;
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 3000;
+    const nGain = ctx.createGain();
+    nGain.gain.setValueAtTime(0.3, t + 0.02);
+    nGain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+    nSrc.connect(hp); hp.connect(nGain); nGain.connect(this.sfxGain);
+    nSrc.start(t); nSrc.stop(t + 0.11);
+    this._trackOsc(nSrc);
   },
 };
 

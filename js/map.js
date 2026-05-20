@@ -1310,7 +1310,8 @@ const GameMap = {
     return tile;
   },
 
-  /** Генерация пиксельной тайловой текстуры 32×32 для стен по биому. */
+  /** Генерация пиксельной тайловой текстуры 32×32 для стен по биому.
+   *  Шаг 1: используем фиксированный детерминированный rng для ровных текстур. */
   _generateWallTile(biomeId) {
     const size = 32;
     const off = document.createElement('canvas');
@@ -1319,7 +1320,10 @@ const GameMap = {
     const ctx = off.getContext('2d');
     ctx.imageSmoothingEnabled = false;
 
-    const rng = this.rng || Math.random;
+    // Шаг 1: фиксированный сид для каждого биома (чтобы текстуры были ровными и повторяемыми)
+    const biomeSeeds = { crypt: 42, ice_caves: 73, fire_mines: 101, forest_ruins: 137, castle: 191, sky_citadel: 233, elven_forest: 277, mountain_keep: 311 };
+    const seed = biomeSeeds[biomeId] || 42;
+    const rng = _mulberry32(seed);
 
     switch (biomeId) {
       case 'crypt': {
@@ -1988,7 +1992,8 @@ const GameMap = {
   /**
    * Двинуть сущность по (dx, dy) с раздельной проверкой осей.
    * Если упёрлись — позволяет скользить вдоль стен.
-   * Новая система: использует «мягкие» хитбоксы стен.
+   * Шаг 1: улучшенная система — хитбокс стен чуть меньше визуала (2-4px),
+   * раздельные оси для естественного скольжения.
    * @param {number} shrinkFactor — 0.25 для игрока (50% хитбокс),
    *   0.15 для врагов (70% хитбокс). По умолчанию 0.25.
    * Возвращает { x, y, blockedX, blockedY }.
@@ -1996,66 +2001,61 @@ const GameMap = {
   moveWithCollision(x, y, dx, dy, rad, shrinkFactor) {
     if (!this.dungeon) return { x: x + dx, y: y + dy, blockedX: false, blockedY: false };
     const sf = (shrinkFactor !== undefined) ? shrinkFactor : 0.25;
-    // Мягкий отступ для проверки (предотвращает застревание в текстурах)
-    const checkRad = rad + 1;
-    // Bug fix #1: уменьшенный радиус для проверки перпендикулярной оси
-    // чтобы позволить скольжение вдоль стен без застревания
-    const slideRad = rad;
+    // Шаг 1: уменьшенный радиус проверки (хитбокс стен на 2px меньше визуала)
+    const checkRad = rad;
     let nx = x, ny = y;
     let blockedX = false, blockedY = false;
-    // --- Ось X ---
+
+    // --- Ось X (сначала двигаем по X) ---
     if (dx !== 0) {
       const tryX = x + dx;
-      if (this.rectIsWalkable(tryX, y, checkRad, sf)) nx = tryX;
-      else {
-        // Доехать до стены маленькими шагами
+      if (this.rectIsWalkable(tryX, y, checkRad, sf)) {
+        nx = tryX;
+      } else {
+        // Пошагово ищем максимально возможное смещение
         const sign = Math.sign(dx);
+        const absDx = Math.abs(dx);
         let stepped = 0;
-        const stepSize = 1;
-        while (Math.abs(stepped) < Math.abs(dx)) {
-          const next = stepped + sign * stepSize;
-          if (this.rectIsWalkable(x + next, y, checkRad, sf)) stepped = next;
-          else break;
+        const stepSize = 2;
+        while (stepped + stepSize <= absDx) {
+          const next = stepped + stepSize;
+          if (this.rectIsWalkable(x + sign * next, y, checkRad, sf)) {
+            stepped = next;
+          } else break;
         }
-        nx = x + stepped;
+        nx = x + sign * stepped;
         blockedX = true;
       }
     }
-    // --- Ось Y (используем slideRad если X был заблокирован) ---
+
+    // --- Ось Y (двигаем по Y из новой X-позиции) ---
     if (dy !== 0) {
-      const yRad = blockedX ? slideRad : checkRad;
       const tryY = ny + dy;
-      if (this.rectIsWalkable(nx, tryY, yRad, sf)) ny = tryY;
-      else {
-        // Bug fix #1: если Y не проходит из новой X-позиции,
-        // пробуем Y из оригинальной X (для скольжения вдоль стен)
-        if (blockedX && this.rectIsWalkable(x, y + dy, yRad, sf)) {
-          nx = x; // откат X — двигаемся только по Y
-          ny = y + dy;
-          blockedX = false; // X не заблокирован (мы его откатили)
-          blockedY = false;
-        } else {
-          const checkX = blockedX ? x : nx;
-          const sign = Math.sign(dy);
-          let stepped = 0;
-          const stepSize = 1;
-          while (Math.abs(stepped) < Math.abs(dy)) {
-            const next = stepped + sign * stepSize;
-            if (this.rectIsWalkable(checkX, ny + next, yRad, sf)) stepped = next;
-            else break;
-          }
-          if (stepped !== 0 && blockedX) nx = checkX;
-          ny = ny + stepped;
-          blockedY = true;
+      if (this.rectIsWalkable(nx, tryY, checkRad, sf)) {
+        ny = tryY;
+      } else {
+        // Пошагово ищем максимально возможное смещение
+        const sign = Math.sign(dy);
+        const absDy = Math.abs(dy);
+        let stepped = 0;
+        const stepSize = 2;
+        while (stepped + stepSize <= absDy) {
+          const next = stepped + stepSize;
+          if (this.rectIsWalkable(nx, ny + sign * next, checkRad, sf)) {
+            stepped = next;
+          } else break;
         }
+        ny = ny + sign * stepped;
+        blockedY = true;
       }
     }
-    // Финальная проверка — если застрял, вытолкнуть
+
+    // Финальная проверка — если застряли, небольшое выталкивание
     if (!this.rectIsWalkable(nx, ny, rad, sf)) {
       const offsets = [
-        {dx: 0, dy: -2}, {dx: 0, dy: 2}, {dx: -2, dy: 0}, {dx: 2, dy: 0},
-        {dx: -2, dy: -2}, {dx: 2, dy: -2}, {dx: -2, dy: 2}, {dx: 2, dy: 2},
-        {dx: 0, dy: -4}, {dx: 0, dy: 4}, {dx: -4, dy: 0}, {dx: 4, dy: 0},
+        {dx: 0, dy: -3}, {dx: 0, dy: 3}, {dx: -3, dy: 0}, {dx: 3, dy: 0},
+        {dx: -3, dy: -3}, {dx: 3, dy: -3}, {dx: -3, dy: 3}, {dx: 3, dy: 3},
+        {dx: 0, dy: -6}, {dx: 0, dy: 6}, {dx: -6, dy: 0}, {dx: 6, dy: 0},
       ];
       for (const off of offsets) {
         if (this.rectIsWalkable(nx + off.dx, ny + off.dy, rad, sf)) {
@@ -2140,10 +2140,11 @@ const GameMap = {
   },
 
   /**
-   * Притянуть объект к ближайшей проходимой точке.
-   * Вызывается периодически (раз в ~0.5 сек) для каждого застрявшего объекта.
-   * @param {object} obj — объект с полями .x, .y (.active опционально)
-   * @param {number} speed — скорость притяжения px/sec (по умолчанию 60)
+   * Шаг 1: Улучшенное притяжение объектов из непроходимых мест.
+   * Скорость 120 px/sec (быстрее, чем раньше).
+   * Если не нашли проходимую точку в 100px — телепорт к центру ближайшей комнаты.
+   * @param {object} obj — объект с полями .x, .y
+   * @param {number} speed — скорость притяжения px/sec (по умолчанию 120)
    * @param {number} dt — дельта времени
    * @returns {boolean} true если объект был в непроходимой зоне и сдвинут
    */
@@ -2151,11 +2152,16 @@ const GameMap = {
     if (!this.dungeon || !obj) return false;
     if (this.isWalkable(obj.x, obj.y)) return false;
 
-    // Объект в стене — ищем ближайшую проходимую точку
-    const target = this.findNearestWalkable(obj.x, obj.y, 8, 160);
-    if (!target) return false;
+    // Объект в стене — ищем ближайшую проходимую точку (8 направлений, шаг 8px)
+    const target = this.findNearestWalkable(obj.x, obj.y, 8, 100);
+    if (!target) {
+      // Крайний случай: телепорт к центру ближайшей комнаты
+      const room = this._findNearestRoom(obj.x, obj.y);
+      if (room) { obj.x = room.cx; obj.y = room.cy; }
+      return true;
+    }
 
-    speed = speed || 60;
+    speed = speed || 120;
     const dx = target.x - obj.x;
     const dy = target.y - obj.y;
     const dist = Math.hypot(dx, dy);
@@ -2170,10 +2176,32 @@ const GameMap = {
     return true;
   },
 
+  /** Шаг 1: найти ближайшую комнату к точке (x, y). */
+  _findNearestRoom(x, y) {
+    if (!this.dungeon || !this.dungeon.rooms) return null;
+    let best = null, bestDist = Infinity;
+    for (const r of this.dungeon.rooms) {
+      if (r.isSecret) continue;
+      const d = Math.hypot(r.cx - x, r.cy - y);
+      if (d < bestDist) { bestDist = d; best = r; }
+    }
+    return best;
+  },
+
   /**
-   * Обработка всех «застрявших» объектов за кадр.
-   * Вызывается из Game.update() раз в 0.5 сек.
-   * @param {object} game — объект Game с пулами xpDrops, goldDrops, enemies, chest
+   * Шаг 1: Вытащить игрока из стены каждый кадр (быстро, 150 px/sec).
+   * Вызывается из Game.update() КАЖДЫЙ кадр для игрока.
+   */
+  attractPlayerFromWalls(player, dt) {
+    if (!this.dungeon || !player) return;
+    if (this.isWalkable(player.x, player.y)) return;
+    this.attractToWalkable(player, 150, dt);
+  },
+
+  /**
+   * Шаг 1: Обработка всех «застрявших» объектов.
+   * Вызывается из Game.update() раз в 0.5 сек (для врагов/лута).
+   * @param {object} game — объект Game с пулами
    * @param {number} dt — дельта времени
    */
   attractAllStuck(game, dt) {
@@ -2182,40 +2210,58 @@ const GameMap = {
     // XP кристаллы
     if (game.xpDrops) {
       game.xpDrops.forEachActive((xp) => {
-        this.attractToWalkable(xp, 80, dt);
+        this.attractToWalkable(xp, 120, dt);
       });
     }
 
     // Золото
     if (game.goldDrops) {
       game.goldDrops.forEachActive((g) => {
-        this.attractToWalkable(g, 80, dt);
+        this.attractToWalkable(g, 120, dt);
       });
     }
 
     // Сундук
-    if (game.chest && game.chest.active) {
-      this.attractToWalkable(game.chest, 40, dt);
+    if (game.chest && game.chest.active !== false) {
+      this.attractToWalkable(game.chest, 80, dt);
     }
 
-    // Враги — если застряли > 2 секунд, телепортировать
+    // Враги — быстрое притяжение (120 px/sec), телепорт после 1.5 сек
     if (game.enemies) {
       game.enemies.forEachActive((e) => {
         if (!this.isWalkable(e.x, e.y)) {
           if (!e._stuckTimer) e._stuckTimer = 0;
           e._stuckTimer += dt;
-          if (e._stuckTimer >= 2.0) {
-            // Мгновенная телепортация к проходимой точке
-            const target = this.findNearestWalkable(e.x, e.y, 10, 200);
+          if (e._stuckTimer >= 1.5) {
+            // Телепорт к ближайшей проходимой точке или комнате
+            const target = this.findNearestWalkable(e.x, e.y, 8, 100);
             if (target) { e.x = target.x; e.y = target.y; }
+            else {
+              const room = this._findNearestRoom(e.x, e.y);
+              if (room) { e.x = room.cx; e.y = room.cy; }
+            }
             e._stuckTimer = 0;
           } else {
-            this.attractToWalkable(e, 60, dt);
+            this.attractToWalkable(e, 120, dt);
           }
         } else {
           e._stuckTimer = 0;
         }
       });
+    }
+
+    // Боссы — вытаскиваем так же
+    if (window.Bosses && Bosses.current) {
+      const boss = Bosses.current;
+      if (!this.isWalkable(boss.x, boss.y)) {
+        this.attractToWalkable(boss, 150, dt);
+      }
+    }
+    if (window.Bosses && Bosses.guardian) {
+      const g = Bosses.guardian;
+      if (!this.isWalkable(g.x, g.y)) {
+        this.attractToWalkable(g, 150, dt);
+      }
     }
   },
 

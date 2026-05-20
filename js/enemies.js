@@ -154,9 +154,10 @@ function _tryContactDamage(e, player, dt) {
 }
 
 /* Скорость врага с учётом dash, captain aura, и замедления от оружий. */
+/* Шаг 1: глобальное снижение скорости всех врагов на 20% (множитель 0.8). */
 function _currentSpeed(e) {
   const base = (e.cfg && e.cfg.speed) || 0;
-  let s = base;
+  let s = base * 0.8; // Шаг 1: -20% скорость всех врагов
   if (e.captainBuffed) s *= (ENEMY_TYPES.captain.auraSpeedMul || 1.20);
   if (e.dashing) s *= (e.cfg.dashMul || 2.0);
   // Шаг 7: замедление от ледяной стрелы и т.п.
