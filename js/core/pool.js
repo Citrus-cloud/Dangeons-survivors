@@ -88,17 +88,17 @@ const PoolManager = {
     this.releaseAll();
     
     // Очищаем кеш расстояний
-    if (window.DistanceCache) {
+    if (window.DistanceCache && DistanceCache._cache && DistanceCache._cache.clear) {
       DistanceCache._cache.clear();
     }
     
     // Очищаем пространственную сетку
-    if (window.Game && Game._enemyGrid) {
+    if (window.Game && Game._enemyGrid && Game._enemyGrid.clear) {
       Game._enemyGrid.clear();
     }
 
     // Очищаем кэш рендера карты
-    if (window.RenderCache) {
+    if (window.RenderCache && RenderCache.clear) {
       RenderCache.clear();
     }
 
