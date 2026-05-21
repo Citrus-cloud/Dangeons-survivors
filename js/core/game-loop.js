@@ -322,7 +322,7 @@ const Game = {
         id: a.id,
         abilityId: a.id,
         title: `${a.name} ${Utils.roman(a.level)} → ${Utils.roman(next)}`,
-        desc: a.effectText ? a.effectText.call ? `След.: ${(function(){ const tmp = Object.create(a); tmp.level = next; return tmp.effectText ? tmp.effectText() : a.desc; })()}` : a.desc : a.desc,
+        desc: a.effectText ? a.effectText.call ? `${t('levelup_upgrade_desc', next, a.maxLevel || 5)}` : a.desc : a.desc,
         apply(player) {
           const tgt = Player.findAbility(player, a.id);
           if (tgt) tgt.upgrade(player);
@@ -1215,7 +1215,7 @@ const Game = {
       if (missingWeapons.length > 0) {
         const info = missingWeapons[Math.floor(Math.random() * missingWeapons.length)];
         return {
-          title: `Редкая находка: ${info.name}`,
+          title: `${t('chest_rare_find')}: ${info.name}`,
           desc: info.desc,
           apply(p) {
             const w = WEAPON_FACTORIES[info.id]();
@@ -1229,7 +1229,7 @@ const Game = {
       if (missingAbilities.length > 0) {
         const info = missingAbilities[Math.floor(Math.random() * missingAbilities.length)];
         return {
-          title: `Редкая находка: ${info.name}`,
+          title: `${t('chest_rare_find')}: ${info.name}`,
           desc: info.desc,
           apply(p) {
             const a = ABILITY_FACTORIES[info.id]();
@@ -1781,7 +1781,7 @@ const Game = {
         kind: 'weapon',
         icon: r.resultIcon,
         id: r.resultId,
-        title: `Эволюция: ${r.resultName}`,
+        title: `${t('chest_evo_title')}: ${r.resultName}`,
         desc: r.desc,
         apply(player) { Evolutions.apply(player, r); },
       });

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <!-- Viewport: полноэкранный режим, без масштабирования (мобильная игра) -->
@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <!-- Цвет темы браузера (тёмно-коричневый фэнтези) -->
   <meta name="theme-color" content="#1a1210" />
-  <meta name="description" content="Dungeon Survivors: D20 — Bullet Heaven в D&D-сеттинге" />
+  <meta name="description" content="Dungeon Survivors: D20 — Bullet Heaven in a D&D setting" />
   <title>Dungeon Survivors — D20</title>
 
   <!-- Стили -->
@@ -39,7 +39,7 @@
       <div class="title-main">Dungeon Survivors</div>
       <div class="title-sub">D20</div>
     </div>
-    <div class="title-tap" data-i18n="title_tap">Нажмите, чтобы начать</div>
+    <div class="title-tap" data-i18n="title_tap">Tap to start</div>
   </div>
 
   <!-- ============================================================
@@ -48,7 +48,7 @@
        ============================================================ -->
   <div id="loadingScreen">
     <div class="loading-die" id="loadingDie">20</div>
-    <div class="loading-text" data-i18n="loading">Загрузка...</div>
+    <div class="loading-text" data-i18n="loading">Loading...</div>
   </div>
 
   <!-- ============================================================
@@ -73,10 +73,10 @@
     </div>
     <!-- Правый верхний угол: пауза, статистика -->
     <div class="hud-top-right">
-      <button id="pauseBtn" title="Пауза">⏸</button>
-      <div id="killCount" data-i18n="hud_kills">Убийств: 0</div>
+      <button id="pauseBtn" title="Pause">⏸</button>
+      <div id="killCount" data-i18n="hud_kills">Kills: 0</div>
       <div id="runTimer">00:00</div>
-      <div id="waveInfo">Волна 1 через 20с</div>
+      <div id="waveInfo">Wave 1 in 20s</div>
     </div>
   </div>
 
@@ -101,30 +101,30 @@
   <div id="menuOverlay" class="overlay">
     <h1>DUNGEON SURVIVORS</h1>
     <h2>D20</h2>
-    <p data-i18n="menu_controls">Касание — динамический джойстик. ПК: WASD/стрелки.</p>
-    <button id="startBtn" class="btn" data-i18n="menu_start">НАЧАТЬ</button>
+    <p data-i18n="menu_controls">Touch — dynamic joystick. PC: WASD/Arrows.</p>
+    <button id="startBtn" class="btn" data-i18n="menu_start">START</button>
   </div>
 
   <!-- Пауза -->
   <div id="pauseOverlay" class="overlay">
-    <h1 data-i18n="pause_title">ПАУЗА</h1>
-    <button id="resumeBtn" class="btn" data-i18n="pause_resume">Продолжить</button>
+    <h1 data-i18n="pause_title">PAUSED</h1>
+    <button id="resumeBtn" class="btn" data-i18n="pause_resume">Resume</button>
   </div>
 
   <!-- Выбор улучшения при повышении уровня -->
   <div id="levelOverlay" class="overlay">
-    <h1><span data-i18n="levelup_title">УРОВЕНЬ</span> <span id="lvlNum">2</span></h1>
-    <h2 data-i18n="levelup_choose">Выберите улучшение</h2>
+    <h1><span data-i18n="levelup_title">LEVEL</span> <span id="lvlNum">2</span></h1>
+    <h2 data-i18n="levelup_choose">Choose an upgrade</h2>
     <div id="cards"></div>
   </div>
 
   <!-- Экран смерти (Game Over) -->
   <div id="gameOverOverlay" class="overlay">
-    <h1 data-i18n="death_title">ВЫ ПОГИБЛИ</h1>
-    <p><span data-i18n="stats_time">Время</span>: <span id="goTime">00:00</span></p>
-    <p><span data-i18n="stats_kills">Убийств</span>: <span id="goKills">0</span></p>
-    <p><span data-i18n="stats_level">Уровень</span>: <span id="goLevel">1</span></p>
-    <button id="restartBtn" class="btn" data-i18n="death_restart">В лагерь</button>
+    <h1 data-i18n="death_title">YOU DIED</h1>
+    <p><span data-i18n="stats_time">Time</span>: <span id="goTime">00:00</span></p>
+    <p><span data-i18n="stats_kills">Kills</span>: <span id="goKills">0</span></p>
+    <p><span data-i18n="stats_level">Level</span>: <span id="goLevel">1</span></p>
+    <button id="restartBtn" class="btn" data-i18n="death_restart">To camp</button>
   </div>
 
   <!-- ============================================================
@@ -132,20 +132,20 @@
        Показываются в нужные моменты через MonetizationManager.
        ============================================================ -->
   <div id="monetization-ui">
-    <!-- Кнопка «Воскреснуть за рекламу» (экран смерти) -->
+    <!-- Revive via ad button (death screen) -->
     <button id="adReviveBtn" class="ad-button ad-revive" onclick="Monetization.handleRevive()">
       <span class="ad-btn-icon">▶️</span>
-      <span class="ad-btn-text" data-i18n="ad_revive">Воскреснуть</span>
+      <span class="ad-btn-text" data-i18n="ad_revive">Revive</span>
     </button>
-    <!-- Кнопка «Удвоить золото за рекламу» (экран результатов) -->
+    <!-- Double gold via ad button (results screen) -->
     <button id="adDoubleGoldBtn" class="ad-button ad-double" onclick="Monetization.handleDoubleGold()">
       <span class="ad-btn-icon">▶️</span>
-      <span class="ad-btn-text" data-i18n="ad_double_gold">×2 Золото</span>
+      <span class="ad-btn-text" data-i18n="ad_double_gold">×2 Gold</span>
     </button>
-    <!-- Кнопка «Убрать рекламу» (настройки / лагерь) -->
+    <!-- Remove ads button (settings / camp) -->
     <button id="noAdsBtn" class="ad-button ad-noads" onclick="Monetization.purchaseNoAds()">
       <span class="ad-btn-icon">🚫</span>
-      <span class="ad-btn-text" data-i18n="ad_remove">Убрать рекламу</span>
+      <span class="ad-btn-text" data-i18n="ad_remove">Remove Ads</span>
     </button>
   </div>
 

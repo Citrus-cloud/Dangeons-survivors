@@ -1615,7 +1615,7 @@ const UI = {
             <button id="resetProgressBtn" class="btn settings-reset-btn">🗑 ${t('settings_reset')}</button>
           </div>
           <div class="settings-row settings-row-btn" id="settingsNoAdsRow">
-            <button id="settingsNoAdsBtn" class="btn settings-noads-btn">🚫 ${t('ad_remove') || 'Убрать рекламу'}</button>
+            <button id="settingsNoAdsBtn" class="btn settings-noads-btn">🚫 ${t('ad_remove') || 'Remove Ads'}</button>
           </div>
         </div>
         <div class="settings-footer">

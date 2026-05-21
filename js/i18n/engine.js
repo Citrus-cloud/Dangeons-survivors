@@ -1,64 +1,64 @@
 'use strict';
 /* ============================================================
-   i18n/engine.js — Движок локализации (многоязычность RU/EN).
+   i18n/engine.js — Localization engine (multilingual RU/EN).
    
-   Система:
-   • LOCALE{} — Хранилище строк (заполняется в locale-ru.js, locale-en.js)
-   • t(key, ...args) — Получить строку на текущем языке
-   • setLang(lang) — Сменить язык и обновить UI
+   System:
+   • LOCALE{} — String storage (populated in locale-ru.js, locale-en.js)
+   • t(key, ...args) — Get string in current language
+   • setLang(lang) — Switch language and update UI
    
-   Определение языка (приоритет):
-   1. Сохранённое в localStorage ('d20_lang')
-   2. navigator.language (автоопределение)
-   3. Fallback: 'ru'
+   Language detection (priority):
+   1. Saved in localStorage ('d20_lang')
+   2. navigator.language (auto-detect)
+   3. Fallback: 'en'
    
-   Подстановка: t('key', arg0, arg1) заменяет {0}, {1} в строке.
+   Substitution: t('key', arg0, arg1) replaces {0}, {1} in strings.
    
-   Зависимости: SafeStorage (должен быть загружен до этого файла)
-   Экспорт: window.{LOCALE, t, setLang, getLang}
+   Dependencies: SafeStorage (must be loaded before this file)
+   Export: window.{LOCALE, t, setLang, getLang}
    ============================================================ */
 
 const LOCALE = { ru: {}, en: {} };
 
-// --- Определение языка ---
-let _currentLang = 'ru';
+// --- Language detection ---
+let _currentLang = 'en';
 (function() {
   const saved = SafeStorage.getItem('d20_lang');
   if (saved && (saved === 'ru' || saved === 'en')) {
     _currentLang = saved;
   } else {
-    const nav = (navigator.language || navigator.userLanguage || 'ru').toLowerCase();
-    _currentLang = nav.startsWith('en') ? 'en' : 'ru';
+    const nav = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+    _currentLang = nav.startsWith('ru') ? 'ru' : 'en';
     SafeStorage.setItem('d20_lang', _currentLang);
   }
 })();
 
-/** Получить строку на текущем языке */
+/** Get string in current language */
 function t(key, ...args) {
   const str = (LOCALE[_currentLang] && LOCALE[_currentLang][key]) ||
-              (LOCALE.ru && LOCALE.ru[key]) || key;
+              (LOCALE.en && LOCALE.en[key]) || key;
   if (args.length === 0) return str;
-  // Поддержка подстановки {0}, {1}...
+  // Substitution support {0}, {1}...
   return str.replace(/\{(\d+)\}/g, (m, i) => args[i] !== undefined ? args[i] : m);
 }
 
-/** Сменить язык */
+/** Switch language */
 function setLang(lang) {
   if (lang !== 'ru' && lang !== 'en') return;
   _currentLang = lang;
   SafeStorage.setItem('d20_lang', lang);
-  // Обновить HTML-элементы с data-i18n
+  // Update HTML elements with data-i18n
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = t(el.getAttribute('data-i18n'));
   });
-  // Перестроить динамические оверлеи лагеря при смене языка
+  // Rebuild dynamic camp overlays on language change
   if (window.UI && UI._campOverlay) {
     UI._campOverlay.remove();
     UI._campOverlay = null;
   }
 }
 
-/** Получить текущий язык */
+/** Get current language */
 function getLang() { return _currentLang; }
 
 window.t = t;
