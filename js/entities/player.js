@@ -1,11 +1,40 @@
 'use strict';
 /* ============================================================
-   player.js — герой: создание, движение, слоты, урон и т.п.
-   Всегда стартует с мечом в первом слоте оружия.
+   player.js — Модуль игрового персонажа (Hero).
+   
+   Отвечает за:
+   - Создание героя (Player.create) с начальными характеристиками
+   - Управление слотами оружия и пассивных способностей
+   - Движение с коллизиями (стены, двери)
+   - Система получения урона (Player.takeDamage) с учётом:
+     * i-frames (неуязвимость после удара)
+     * Уворот (талант)
+     * Щит маны (полная блокировка)
+     * Снижение урона (броня)
+     * Магический отклик (ответный снаряд)
+   - Регенерация HP
+   - Рендер героя (спрайт/фоллбэк + ауры + эффекты)
+   
+   Зависимости:
+   - CONFIG (параметры)
+   - Input (система ввода)
+   - GameMap (коллизии, границы)
+   - MetaProgress (таланты, гильдия)
+   - Classes (классовая система)
+   - Particles (визуальные эффекты)
+   
+   Экспорт: window.Player
    ============================================================ */
 
 const Player = {
-  /** Создать нового героя. */
+  /**
+   * Создать нового героя с полным набором начальных характеристик.
+   * Применяет бонусы из мета-прогресса, классов и гильдии.
+   * 
+   * @param {number} startX - Начальная X-координата (центр карты по умолчанию)
+   * @param {number} startY - Начальная Y-координата (центр карты по умолчанию)
+   * @returns {Object} Объект героя со всеми полями
+   */
   create(startX, startY) {
     // Шаг 15: динамические слоты из мета-прогресса
     const weaponSlotCount = (window.MetaProgress && MetaProgress.data)
@@ -142,7 +171,13 @@ const Player = {
     return p;
   },
 
-  /** Найти первый свободный слот оружия и положить туда. Возвращает true/false. */
+  /**
+   * Добавить оружие в первый свободный слот.
+   * 
+   * @param {Object} player - Объект героя
+   * @param {Object} weapon - Объект оружия (из WEAPON_FACTORIES)
+   * @returns {boolean} true если оружие добавлено, false если нет свободных слотов
+   */
   addWeapon(player, weapon) {
     for (let i = 0; i < player.weaponSlots.length; i++) {
       if (!player.weaponSlots[i]) {
@@ -154,6 +189,14 @@ const Player = {
     return false;
   },
 
+  /**
+   * Добавить пассивную способность в первый свободный слот.
+   * Сразу вызывает ability.apply(player) для применения эффектов.
+   * 
+   * @param {Object} player - Объект героя
+   * @param {Object} ability - Объект пассивки (из ABILITY_FACTORIES)
+   * @returns {boolean} true если способность добавлена
+   */
   addAbility(player, ability) {
     for (let i = 0; i < player.abilitySlots.length; i++) {
       if (!player.abilitySlots[i]) {
@@ -166,20 +209,40 @@ const Player = {
     return false;
   },
 
-  /** Найти оружие по id (или null). */
+  /**
+   * Найти оружие по ID в слотах героя.
+   * @param {Object} player - Объект героя
+   * @param {string} id - ID оружия
+   * @returns {Object|null} Объект оружия или null
+   */
   findWeapon(player, id) {
     for (const w of player.weaponSlots) if (w && w.id === id) return w;
     return null;
   },
+  /**
+   * Найти пассивную способность по ID.
+   * @param {Object} player - Объект героя
+   * @param {string} id - ID пассивки
+   * @returns {Object|null} Объект пассивки или null
+   */
   findAbility(player, id) {
     for (const a of player.abilitySlots) if (a && a.id === id) return a;
     return null;
   },
 
+  /** Проверить наличие свободного слота оружия */
   hasFreeWeaponSlot(player)  { return player.weaponSlots.some(s => !s); },
+  /** Проверить наличие свободного слота пассивки */
   hasFreeAbilitySlot(player) { return player.abilitySlots.some(s => !s); },
 
-  /** Удалить пассивку из её слота (со снятием эффектов). Возвращает true/false. */
+  /**
+   * Удалить пассивку из указанного слота (со снятием всех эффектов).
+   * Вызывает ability.remove(player) если определён.
+   * 
+   * @param {Object} player - Объект героя
+   * @param {number} slotIndex - Индекс слота (0..N-1)
+   * @returns {boolean} true если способность удалена
+   */
   removeAbility(player, slotIndex) {
     if (slotIndex < 0 || slotIndex >= player.abilitySlots.length) return false;
     const a = player.abilitySlots[slotIndex];
@@ -270,8 +333,15 @@ const Player = {
     pr.homingStrength = 3.0;
   },
 
-  /** Заменить оружие в указанном слоте. Если слот пустой — просто положить.
-   *  Используется для эволюций: новое оружие занимает слот старого. */
+  /**
+   * Заменить оружие в указанном слоте (используется для эволюций).
+   * Новое оружие занимает слот старого.
+   * 
+   * @param {Object} player - Объект героя
+   * @param {number} slotIndex - Индекс слота для замены
+   * @param {Object} newWeapon - Новое оружие
+   * @returns {boolean} true если замена произведена
+   */
   replaceWeapon(player, slotIndex, newWeapon) {
     if (slotIndex < 0 || slotIndex >= player.weaponSlots.length) return false;
     const old = player.weaponSlots[slotIndex];
@@ -281,7 +351,13 @@ const Player = {
     return true;
   },
 
-  /** Обновление героя: движение, регенерация, встроенные кулдауны. */
+  /**
+   * Обновление героя каждый кадр.
+   * Обрабатывает: движение, коллизии, регенерацию, ауры, таймеры.
+   * 
+   * @param {Object} player - Объект героя
+   * @param {number} dt - Дельта времени (sec)
+   */
   update(player, dt) {
     const move = Input.getMove();
     const ml = Math.hypot(move.x, move.y);
@@ -379,7 +455,13 @@ const Player = {
     player.missileCd = Math.max(0, player.missileCd - dt);
   },
 
-  /** Отрисовка героя. ctx сдвинут на -cam. */
+  /**
+   * Отрисовка героя на canvas.
+   * Рисует: ауру холода, щит маны, тень, спрайт/фоллбэк, радиус подбора.
+   * 
+   * @param {CanvasRenderingContext2D} ctx - Контекст рендера (сдвинут на -camera)
+   * @param {Object} player - Объект героя
+   */
   render(ctx, player) {
     const ps = player.size;
     const t = Date.now() * 0.001; // время для анимаций

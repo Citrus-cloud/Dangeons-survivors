@@ -1,7 +1,26 @@
 'use strict';
 /* ============================================================
    performance.js — Утилиты оптимизации памяти и производительности.
-   MemoryOptimizer, DistanceCache, EnemyThrottle, AudioPool.
+   
+   Содержит:
+   • MemoryOptimizer — Ограничение частиц и очистка далёких снарядов
+   • DistanceCache — Кэш расстояний (один раз за кадр)
+   • EnemyThrottle — Throttling обновления ИИ (пропуск кадров)
+   • AudioPool — Пул аудио-источников для SFX
+   
+   MemoryOptimizer:
+   - enforceParticleLimit() — Деактивирует старые частицы при превышении лимита
+   - cleanupDistantProjectiles() — Убирает снаряды, улетевшие за карту
+   
+   DistanceCache:
+   - beginFrame(px, py) — Кэширует позицию героя на начало кадра
+   - distToPlayer(x, y) → number — Быстрое расстояние до героя
+   
+   EnemyThrottle:
+   - tick() — Инкремент счётчика кадров
+   - shouldUpdate(enemyIndex) → boolean — Нужно ли обновлять врага в этом кадре
+   
+   Экспорт: window.{MemoryOptimizer, DistanceCache, EnemyThrottle}
    ============================================================ */
 
 const MemoryOptimizer = {

@@ -1,16 +1,24 @@
 /* ============================================================
-   sprites_items.js — Пиксельные спрайты оружий, пассивок,
-   эволюций и снарядов (16x16 иконки, 8x8/12x12 снаряды).
-
-   Генерируются программно через Canvas при старте игры.
-   Кешируются для O(1) доступа.
-
+   sprites-items.js — Пиксельные спрайты предметов (16×16).
+   
+   Содержит процедурную генерацию спрайтов для:
+   • Оружий (WEAPON_SPRITES) — мечи, посохи, арбалеты и т.д.
+   • Пассивок (ABILITY_SPRITES) — щиты, ауры, кольца
+   • Эволюций (EVOLUTION_SPRITES) — улучшенные формы оружий
+   • Снарядов (PROJECTILE_SPRITES) — 8×8 / 12×12 для пуль
+   
+   Все спрайты генерируются программно через Canvas при старте.
+   Используют утилиты из sprites-enemies.js (_createSpriteCanvas и др.).
+   
    API:
-   - initItemSprites()       — генерирует все спрайты, вызвать 1 раз
-   - WEAPON_SPRITES          — кеш {id: canvas 16x16}
-   - ABILITY_SPRITES         — кеш {id: canvas 16x16}
-   - EVOLUTION_SPRITES       — кеш {id: canvas 16x16}
-   - PROJECTILE_SPRITES      — кеш {type: canvas 8x8 или 12x12}
+   • initItemSprites() — Генерирует все спрайты (вызвать 1 раз)
+   • WEAPON_SPRITES{id: canvas} — Кэш иконок оружия
+   • ABILITY_SPRITES{id: canvas} — Кэш иконок пассивок
+   • EVOLUTION_SPRITES{id: canvas} — Кэш иконок эволюций
+   • PROJECTILE_SPRITES{type: canvas} — Кэш спрайтов снарядов
+   
+   Экспорт: window.{WEAPON_SPRITES, ABILITY_SPRITES, EVOLUTION_SPRITES,
+                     PROJECTILE_SPRITES, initItemSprites}
    ============================================================ */
 
 const WEAPON_SPRITES = {};

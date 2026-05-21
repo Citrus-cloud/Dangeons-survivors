@@ -1,19 +1,29 @@
 'use strict';
 /* ============================================================
-   particles.js — пул частиц и помощники для визуальных эффектов.
-
-   Шаг 3:
-   - Унифицированный объект Particle: kind = 'spark' | 'ring' | 'text'
-     поверх имеющихся полей (x, y, vx, vy, life, color, size).
-   - Helpers: Particles.spark, Particles.ring, Particles.burst,
-     Particles.text, Particles.chestGlow, Particles.fusionBurst.
-   - Пул создаётся и обновляется в main.js (CONFIG.POOLS.PARTICLES = 100).
-   - Этот модуль ТОЛЬКО предоставляет фабрику и хелперы спавна;
-     апдейт/рендер живут в Game.updateParticles / Game.renderParticles
-     (там же используем kind для разной отрисовки).
+   particles.js — Система визуальных частиц (VFX).
+   
+   Назначение:
+   Управляет созданием и спавном визуальных эффектов:
+   искры, кольца, текст, пыль, свечение сундуков и т.д.
+   
+   Типы частиц (kind):
+   • 'spark' — Разлетающийся квадрат (базовый тип)
+   • 'ring'  — Расширяющееся кольцо (AoE-индикатор)
+   • 'text'  — Плавающий текст (урон, криты, сообщения)
+   • 'dust'  — Пылевая частица с гравитацией
+   
+   Пул создаётся в Game.init() (CONFIG.POOLS.PARTICLES = 100).
+   Обновление/рендер — в Game.updateParticles() / Game.renderParticles().
+   
+   Экспорт: window.{createParticle, Particles}
    ============================================================ */
 
-/** Фабрика частицы. Расширенная под Шаг 3. */
+/**
+ * Фабрика объекта-частицы для ObjectPool.
+ * Все поля инициализируются нулями/значениями по умолчанию.
+ * 
+ * @returns {Object} Пустой объект частицы с active: false
+ */
 function createParticle() {
   return {
     active: false,

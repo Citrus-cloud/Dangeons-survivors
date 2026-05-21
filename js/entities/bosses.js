@@ -1,35 +1,89 @@
 'use strict';
 /* ============================================================
-   bosses.js — Система мини-боссов (Шаг 14: ротация, 13 боссов).
-
+   bosses.js — Система боссов (глобальные + стражи карт).
+   
    Архитектура:
-   - Bosses.current — текущий активный босс (или null).
-   - Bosses.guardian — текущий страж карты (или null).
-   - Bosses.globalRotation[] — 4 босса, выбранных для забега.
-   - Bosses.selectGlobalBosses() — ротация при старте забега.
-   - Bosses.selectGuardian(biomeId) — выбор стража для карты.
-   - Bosses.spawnGlobalBoss(slotIndex, player) — спавн глобального.
-   - Bosses.spawnGuardian(player) — спавн стража карты.
+   ─────────────
+   Bosses — синглтон, управляющий жизненным циклом боссов:
+   
+   Состояние:
+   • Bosses.current   — Текущий глобальный босс (или null)
+   • Bosses.guardian  — Текущий страж карты (или null)
+   • Bosses.globalRotation[] — 4 босса, выбранных для забега
+   
+   Ротация (Шаг 14):
+   • selectGlobalBosses() — Выбор 4 случайных боссов на забег
+   • selectGuardian(biomeId) — Выбор стража для конкретного биома
+   
+   Спавн:
+   • spawnGlobalBoss(slotIndex, player) — Спавн по таймеру (5:00, 10:00...)
+   • spawnGuardian(player) — Спавн стража карты
+   
+   Обновление:
+   • update(player, dt) — Главный цикл обоих боссов
+   • _updateBoss(boss, player, dt) — Диспетчер AI по boss.id
+   
+   Урон и смерть:
+   • damage(dmg, target) — Нанести урон с проверкой фазы
+   • _checkPhaseTransition(boss) — Переход на фазу 2/3
+   • _onBossDeath(boss) — Обработка смерти (награды, взрывы)
+   
+   Доступные боссы (13 шт.):
+   ─────────────────────────
+   boss_skeleton_knight — Скелет-рыцарь (slash + whirlwind)
+   boss_lich            — Лич (homing bolt + summon + AoE)
+   boss_spider_queen    — Королева пауков (web + bite + poison trail)
+   boss_fire_lord       — Огненный лорд (fireball + fire ring + trail)
+   boss_ice_lord        — Ледяной лорд (ice bolt + frost nova + ice spikes)
+   boss_ancient_ent     — Древний энт (roots + spores + branches)
+   boss_dark_knight     — Тёмный рыцарь (slash + dark wave + summon)
+   boss_ghoul_king      — Король гулей (claws + lifesteal + summon)
+   boss_ice_serpent     — Ледяной змей (ice breath + tail sweep + ice storm)
+   boss_magma_giant     — Магма-гигант (lava wave + stomp + eruption)
+   boss_spider_matriarch— Паучиха (web zones + teleport + death spawn)
+   boss_knight_commander— Рыцарь-командир (greatsword + command + rage)
+   boss_shadow_dragon   — Теневой дракон (dark breath + summon + explosion)
+   boss_ancient_dragon  — Древний дракон (финальный босс кампании, 3 фазы)
+   
+   Зависимости:
+   BOSS_CONFIG, BOSS_TYPES, BOSS_GUARDIANS_BY_BIOME, CONFIG,
+   Utils, Player, GameMap, Particles, Game, Loot, GameAudio
+   
+   Экспорт: window.Bosses
    ============================================================ */
 
 const Bosses = {
-  current: null,          // текущий глобальный босс
-  guardian: null,         // текущий страж карты
-  bossIndex: 0,           // индекс следующего слота (0..3)
-  nextSpawnTime: 0,       // время следующего глобального босса
-  defeatedMsg: 0,         // таймер «Босс повержен!»
+  /** @type {Object|null} Текущий глобальный босс забега */
+  current: null,
+  /** @type {Object|null} Текущий страж карты */
+  guardian: null,
+  /** @type {number} Индекс следующего слота (0..3) */
+  bossIndex: 0,
+  /** @type {number} Время спавна следующего глобального босса (sec) */
+  nextSpawnTime: 0,
+  /** @type {number} Таймер сообщения «Босс повержен!» */
+  defeatedMsg: 0,
+  /** @type {number} Таймер тряски экрана */
   screenShake: 0,
+  /** @type {number} Смещение тряски X */
   screenShakeX: 0,
+  /** @type {number} Смещение тряски Y */
   screenShakeY: 0,
-  globalRotation: [],     // массив 4 bossId для этого забега
-  bossAnnounce: 0,        // таймер анонса имени босса
-  bossAnnounceName: '',   // имя для анонса
+  /** @type {string[]} Массив 4 bossId для текущего забега */
+  globalRotation: [],
+  /** @type {number} Таймер анонса имени босса */
+  bossAnnounce: 0,
+  /** @type {string} Имя босса для анонса */
+  bossAnnounceName: '',
 
   /* ============================================================
-     Инициализация и ротация
+     Инициализация и ротация боссов
      ============================================================ */
 
-  /** Полная инициализация для нового забега. */
+  /**
+   * Полная инициализация для нового забега.
+   * Сбрасывает все состояния и выбирает ротацию боссов.
+   */
   init() {
     this.current = null;
     this.guardian = null;
