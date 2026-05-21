@@ -1011,7 +1011,7 @@ const UI = {
         <div class="guild-rank-section">
           <div class="guild-rank-current">
             <span class="guild-rank-icon">🛡</span>
-            <span id="guildRankName" class="guild-rank-name">Новобранец</span>
+            <span id="guildRankName" class="guild-rank-name">${t('guild_rank_novice')}</span>
           </div>
           <div class="guild-rep-bar-v2">
             <div class="guild-rep-fill-v2" id="guildRepFillV2"></div>
@@ -1069,7 +1069,7 @@ const UI = {
       repText = `${rep} / ${nextRep}`;
     } else {
       pct = 100;
-      repText = `${rep} — МАКС`;
+      repText = `${rep} ${t('guild_max')}`;
     }
     ov.querySelector('#guildRepFillV2').style.width = pct + '%';
     ov.querySelector('#guildRepTextV2').textContent = repText;
@@ -1102,7 +1102,7 @@ const UI = {
         <div class="guild-rank-row-left">
           <span class="guild-rank-num">${i + 1}</span>
           <span class="guild-rank-row-name">${r.name}</span>
-          <span class="guild-rank-row-rep">(${r.rep} реп.)</span>
+          <span class="guild-rank-row-rep">(${r.rep} ${t('guild_rep')})</span>
         </div>
         <div class="guild-rank-row-right">
           <span class="guild-rank-row-reward">${r.reward}</span>
@@ -1197,7 +1197,7 @@ const UI = {
     if (q.claimed) {
       statusHtml = '<span class="guild-quest-done">' + t('guild_quest_done') + '</span>';
     } else if (q.completed) {
-      statusHtml = `<button class="btn guild-quest-claim-btn" data-quest-id="${q.id}">Забрать (+${q.repReward} реп.)</button>`;
+      statusHtml = `<button class="btn guild-quest-claim-btn" data-quest-id="${q.id}">${t('guild_quest_claim', q.repReward)}</button>`;
     } else {
       statusHtml = `<span class="guild-quest-progress-text">${q.progress}/${q.target}</span>`;
     }
