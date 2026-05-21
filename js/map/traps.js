@@ -277,14 +277,14 @@ GameMap._handlePuzzleEvent = function(event, player) {
       Game.secretChest = c;
       if (window.Particles) {
         Particles.burst(c.x, c.y, 10, { color: '#ffd700', speedMin: 60, speedMax: 160, lifeMin: 0.4, lifeMax: 0.8, sizeMin: 3, sizeMax: 6 });
-        Particles.text(player.x, player.y - 40, 'PUZZLE SOLVED!', 1.5, '#ffd700', 14);
+        Particles.text(player.x, player.y - 40, t('puzzle_solved'), 1.5, '#ffd700', 14);
       }
     }
   } else if (event.type === 'error') {
     player.hp -= event.damage || 5;
     if (window.Particles) {
       Particles.burst(player.x, player.y, 4, { color: '#ff3333', speedMin: 40, speedMax: 100, lifeMin: 0.2, lifeMax: 0.4, sizeMin: 2, sizeMax: 4 });
-      Particles.text(player.x, player.y - 30, 'ERROR!', 1.0, '#ff3333', 12);
+      Particles.text(player.x, player.y - 30, t('puzzle_error'), 1.0, '#ff3333', 12);
     }
     if (window.Enemies && window.Game && Game.enemies) {
       const count = event.damage >= 10 ? 2 : 1;
@@ -354,7 +354,7 @@ GameMap._handleMagicRuneEvent = function(event, player) {
       player.hp = Math.min(player.maxHp, player.hp + event.amount);
       if (window.Particles) {
         Particles.burst(event.x, event.y, 8, { color: '#33ff66', speedMin: 40, speedMax: 100, lifeMin: 0.4, lifeMax: 0.7, sizeMin: 2, sizeMax: 4 });
-        Particles.text(player.x, player.y - 30, '+' + event.amount + ' HP', 1.0, '#33ff66', 12);
+        Particles.text(player.x, player.y - 30, t('hp_gained', event.amount), 1.0, '#33ff66', 12);
       }
       break;
     }

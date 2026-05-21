@@ -363,7 +363,7 @@ const Bosses = {
               color: '#ff0000', speedMin: 80, speedMax: 200,
               lifeMin: 0.4, lifeMax: 0.8, sizeMin: 3, sizeMax: 6,
             });
-            Particles.text(boss.x, boss.y - 40, 'PHASE III — RAGE!', 2.0, '#ff0000', 18);
+            Particles.text(boss.x, boss.y - 40, t('boss_phase3_rage'), 2.0, '#ff0000', 18);
           }
         }
       }
@@ -439,7 +439,7 @@ const Bosses = {
     const deathColor = cfg.color || '#fff';
     if (window.Particles) {
       Particles.bossDust(boss.x, boss.y, deathColor);
-      Particles.text(boss.x, boss.y - 30, 'BOSS DEFEATED!', 2.0, '#ffd700', 20);
+      Particles.text(boss.x, boss.y - 30, t('boss_defeated'), 2.0, '#ffd700', 20);
     }
 
     this.screenShake = 0.3;
@@ -1336,7 +1336,7 @@ const Bosses = {
       }
       if (window.Particles) {
         Particles.ring(boss.x, boss.y, atk.commandAttack.radius, 0.4, 'rgba(255, 50, 50, 0.7)', 3);
-        Particles.text(boss.x, boss.y - 30, 'ATTACK!', 1.5, '#ff4444', 14);
+        Particles.text(boss.x, boss.y - 30, t('boss_attack'), 1.5, '#ff4444', 14);
       }
     }
   },
@@ -1650,7 +1650,7 @@ const Bosses = {
     ctx.font = 'bold 28px ui-monospace, monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('BOSS DEFEATED!', viewW / 2, viewH / 3);
+    ctx.fillText(t('boss_defeated'), viewW / 2, viewH / 3);
     ctx.globalAlpha = 1;
     ctx.restore();
   },
@@ -1764,7 +1764,7 @@ const Bosses = {
         }
         if (window.Particles) {
           Particles.ring(boss.x, boss.y, atk.roar.radius, 0.5, 'rgba(128, 0, 255, 0.8)', 4);
-          Particles.text(boss.x, boss.y - 50, 'SCREAM!', 1.0, '#a040ff', 16);
+          Particles.text(boss.x, boss.y - 50, t('boss_scream'), 1.0, '#a040ff', 16);
         }
       }
     }
@@ -2195,7 +2195,7 @@ Bosses._updatePuzzleSphinx = function(boss, player, dt) {
       boss._puzzleCd = atk.puzzleInterval || 15.0;
       if (window.Particles) {
         Particles.ring(boss.x, boss.y, 60, 0.3, 'rgba(0, 255, 100, 0.8)', 3);
-        Particles.text(boss.x, boss.y - 40, 'VULNERABLE!', 1.5, '#00ff66', 16);
+        Particles.text(boss.x, boss.y - 40, t('boss_vulnerable'), 1.5, '#00ff66', 16);
       }
     } else if (boss._puzzleTimer <= 0) {
       // Время вышло — AoE штраф

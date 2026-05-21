@@ -2532,7 +2532,7 @@ const GameMap = {
       Particles.ring(door.x + door.w / 2, door.y + door.h / 2, 80, 0.5,
         'rgba(255, 215, 80, 0.85)', 4);
       Particles.text(door.x + door.w / 2, door.y - 16,
-        'SECRET ROOM OPENED', 1.6, '#ffd84a', 14);
+        t('secret_room_opened'), 1.6, '#ffd84a', 14);
     }
     // Спавним сундук в секретной комнате (через main.js)
     if (window.Game && Game.spawnSecretChest) Game.spawnSecretChest();
@@ -3726,7 +3726,7 @@ GameMap.updateCampaignObjects = function(dt, player) {
             color: '#9b59b6', speedMin: 60, speedMax: 180,
             lifeMin: 0.5, lifeMax: 1.0, sizeMin: 3, sizeMax: 6,
           });
-          Particles.text(obj.x, obj.y - 30, 'ALTAR ACTIVATED!', 1.5, '#9b59b6', 14);
+          Particles.text(obj.x, obj.y - 30, t('altar_activated'), 1.5, '#9b59b6', 14);
         }
       }
     }
@@ -3769,7 +3769,7 @@ GameMap.updateCampaignObjects = function(dt, player) {
             }
           }
           if (window.Particles && player) {
-            Particles.text(player.x, player.y - 40, 'KEY GUARDIAN APPEARED!', 2.0, '#ffd700', 14);
+            Particles.text(player.x, player.y - 40, t('key_guardian_appeared'), 2.0, '#ffd700', 14);
           }
         }
       }

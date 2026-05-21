@@ -179,7 +179,7 @@ const UI = {
    */
   showLevelUp(level, choices, onPick) {
     this.hideAll();
-    this.lvlNum.textContent = level;
+    this.lvlNum.textContent = t('levelup_title', level);
     this.cardsEl.innerHTML = '';
     if (choices.length === 0) {
       // На случай форс-мажора — кнопка "Продолжить"
@@ -1470,7 +1470,7 @@ const UI = {
         const room = puzzle.room;
         if (player.x >= room.x && player.x <= room.x + room.w &&
             player.y >= room.y && player.y <= room.y + room.h) {
-          this._renderPuzzleProgress(ctx, viewW, viewH, puzzle, 'Rune Activation');
+          this._renderPuzzleProgress(ctx, viewW, viewH, puzzle, t('puzzle_label_rune'));
           break;
         }
       }
@@ -1483,7 +1483,7 @@ const UI = {
         const room = puzzle.room;
         if (player.x >= room.x && player.x <= room.x + room.w &&
             player.y >= room.y && player.y <= room.y + room.h) {
-          this._renderPuzzleProgress(ctx, viewW, viewH, puzzle, 'Cipher');
+          this._renderPuzzleProgress(ctx, viewW, viewH, puzzle, t('puzzle_label_cipher'));
           break;
         }
       }
@@ -1551,7 +1551,7 @@ const UI = {
       ctx.font = 'bold 12px ui-monospace, monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillText('Wrong! Resetting...', viewW / 2, by + barH + 12);
+      ctx.fillText(t('puzzle_wrong_reset'), viewW / 2, by + barH + 12);
     }
   },
 
@@ -1655,16 +1655,12 @@ const UI = {
     // Переключатель языка
     ov.querySelector('#langRuBtn').addEventListener('click', () => {
       setLang('ru');
-      // Перестроить настройки для обновления текстов
-      this._settingsOverlay.remove();
-      this._settingsOverlay = null;
+      // setLang() already destroys all overlays; rebuild settings
       this.showSettings();
     });
     ov.querySelector('#langEnBtn').addEventListener('click', () => {
       setLang('en');
-      // Перестроить настройки для обновления текстов
-      this._settingsOverlay.remove();
-      this._settingsOverlay = null;
+      // setLang() already destroys all overlays; rebuild settings
       this.showSettings();
     });
 
