@@ -1,7 +1,7 @@
 {
   "name": "Dungeon Survivors: D20",
   "short_name": "Dungeon D20",
-  "description": "Bullet Heaven в D&D-сеттинге — выживай в подземельях!",
+  "description": "Bullet Heaven in a D&D setting — survive the dungeons!",
   "start_url": "index.html",
   "display": "standalone",
   "orientation": "any",

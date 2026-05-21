@@ -860,3 +860,4 @@ LOCALE.ru.victory_reward_achieve = 'Достижение: Победитель �
 
 // === Разное ===
 LOCALE.ru.exclusive_legendary = 'Легендарное';
+LOCALE.ru.chest_rare_find = 'Редкая находка';

@@ -966,3 +966,4 @@ LOCALE.en.victory_reward_achieve = 'Achievement: Dragon Slayer';
 
 // === Misc ===
 LOCALE.en.exclusive_legendary = 'Legendary';
+LOCALE.en.chest_rare_find = 'Rare Find';
