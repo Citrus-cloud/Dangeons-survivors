@@ -128,58 +128,54 @@ const Particles = {
     }
   },
 
-  /** Эффект слияния (эволюция): золотая вспышка-кольцо + 12 искр. */
+  /** Эффект слияния (эволюция): золотая вспышка-кольцо + 6 искр. (упрощено для мобильных) */
   fusionBurst(x, y) {
-    // Кольцо: расширяется до 100 px за 0.3 с
-    this.ring(x, y, 100, 0.30, 'rgba(255, 220, 90, 0.95)', 4);
-    // Внутреннее кольцо чуть меньше и ярче
-    this.ring(x, y, 60,  0.25, 'rgba(255, 255, 200, 0.8)', 2);
-    // Золотые искры
-    this.burst(x, y, 12, {
+    // Кольцо: расширяется до 80 px за 0.25 с
+    this.ring(x, y, 80, 0.25, 'rgba(255, 220, 90, 0.9)', 3);
+    // Золотые искры (уменьшено количество)
+    this.burst(x, y, 6, {
       color: '#ffd84a',
-      speedMin: 80, speedMax: 220,
-      lifeMin: 0.45, lifeMax: 0.85,
-      sizeMin: 2.5, sizeMax: 4.5,
-    });
-  },
-
-  /** Лёгкое свечение при появлении сундука — мягкое расширяющееся кольцо. */
-  chestGlow(x, y) {
-    this.ring(x, y, 50, 0.50, 'rgba(255, 215, 80, 0.55)', 3);
-  },
-
-  /** Эффект открытия сундука: яркая вспышка + жёлтые искры. */
-  chestOpen(x, y) {
-    this.ring(x, y, 80, 0.35, 'rgba(255, 240, 160, 0.95)', 4);
-    this.burst(x, y, 14, {
-      color: '#ffd84a',
-      speedMin: 90, speedMax: 240,
-      lifeMin: 0.5, lifeMax: 0.9,
+      speedMin: 80, speedMax: 180,
+      lifeMin: 0.35, lifeMax: 0.65,
       sizeMin: 2, sizeMax: 4,
     });
   },
 
-  /** Шаг 6: Эффект появления босса — двойная вспышка + портал. */
-  bossSpawn(x, y, color) {
-    this.ring(x, y, 80, 0.5, 'rgba(255, 200, 50, 0.9)', 4);
-    this.ring(x, y, 50, 0.4, color || 'rgba(255, 80, 30, 0.8)', 3);
-    this.burst(x, y, 15, {
-      color: '#ffd700',
+  /** Лёгкое свечение при появлении сундука — убрано для производительности на мобильных. */
+  chestGlow(x, y) {
+    // Отключено свечение для мобильных устройств
+  },
+
+  /** Эффект открытия сундука: вспышка + жёлтые искры (упрощено). */
+  chestOpen(x, y) {
+    this.ring(x, y, 70, 0.30, 'rgba(255, 240, 160, 0.9)', 3);
+    this.burst(x, y, 8, {
+      color: '#ffd84a',
       speedMin: 80, speedMax: 200,
-      lifeMin: 0.5, lifeMax: 0.9,
-      sizeMin: 3, sizeMax: 5,
+      lifeMin: 0.4, lifeMax: 0.7,
+      sizeMin: 2, sizeMax: 3,
     });
   },
 
-  /** Шаг 6: Эффект смерти босса — крупная вспышка + много частиц + тряска. */
+  /** Шаг 6: Эффект появления босса — вспышка + искры (упрощено). */
+  bossSpawn(x, y, color) {
+    this.ring(x, y, 70, 0.4, color || 'rgba(255, 80, 30, 0.8)', 3);
+    this.burst(x, y, 8, {
+      color: '#ffd700',
+      speedMin: 70, speedMax: 180,
+      lifeMin: 0.4, lifeMax: 0.7,
+      sizeMin: 2, sizeMax: 4,
+    });
+  },
+
+  /** Шаг 6: Эффект смерти босса — вспышка + частицы (упрощено). */
   bossDeath(x, y, color) {
-    this.ring(x, y, 120, 0.5, color || '#ff4444', 5);
-    this.ring(x, y, 80, 0.35, 'rgba(255, 255, 200, 0.9)', 3);
-    this.burst(x, y, 25, {
+    this.ring(x, y, 100, 0.4, color || '#ff4444', 4);
+    this.burst(x, y, 12, {
       color: color || '#ff4444',
-      speedMin: 100, speedMax: 280,
-      lifeMin: 0.5, lifeMax: 1.0,
-      sizeMin: 3, sizeMax: 6,
+      speedMin: 80, speedMax: 220,
+      lifeMin: 0.4, lifeMax: 0.8,
+      sizeMin: 2, sizeMax: 5,
     });
     this.text(x, y - 30, 'BOSS DEFEATED!', 2.0, '#ffd700', 20);
   },
@@ -203,49 +199,49 @@ const Particles = {
   },
 
   /**
-   * «Щелчок Таноса» — рассыпание обычного врага (8–12 частиц, 0.3 сек).
+   * «Щелчок Таноса» — рассыпание обычного врага (5–8 частиц, 0.25 сек).
    * @param {number} x - позиция врага
    * @param {number} y - позиция врага
    * @param {string} color - основной цвет врага
    */
   enemyDust(x, y, color) {
-    const count = Utils.randInt(8, 12);
+    const count = Utils.randInt(5, 8);
     const baseColor = color || '#888';
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const speed = Utils.rand(20, 40);
+      const speed = Utils.rand(18, 35);
       const vx = Math.cos(angle) * speed;
-      const vy = Math.sin(angle) * speed - Utils.rand(5, 15); // лёгкий подлёт вверх
-      const life = Utils.rand(0.2, 0.35);
+      const vy = Math.sin(angle) * speed - Utils.rand(4, 12);
+      const life = Utils.rand(0.15, 0.30);
       this.dust(
-        x + Utils.rand(-6, 6),
-        y + Utils.rand(-6, 6),
-        vx, vy, life, baseColor, Utils.rand(20, 40)
+        x + Utils.rand(-5, 5),
+        y + Utils.rand(-5, 5),
+        vx, vy, life, baseColor, Utils.rand(20, 35)
       );
     }
   },
 
   /**
-   * «Щелчок Таноса» для боссов — 20-30 частиц, 0.5 сек + вспышка.
+   * «Щелчок Таноса» для боссов — 12-18 частиц, 0.4 сек + вспышка (упрощено).
    * @param {number} x - позиция босса
    * @param {number} y - позиция босса
    * @param {string} color - цвет босса
    */
   bossDust(x, y, color) {
-    const count = Utils.randInt(20, 30);
+    const count = Utils.randInt(12, 18);
     const baseColor = color || '#c00';
     // Вспышка
-    this.ring(x, y, 60, 0.3, 'rgba(255, 255, 200, 0.9)', 4);
+    this.ring(x, y, 50, 0.25, 'rgba(255, 255, 200, 0.8)', 3);
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const speed = Utils.rand(30, 60);
+      const speed = Utils.rand(25, 50);
       const vx = Math.cos(angle) * speed;
-      const vy = Math.sin(angle) * speed - Utils.rand(8, 20);
-      const life = Utils.rand(0.3, 0.55);
+      const vy = Math.sin(angle) * speed - Utils.rand(6, 16);
+      const life = Utils.rand(0.25, 0.45);
       this.dust(
-        x + Utils.rand(-10, 10),
-        y + Utils.rand(-10, 10),
-        vx, vy, life, baseColor, Utils.rand(15, 35)
+        x + Utils.rand(-8, 8),
+        y + Utils.rand(-8, 8),
+        vx, vy, life, baseColor, Utils.rand(15, 30)
       );
     }
   },

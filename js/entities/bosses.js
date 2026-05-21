@@ -565,6 +565,12 @@ const Bosses = {
     // Шаг 15: счётчик убийств боссов
     Game.bossKills = (Game.bossKills || 0) + 1;
 
+    // --- Достижения: проверка убийств боссов (суммарно) ---
+    if (window.Achievements && window.MetaProgress && MetaProgress.data) {
+      const totalBosses = (MetaProgress.data.totalBossKills || 0) + Game.bossKills;
+      Achievements.check('bosses', totalBosses);
+    }
+
     // Золотой сундук (особый — выбор из 3 карт)
     Game.bossChest = {
       x: boss.x,
