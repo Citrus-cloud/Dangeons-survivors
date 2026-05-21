@@ -87,13 +87,15 @@ const PoolManager = {
     // Возвращаем всё в пулы (не создаём мусор)
     this.releaseAll();
     
-    // Очищаем кеш расстояний
+    // Сбрасываем кеш расстояний (сбрасываем позицию и frameId)
     if (window.DistanceCache) {
-      DistanceCache._cache.clear();
+      DistanceCache._playerX = 0;
+      DistanceCache._playerY = 0;
+      DistanceCache._frameId = 0;
     }
     
     // Очищаем пространственную сетку
-    if (window.Game && Game._enemyGrid) {
+    if (window.Game && Game._enemyGrid && Game._enemyGrid.clear) {
       Game._enemyGrid.clear();
     }
 
