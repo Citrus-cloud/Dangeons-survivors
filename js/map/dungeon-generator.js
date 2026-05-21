@@ -335,13 +335,20 @@ const GameMap = {
       }
     }
 
+    // ВАЖНО: присваиваем dungeon ДО размещения Step17 объектов,
+    // чтобы render() не получил null даже при ошибке в _placeStep17Objects.
+    this.dungeon = dungeon;
+
     // Шаг 17: размещаем новые загадки и ловушки
-    const isCampaign = !!(window.Campaign && Campaign.active);
-    if (GameMap._placeStep17Objects) {
-      GameMap._placeStep17Objects(dungeon, mapNumber, isCampaign);
+    try {
+      const isCampaign = !!(window.Campaign && Campaign.active);
+      if (GameMap._placeStep17Objects) {
+        GameMap._placeStep17Objects(dungeon, mapNumber, isCampaign);
+      }
+    } catch (e) {
+      console.error('[GameMap] _placeStep17Objects failed:', e);
     }
 
-    this.dungeon = dungeon;
     return dungeon;
   },
 
@@ -2647,9 +2654,11 @@ const GameMap = {
     }
 
     if (!this.dungeon) {
-      // Совместимость: если подземелье не сгенерено
-      ctx.fillStyle = '#2a2a2a';
-      ctx.fillRect(0, 0, this.mapW, this.mapH);
+      // Совместимость: если подземелье не сгенерено И кэш пола тоже отсутствует
+      if (!this._floorCache) {
+        ctx.fillStyle = '#2a2a2a';
+        ctx.fillRect(0, 0, this.mapW, this.mapH);
+      }
       if (window.PerfMonitor) PerfMonitor.end('mapRender');
       return;
     }
