@@ -828,6 +828,11 @@ LOCALE.en.boss_shadow_dragon = 'Shadow Dragon';
 LOCALE.en.weapon_phoenix_bow = 'Phoenix Bow';
 LOCALE.en.weapon_beast_claw = 'Beast Claw';
 LOCALE.en.weapon_rune_shield = 'Rune Shield';
+LOCALE.en.weapon_desc_lich_blade = 'Melee, 30 dmg. Guild 2+: summons skeletons.';
+LOCALE.en.weapon_desc_phoenix_bow = 'Fire arrow, 40px explosion.';
+LOCALE.en.weapon_desc_archmage_staff = '3 orbs (fire+ice+lightning).';
+LOCALE.en.weapon_desc_beast_claw = 'Fast strikes, crit, bleed.';
+LOCALE.en.weapon_desc_rune_shield = '15 dps in 50px radius, +10% DR.';
 
 
 /* --- Tutorial --- */

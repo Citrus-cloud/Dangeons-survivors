@@ -683,7 +683,7 @@ const UI = {
           <div class="camp-rep"><span class="rep-icon">⚜</span> <span id="campRepVal">0</span> <span id="campGuildLvl">(${t('level_short')} 0)</span></div>
         </div>
         <div class="camp-buttons">
-          <button id="campCampaignBtn" class="btn camp-btn camp-btn-campaign">${t('menu_campaign')}</button>
+          <button id="campCampaignBtn" class="btn camp-btn camp-btn-campaign" style="position:relative;opacity:0.6;pointer-events:none;">${t('menu_campaign')}<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.85em;color:#fff;background:rgba(0,0,0,0.45);border-radius:inherit;">В разработке</span></button>
           <button id="campStartBtn" class="btn camp-btn camp-btn-main">${t('menu_trials')}</button>
           <button id="campHeroBtn" class="btn camp-btn">${t('camp_hero')}</button>
           <button id="campTalentsBtn" class="btn camp-btn">${t('camp_talents')}</button>
@@ -708,8 +708,7 @@ const UI = {
       this.showMapSelect();
     });
     ov.querySelector('#campCampaignBtn').addEventListener('click', () => {
-      this.hideCamp();
-      this._showStoryCampaignMenu();
+      // Сюжетный режим в разработке — заглушка
     });
     ov.querySelector('#campTalentsBtn').addEventListener('click', () => {
       this.hideCamp();

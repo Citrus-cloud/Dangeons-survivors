@@ -666,6 +666,11 @@ LOCALE.ru.boss_shadow_dragon = 'Теневой дракон';
 LOCALE.ru.weapon_phoenix_bow = 'Лук феникса';
 LOCALE.ru.weapon_beast_claw = 'Коготь зверя';
 LOCALE.ru.weapon_rune_shield = 'Рунный щит';
+LOCALE.ru.weapon_desc_lich_blade = 'Ближний бой, 30 урона. Гильдия 2+: призывает скелетов.';
+LOCALE.ru.weapon_desc_phoenix_bow = 'Огненная стрела, взрыв 40px.';
+LOCALE.ru.weapon_desc_archmage_staff = '3 сферы (огонь+лёд+молния).';
+LOCALE.ru.weapon_desc_beast_claw = 'Быстрые удары, крит, кровотечение.';
+LOCALE.ru.weapon_desc_rune_shield = '15 урон/сек в радиусе 50px, +10% защиты.';
 
 
 /* --- Обучение (Tutorial) --- */

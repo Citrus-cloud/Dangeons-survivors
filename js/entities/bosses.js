@@ -1788,8 +1788,10 @@ const Bosses = {
         // Отбрасывание
         const kbx = dx / dist * atk.tailSwipe.knockback;
         const kby = dy / dist * atk.tailSwipe.knockback;
+        const _oldXB1 = player.x, _oldYB1 = player.y;
         player.x += kbx;
         player.y += kby;
+        if (window.Player && Player.validatePosition) Player.validatePosition(player, _oldXB1, _oldYB1);
         if (window.Particles) {
           Particles.ring(boss.x, boss.y, atk.tailSwipe.radius, 0.3, 'rgba(255, 100, 0, 0.8)', 4);
         }
@@ -1975,8 +1977,10 @@ Bosses._updateWebArchitect = function(boss, player, dt) {
     // Притягивание
     const n = Utils.norm(boss.x - player.x, boss.y - player.y);
     const pullDist = Math.min(dist * 0.5, 100);
+    const _oldXB2 = player.x, _oldYB2 = player.y;
     player.x += n.x * pullDist;
     player.y += n.y * pullDist;
+    if (window.Player && Player.validatePosition) Player.validatePosition(player, _oldXB2, _oldYB2);
     const dmg = atk.harpoon.damage * boss.difficultyMul;
     if (Player.takeDamage) Player.takeDamage(player, dmg, boss);
     else player.hp -= dmg;

@@ -2872,11 +2872,11 @@ const EXCLUSIVE_WEAPON_FACTORIES = {
 };
 
 const EXCLUSIVE_WEAPON_INFO = [
-  { id: 'lich_blade',     name: t('guild_reward_lich_blade'), icon: '💀', desc: 'Melee, 30 dmg. Guild 2+: summons skeletons.' },
-  { id: 'phoenix_bow',    name: t('weapon_phoenix_bow'),        icon: '🔥', desc: 'Fire arrow, 40px explosion.' },
-  { id: 'archmage_staff', name: t('guild_reward_archmage_staff'),     icon: '🪄', desc: '3 orbs (fire+ice+lightning).' },
-  { id: 'beast_claw',     name: t('weapon_beast_claw'),       icon: '🐾', desc: 'Fast strikes, crit, bleed.' },
-  { id: 'rune_shield',    name: t('weapon_rune_shield'),         icon: '🛡', desc: '15 dps in 50px radius, +10% DR.' },
+  { id: 'lich_blade',     name: t('guild_reward_lich_blade'), icon: '💀', desc: t('weapon_desc_lich_blade') },
+  { id: 'phoenix_bow',    name: t('weapon_phoenix_bow'),        icon: '🔥', desc: t('weapon_desc_phoenix_bow') },
+  { id: 'archmage_staff', name: t('guild_reward_archmage_staff'),     icon: '🪄', desc: t('weapon_desc_archmage_staff') },
+  { id: 'beast_claw',     name: t('weapon_beast_claw'),       icon: '🐾', desc: t('weapon_desc_beast_claw') },
+  { id: 'rune_shield',    name: t('weapon_rune_shield'),         icon: '🛡', desc: t('weapon_desc_rune_shield') },
 ];
 
 // Супер-эволюции
