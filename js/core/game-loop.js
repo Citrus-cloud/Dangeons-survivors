@@ -560,7 +560,7 @@ const Game = {
     this.updateWaves(dt);
     this.updateBoss(dt);
     // Шаг 13: бесконечный режим — таймер карты, портал, страж
-    if (!window.Campaign || !Campaign.active) {
+    if ((!window.Campaign || !Campaign.active) && (!window.StoryCampaign || !StoryCampaign.active)) {
       this.updateInfiniteMode(dt);
     }
     // Шаг 16: обновление кампании
@@ -569,6 +569,10 @@ const Game = {
       if (window.GameMap && GameMap.updateCampaignObjects) {
         GameMap.updateCampaignObjects(dt, this.player);
       }
+    }
+    // Шаг 3 (сюжетная кампания): обновление StoryCampaign
+    if (window.StoryCampaign && StoryCampaign.active) {
+      StoryCampaign.update(dt);
     }
     Enemies.update(this.enemies, this.player, dt);
 
@@ -695,6 +699,10 @@ const Game = {
       if (window.Campaign && Campaign.active) {
         Campaign.onPlayerDeath();
       }
+      // Шаг 3: обработка смерти в сюжетной кампании
+      if (window.StoryCampaign && StoryCampaign.active) {
+        StoryCampaign.onPlayerDeath();
+      }
       this.triggerGameOver();
     }
 
@@ -751,6 +759,14 @@ const Game = {
   },
 
   updateWaves(dt) {
+    // Шаг 3: в сюжетной кампании используем waveConfig главы
+    if (window.StoryCampaign && StoryCampaign.active) {
+      const chapter = STORY_CAMPAIGN.getChapter(StoryCampaign.currentChapterId);
+      if (chapter && chapter.waveConfig) {
+        if (this.waveIndex >= chapter.waveConfig.maxWaves) return; // лимит волн
+      }
+    }
+
     this.waveTimer -= dt;
     if (this.waveTimer <= 0) {
       this.waveIndex += 1;
@@ -1611,6 +1627,7 @@ const Game = {
 
     // Шаг 16: в кампании не спавним глобальных боссов по таймеру
     if (window.Campaign && Campaign.active) return;
+    if (window.StoryCampaign && StoryCampaign.active) return;
 
     // Проверка таймера спавна глобального босса (из ротации)
     if (!Bosses.isGlobalAlive() && !Bosses.current && Bosses.bossIndex < BOSS_CONFIG.SPAWN_TIMES.length) {

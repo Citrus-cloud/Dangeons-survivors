@@ -433,6 +433,10 @@ const Bosses = {
       if (window.Campaign && Campaign.active) {
         Campaign.onCampaignBossKilled();
       }
+      // Шаг 3: уведомить сюжетную кампанию
+      if (window.StoryCampaign && StoryCampaign.active) {
+        StoryCampaign.onBossDefeated(boss.id);
+      }
     }
 
     // Визуальные эффекты смерти — Шаг 3: dusting + вспышка
@@ -455,6 +459,10 @@ const Bosses = {
       // Уведомить кампанию (для боссов кроме дракона, у которого свой хендлер)
       if (boss.id !== 'boss_ancient_dragon' && window.Campaign && Campaign.active) {
         Campaign.onCampaignBossKilled();
+      }
+      // Шаг 3: уведомить сюжетную кампанию
+      if (window.StoryCampaign && StoryCampaign.active) {
+        StoryCampaign.onBossDefeated(boss.id);
       }
     } else if (boss.role === 'global') {
       this.bossIndex++;

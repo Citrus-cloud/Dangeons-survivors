@@ -822,6 +822,7 @@ const UI = {
     btnsEl.innerHTML = '';
 
     const hasSave = window.StoryCampaignState && StoryCampaignState.hasSave();
+    const isComplete = window.StoryCampaign && StoryCampaign.isCampaignComplete();
 
     if (hasSave) {
       // Загрузить данные для отображения
@@ -834,6 +835,10 @@ const UI = {
         infoEl.innerHTML = `
           <div style="font-size:1.2em; color:#e2b347; margin-bottom:8px;">${t(chapter.name)}</div>
           <div style="color:#a8a8a8;">${t(chapter.description)}</div>
+          <div style="color:#2ecc71;font-size:0.85em;margin-top:8px;">
+            ${t('chapter_label')} ${StoryCampaignState.currentChapter}/${STORY_CAMPAIGN.chapters.length}
+            ${StoryCampaignState.collectedItems.filter(i => i.startsWith('crystal_shard')).length}/3 💎
+          </div>
         `;
       } else {
         infoEl.textContent = '';
@@ -842,17 +847,27 @@ const UI = {
       // Кнопка «Продолжить»
       const continueBtn = document.createElement('button');
       continueBtn.className = 'btn camp-btn camp-btn-campaign';
-      continueBtn.textContent = t('continue_game');
+      continueBtn.textContent = t('camp_story_continue');
       continueBtn.addEventListener('click', () => {
         this._hideStoryCampaignMenu();
         if (window.StoryCampaign) StoryCampaign.continueGame();
       });
       btnsEl.appendChild(continueBtn);
 
+      // Кнопка «Выбор главы»
+      const selectBtn = document.createElement('button');
+      selectBtn.className = 'btn camp-btn';
+      selectBtn.textContent = '📋 ' + t('story_title');
+      selectBtn.addEventListener('click', () => {
+        this._hideStoryCampaignMenu();
+        if (window.StoryCampaign) StoryCampaign.showChapterSelect(() => this.showCamp());
+      });
+      btnsEl.appendChild(selectBtn);
+
       // Кнопка «Новая игра» (с подтверждением сброса)
       const newGameBtn = document.createElement('button');
       newGameBtn.className = 'btn camp-btn btn-secondary';
-      newGameBtn.textContent = t('new_game');
+      newGameBtn.textContent = t('camp_story_new');
       newGameBtn.addEventListener('click', () => {
         if (confirm(t('new_game_confirm'))) {
           this._hideStoryCampaignMenu();
@@ -860,6 +875,20 @@ const UI = {
         }
       });
       btnsEl.appendChild(newGameBtn);
+
+      // Новая Игра+ (если пройдено)
+      if (isComplete) {
+        const ngpBtn = document.createElement('button');
+        ngpBtn.className = 'btn camp-btn';
+        ngpBtn.style.background = 'linear-gradient(135deg,#9b59b6,#8e44ad)';
+        ngpBtn.style.color = '#fff';
+        ngpBtn.textContent = '🔄 ' + t('new_game_plus');
+        ngpBtn.addEventListener('click', () => {
+          this._hideStoryCampaignMenu();
+          if (window.StoryCampaign) StoryCampaign.startNewGamePlus();
+        });
+        btnsEl.appendChild(ngpBtn);
+      }
     } else {
       // Нет сохранения — показать вступительный текст и кнопку «Новая игра»
       infoEl.innerHTML = `
@@ -869,7 +898,7 @@ const UI = {
 
       const newGameBtn = document.createElement('button');
       newGameBtn.className = 'btn camp-btn camp-btn-campaign';
-      newGameBtn.textContent = t('new_game');
+      newGameBtn.textContent = t('camp_story_new');
       newGameBtn.addEventListener('click', () => {
         this._hideStoryCampaignMenu();
         if (window.StoryCampaign) StoryCampaign.startNewGame();
