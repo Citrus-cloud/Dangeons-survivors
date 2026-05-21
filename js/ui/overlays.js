@@ -39,7 +39,7 @@ const UIExtended = {
       <div class="camp-bg">
         <h1 class="camp-title" style="font-size:1.4em;">${t('class_select_title')}</h1>
         <div id="classGrid" class="class-grid"></div>
-        <button id="classBackBtn" class="btn" style="margin-top:16px;">↩ Назад</button>
+        <button id="classBackBtn" class="btn" style="margin-top:16px;">${t('btn_back')}</button>
       </div>
     `;
     document.body.appendChild(ov);
@@ -106,7 +106,6 @@ const UIExtended = {
         <div class="bestiary-header">
           <h1 class="bestiary-title">${t('bestiary_title')}</h1>
           <div id="bestiaryStats" class="bestiary-stats-header"></div>
-          <button id="bestiaryBackBtn" class="btn bestiary-back-btn">${t('bestiary_back')}</button>
         </div>
         <div class="bestiary-body">
           <div class="bestiary-left" id="bestiaryLeft">
@@ -120,6 +119,9 @@ const UIExtended = {
               </div>
             </div>
           </div>
+        </div>
+        <div class="bestiary-footer">
+          <button id="bestiaryBackBtn" class="btn bestiary-back-btn">${t('bestiary_back')}</button>
         </div>
       </div>
     `;
@@ -236,8 +238,8 @@ const UIExtended = {
     }
 
     // Тир
-    const tierNames = { 0: 'Special', 1: 'Tier I', 2: 'Tier II', 3: 'Tier III', 4: 'Tier IV', 5: 'Tier V' };
-    const tierLabel = tierNames[cfg.tier] || 'Tier ' + cfg.tier;
+    const tierNames = { 0: t('tier_0'), 1: t('tier_1'), 2: t('tier_2'), 3: t('tier_3'), 4: t('tier_4'), 5: t('tier_5') };
+    const tierLabel = tierNames[cfg.tier] || t('tier_1');
 
     let html = `
       <div class="bestiary-detail-card">
@@ -248,17 +250,17 @@ const UIExtended = {
         <div class="bestiary-detail-desc">"${desc}"</div>
         <div class="bestiary-detail-divider"></div>
         <div class="bestiary-detail-stats">
-          <div class="bestiary-stat-row"><span class="bestiary-stat-label">❤ HP:</span><span class="bestiary-stat-value">${cfg.hp}</span></div>
-          <div class="bestiary-stat-row"><span class="bestiary-stat-label">⚔ Урон:</span><span class="bestiary-stat-value">${cfg.damage}</span></div>
-          <div class="bestiary-stat-row"><span class="bestiary-stat-label">🏃 Скорость:</span><span class="bestiary-stat-value">${speedLabel}</span></div>
-          <div class="bestiary-stat-row"><span class="bestiary-stat-label">✨ Опыт:</span><span class="bestiary-stat-value">${xpMin}–${xpMax}</span></div>
+          <div class="bestiary-stat-row"><span class="bestiary-stat-label">${t('bestiary_hp')}</span><span class="bestiary-stat-value">${cfg.hp}</span></div>
+          <div class="bestiary-stat-row"><span class="bestiary-stat-label">${t('bestiary_damage')}</span><span class="bestiary-stat-value">${cfg.damage}</span></div>
+          <div class="bestiary-stat-row"><span class="bestiary-stat-label">${t('bestiary_speed')}</span><span class="bestiary-stat-value">${speedLabel}</span></div>
+          <div class="bestiary-stat-row"><span class="bestiary-stat-label">${t('bestiary_xp')}</span><span class="bestiary-stat-value">${xpMin}–${xpMax}</span></div>
         </div>`;
 
     if (abilities) {
       html += `
         <div class="bestiary-detail-divider"></div>
         <div class="bestiary-detail-abilities">
-          <div class="bestiary-abilities-title">⚡ Особые способности</div>
+          <div class="bestiary-abilities-title">${t('bestiary_abilities_title')}</div>
           <div class="bestiary-abilities-text">${abilities}</div>
         </div>`;
     }
