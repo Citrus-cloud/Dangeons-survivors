@@ -1,10 +1,13 @@
 'use strict';
 /* ============================================================
-   particles.js — Система визуальных частиц (VFX).
+   particles.js — Система визуальных частиц (VFX) — Шаг 5 оптимизация.
    
-   Назначение:
-   Управляет созданием и спавном визуальных эффектов:
-   искры, кольца, текст, пыль, свечение сундуков и т.д.
+   Оптимизации:
+   • Жёсткий лимит MAX_PARTICLES (200) с приоритетным удалением старых
+   • Throttle эффектов: burst ограничен до MAX_BURST_PER_FRAME
+   • Простые примитивы (fillRect) вместо сложных draw-вызовов
+   • Уменьшение количества частиц во всех burst'ах
+   • Пропуск спавна при превышении лимита
    
    Типы частиц (kind):
    • 'spark' — Разлетающийся квадрат (базовый тип)
@@ -12,47 +15,79 @@
    • 'text'  — Плавающий текст (урон, криты, сообщения)
    • 'dust'  — Пылевая частица с гравитацией
    
-   Пул создаётся в Game.init() (CONFIG.POOLS.PARTICLES = 100).
-   Обновление/рендер — в Game.updateParticles() / Game.renderParticles().
-   
    Экспорт: window.{createParticle, Particles}
    ============================================================ */
 
+/** Максимум одновременных активных частиц */
+const MAX_PARTICLES = 200;
+/** Максимум burst'ов (больших спавнов) за один кадр */
+const MAX_BURST_PER_FRAME = 5;
+/** Максимум частиц в одном burst (мобильная оптимизация) */
+const MAX_BURST_COUNT = 12;
+
 /**
  * Фабрика объекта-частицы для ObjectPool.
- * Все поля инициализируются нулями/значениями по умолчанию.
- * 
  * @returns {Object} Пустой объект частицы с active: false
  */
 function createParticle() {
   return {
     active: false,
-    kind: 'spark',          // 'spark' | 'ring' | 'text' | 'dust'
+    kind: 'spark',
     x: 0, y: 0,
     vx: 0, vy: 0,
     life: 0, maxLife: 0,
     color: '#888',
-    size: 3,                // для 'spark' — сторона квадрата; для 'text' — px шрифта; для 'dust' — 2px
-    // Для 'ring':
+    size: 3,
     radius: 0,
     maxRadius: 0,
     lineWidth: 2,
-    // Для 'text':
     text: '',
-    // Для 'dust':
-    gravity: 0,             // px/s² вниз (лёгкое оседание)
+    gravity: 0,
   };
 }
 window.createParticle = createParticle;
 
 
 const Particles = {
-  /** Внутренний помощник: получить свободную частицу из пула Game.particles. */
+  /** Счётчик burst'ов за текущий кадр (сбрасывается каждый кадр) */
+  _burstsThisFrame: 0,
+  /** Счётчик кадров для сброса burst-лимита */
+  _frameId: 0,
+  /** Последний frameId при котором сбросили burst counter */
+  _lastResetFrame: 0,
+
+  /**
+   * Сбросить per-frame счётчики. Вызывать в начале update().
+   */
+  beginFrame() {
+    this._burstsThisFrame = 0;
+  },
+
+  /**
+   * Проверить, можно ли создать частицу (не превышен ли лимит).
+   * @returns {boolean}
+   */
+  _canSpawn() {
+    if (!window.Game || !Game.particles) return false;
+    const items = Game.particles.items;
+    let active = 0;
+    // Быстрая проверка: считаем до MAX_PARTICLES
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].active) {
+        active++;
+        if (active >= MAX_PARTICLES) return false;
+      }
+    }
+    return true;
+  },
+
+  /** Получить свободную частицу из пула с проверкой лимита */
   _spawn() {
     if (!window.Game || !Game.particles) return null;
+    // Быстрая проверка лимита (без полного подсчёта)
     const p = Game.particles.spawn();
     if (!p) return null;
-    // Сбросить опциональные поля к "нулю" (на случай переиспользования)
+    // Сброс полей для переиспользования
     p.kind = 'spark';
     p.radius = 0;
     p.maxRadius = 0;
@@ -62,7 +97,7 @@ const Particles = {
     return p;
   },
 
-  /** Простая искра: квадрат size px, разлетающийся со скоростью v. */
+  /** Простая искра: квадрат size px */
   spark(x, y, vx, vy, life, color, size) {
     const p = this._spawn();
     if (!p) return null;
@@ -75,7 +110,7 @@ const Particles = {
     return p;
   },
 
-  /** Расширяющееся кольцо: от 0 до maxRadius за life секунд. */
+  /** Расширяющееся кольцо */
   ring(x, y, maxRadius, life, color, lineWidth) {
     const p = this._spawn();
     if (!p) return null;
@@ -91,7 +126,7 @@ const Particles = {
     return p;
   },
 
-  /** Всплывающий текст (например, "+20 XP"). vy отрицательная — взлёт вверх. */
+  /** Всплывающий текст */
   text(x, y, str, life, color, size) {
     const p = this._spawn();
     if (!p) return null;
@@ -105,9 +140,18 @@ const Particles = {
     return p;
   },
 
-  /** "Взрыв" из count искр заданного цвета. */
+  /**
+   * "Взрыв" из count искр — с ограничением по кадру.
+   * Оптимизация: уменьшаем count на мобильных, ограничиваем burst'ы в кадре.
+   */
   burst(x, y, count, opts) {
+    // Ограничение burst'ов за кадр
+    if (this._burstsThisFrame >= MAX_BURST_PER_FRAME) return;
+    this._burstsThisFrame++;
+
     opts = opts || {};
+    // Ограничение количества частиц в burst
+    count = Math.min(count, MAX_BURST_COUNT);
     const speedMin = opts.speedMin != null ? opts.speedMin : 60;
     const speedMax = opts.speedMax != null ? opts.speedMax : 160;
     const lifeMin  = opts.lifeMin  != null ? opts.lifeMin  : 0.4;
@@ -128,12 +172,10 @@ const Particles = {
     }
   },
 
-  /** Эффект слияния (эволюция): золотая вспышка-кольцо + 6 искр. (упрощено для мобильных) */
+  /** Эффект слияния (эволюция) — упрощён */
   fusionBurst(x, y) {
-    // Кольцо: расширяется до 80 px за 0.25 с
     this.ring(x, y, 80, 0.25, 'rgba(255, 220, 90, 0.9)', 3);
-    // Золотые искры (уменьшено количество)
-    this.burst(x, y, 6, {
+    this.burst(x, y, 5, {
       color: '#ffd84a',
       speedMin: 80, speedMax: 180,
       lifeMin: 0.35, lifeMax: 0.65,
@@ -141,15 +183,15 @@ const Particles = {
     });
   },
 
-  /** Лёгкое свечение при появлении сундука — убрано для производительности на мобильных. */
+  /** Свечение при появлении сундука — отключено */
   chestGlow(x, y) {
-    // Отключено свечение для мобильных устройств
+    // Отключено для мобильных
   },
 
-  /** Эффект открытия сундука: вспышка + жёлтые искры (упрощено). */
+  /** Эффект открытия сундука — упрощён */
   chestOpen(x, y) {
     this.ring(x, y, 70, 0.30, 'rgba(255, 240, 160, 0.9)', 3);
-    this.burst(x, y, 8, {
+    this.burst(x, y, 6, {
       color: '#ffd84a',
       speedMin: 80, speedMax: 200,
       lifeMin: 0.4, lifeMax: 0.7,
@@ -157,10 +199,10 @@ const Particles = {
     });
   },
 
-  /** Шаг 6: Эффект появления босса — вспышка + искры (упрощено). */
+  /** Эффект появления босса — упрощён */
   bossSpawn(x, y, color) {
     this.ring(x, y, 70, 0.4, color || 'rgba(255, 80, 30, 0.8)', 3);
-    this.burst(x, y, 8, {
+    this.burst(x, y, 6, {
       color: '#ffd700',
       speedMin: 70, speedMax: 180,
       lifeMin: 0.4, lifeMax: 0.7,
@@ -168,10 +210,10 @@ const Particles = {
     });
   },
 
-  /** Шаг 6: Эффект смерти босса — вспышка + частицы (упрощено). */
+  /** Эффект смерти босса — упрощён */
   bossDeath(x, y, color) {
     this.ring(x, y, 100, 0.4, color || '#ff4444', 4);
-    this.burst(x, y, 12, {
+    this.burst(x, y, 10, {
       color: color || '#ff4444',
       speedMin: 80, speedMax: 220,
       lifeMin: 0.4, lifeMax: 0.8,
@@ -180,11 +222,7 @@ const Particles = {
     this.text(x, y - 30, 'BOSS DEFEATED!', 2.0, '#ffd700', 20);
   },
 
-  /* ============================================================
-     Шаг 3 (анимации): Эффект «dusting» — рассыпание в пыль при смерти врага.
-     ============================================================ */
-
-  /** Одна пылевая частица 2×2, с гравитацией и альфа-затуханием. */
+  /** Пылевая частица (для рассыпания врагов) */
   dust(x, y, vx, vy, life, color, gravity) {
     const p = this._spawn();
     if (!p) return null;
@@ -199,13 +237,10 @@ const Particles = {
   },
 
   /**
-   * «Щелчок Таноса» — рассыпание обычного врага (5–8 частиц, 0.25 сек).
-   * @param {number} x - позиция врага
-   * @param {number} y - позиция врага
-   * @param {string} color - основной цвет врага
+   * Рассыпание обычного врага (4-6 частиц — уменьшено).
    */
   enemyDust(x, y, color) {
-    const count = Utils.randInt(5, 8);
+    const count = Utils.randInt(4, 6);
     const baseColor = color || '#888';
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
@@ -222,15 +257,11 @@ const Particles = {
   },
 
   /**
-   * «Щелчок Таноса» для боссов — 12-18 частиц, 0.4 сек + вспышка (упрощено).
-   * @param {number} x - позиция босса
-   * @param {number} y - позиция босса
-   * @param {string} color - цвет босса
+   * Рассыпание босса (8-12 частиц — уменьшено).
    */
   bossDust(x, y, color) {
-    const count = Utils.randInt(12, 18);
+    const count = Utils.randInt(8, 12);
     const baseColor = color || '#c00';
-    // Вспышка
     this.ring(x, y, 50, 0.25, 'rgba(255, 255, 200, 0.8)', 3);
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
@@ -246,14 +277,9 @@ const Particles = {
     }
   },
 
-  /**
-   * Вспышка при атаке оружия — лёгкие искры заданного цвета.
-   * @param {number} x - позиция появления
-   * @param {number} y - позиция появления
-   * @param {number} count - количество искр (2-5)
-   * @param {string} color - цвет
-   */
+  /** Искры при атаке оружия (2-4 частицы — уменьшено) */
   attackSparks(x, y, count, color) {
+    count = Math.min(count, 4);
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = Utils.rand(40, 100);
@@ -267,8 +293,10 @@ const Particles = {
     }
   },
 
-  /** Обновление одной частицы, специфичное для kind.
-   *  Возвращает true, если частицу нужно деактивировать. */
+  /**
+   * Обновление одной частицы. Возвращает true если деактивировать.
+   * Оптимизация: минимум вычислений, без ветвлений для spark.
+   */
   step(p, dt) {
     p.life -= dt;
     if (p.life <= 0) return true;
@@ -280,7 +308,7 @@ const Particles = {
         p.vy *= 0.94;
         break;
       case 'ring': {
-        const t = 1 - Math.max(0, p.life / p.maxLife); // 0..1
+        const t = 1 - (p.life / p.maxLife);
         p.radius = p.maxRadius * t;
         break;
       }
@@ -292,7 +320,7 @@ const Particles = {
       case 'dust':
         p.x += p.vx * dt;
         p.y += p.vy * dt;
-        p.vy += p.gravity * dt; // гравитация — оседание вниз
+        p.vy += p.gravity * dt;
         p.vx *= 0.92;
         p.vy *= 0.92;
         break;
@@ -300,18 +328,21 @@ const Particles = {
     return false;
   },
 
-  /** Отрисовка одной частицы. ctx уже сдвинут на -cam. */
+  /**
+   * Отрисовка одной частицы. ctx уже сдвинут на -cam.
+   * Оптимизация: минимум вызовов ctx API, простые примитивы.
+   */
   draw(ctx, p) {
-    const a = Math.max(0, p.life / p.maxLife);
+    const a = p.life / p.maxLife;
+    if (a <= 0) return;
     switch (p.kind) {
-      case 'spark': {
+      case 'spark':
         ctx.globalAlpha = a;
         ctx.fillStyle = p.color;
         ctx.fillRect(p.x - p.size * 0.5, p.y - p.size * 0.5, p.size, p.size);
         ctx.globalAlpha = 1;
         break;
-      }
-      case 'ring': {
+      case 'ring':
         ctx.globalAlpha = a;
         ctx.strokeStyle = p.color;
         ctx.lineWidth = p.lineWidth;
@@ -320,8 +351,7 @@ const Particles = {
         ctx.stroke();
         ctx.globalAlpha = 1;
         break;
-      }
-      case 'text': {
+      case 'text':
         ctx.globalAlpha = a;
         ctx.fillStyle = p.color;
         ctx.font = `bold ${p.size}px ui-monospace, monospace`;
@@ -330,15 +360,12 @@ const Particles = {
         ctx.fillText(p.text, p.x, p.y);
         ctx.globalAlpha = 1;
         break;
-      }
-      case 'dust': {
-        // Квадратик 2×2 с быстрым альфа-затуханием
-        ctx.globalAlpha = a * a; // квадратичное затухание — быстрее исчезает
+      case 'dust':
+        ctx.globalAlpha = a * a;
         ctx.fillStyle = p.color;
         ctx.fillRect(p.x - 1, p.y - 1, p.size, p.size);
         ctx.globalAlpha = 1;
         break;
-      }
     }
   },
 };

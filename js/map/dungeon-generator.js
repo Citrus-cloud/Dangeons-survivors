@@ -2545,20 +2545,23 @@ const GameMap = {
 
   /** Отрисовать пол + декор. ctx уже сдвинут на -cam. */
   render(ctx, cam, viewW, viewH) {
+    if (window.PerfMonitor) PerfMonitor.begin('mapRender');
+
     // === Небесный город: фоновый слой неба (рисуется ПЕРВЫМ) ===
     if (this.currentBiome && this.currentBiome.id === 'sky_citadel') {
       this._renderSkyBackground(ctx, cam, viewW, viewH);
     } else {
-      // Фон карты — почти чёрный (стены)
+      // Шаг 5: Рисуем фон ТОЛЬКО в видимой области (не весь mapW×mapH)
       ctx.fillStyle = '#0e0e0e';
-      ctx.fillRect(0, 0, this.mapW, this.mapH);
+      ctx.fillRect(cam.x, cam.y, viewW, viewH);
     }
 
-    // Кешированный пол
+    // Кешированный пол (offscreen canvas — основная оптимизация Шаг 5)
     if (this._floorCache) {
-      const sx = cam.x, sy = cam.y;
-      const sw = Math.min(viewW, this.mapW - sx);
-      const sh = Math.min(viewH, this.mapH - sy);
+      const sx = Math.max(0, cam.x) | 0;
+      const sy = Math.max(0, cam.y) | 0;
+      const sw = Math.min(viewW, this.mapW - sx) | 0;
+      const sh = Math.min(viewH, this.mapH - sy) | 0;
       if (sw > 0 && sh > 0) {
         ctx.drawImage(this._floorCache, sx, sy, sw, sh, sx, sy, sw, sh);
       }
@@ -2613,6 +2616,8 @@ const GameMap = {
 
     // Шаг 13: портал
     this.renderPortal(ctx, cam, viewW, viewH);
+
+    if (window.PerfMonitor) PerfMonitor.end('mapRender');
   },
 
   /* ============================================================

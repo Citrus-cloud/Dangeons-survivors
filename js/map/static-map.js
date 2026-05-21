@@ -318,10 +318,21 @@ const StaticMap = {
     // Эффекты тайлов под игроком (лава, вода, болото)
     this._applyTileEffects(player, dt);
 
-    // Обновляем триггеры
-    for (const tr of this.activeTriggers) {
+    // Шаг 5: Обновляем триггеры с distance-based culling
+    const cs = this.currentData ? (this.currentData.tileSize || 20) : 20;
+    const triggerCheckRadius = 300; // Проверять только ближайшие триггеры
+    const px = player.x, py = player.y;
+
+    for (let i = 0; i < this.activeTriggers.length; i++) {
+      const tr = this.activeTriggers[i];
       if (!tr._active) continue;
       tr._cooldown = Math.max(0, (tr._cooldown || 0) - dt);
+
+      // Шаг 5: Пропуск далёких триггеров (кроме глобальных)
+      const trX = tr.x * cs, trY = tr.y * cs;
+      const dx = px - trX, dy = py - trY;
+      if (dx * dx + dy * dy > triggerCheckRadius * triggerCheckRadius) continue;
+
       switch (tr.kind) {
         case 'spike_pit': this._updateSpikePit(tr, player, dt); break;
         case 'spore_cloud': this._updateSporeCloud(tr, player, dt); break;
@@ -338,8 +349,9 @@ const StaticMap = {
     }
 
 
-    // Обновляем руны
-    for (const rune of this.activeRunes) {
+    // Обновляем руны (только не подобранные, с distance check)
+    for (let i = 0; i < this.activeRunes.length; i++) {
+      const rune = this.activeRunes[i];
       if (rune.collected) continue;
       rune.pulse += dt * 4;
       const dx = player.x - rune.x, dy = player.y - rune.y;

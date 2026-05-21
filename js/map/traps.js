@@ -208,15 +208,26 @@ GameMap._placeMagicFloorRunes = function(dungeon, count) {
 /** Обновить объекты Шага 17 (вызывается из GameMap.update). */
 GameMap.updateStep17 = function(dt, player) {
   if (!this.dungeon || !player) return;
+  const px = player.x, py = player.y;
+  const checkR2 = 500 * 500; // Шаг 5: Только ближайшие объекты обновляются
 
   if (this.dungeon.runePuzzles) {
     for (const puzzle of this.dungeon.runePuzzles) {
+      // Шаг 5: distance check для загадок
+      if (puzzle.room) {
+        const dx = px - puzzle.room.cx, dy = py - puzzle.room.cy;
+        if (dx * dx + dy * dy > checkR2) continue;
+      }
       const ev = RunePuzzle.update(puzzle, player, dt);
       if (ev) GameMap._handlePuzzleEvent(ev, player);
     }
   }
   if (this.dungeon.floorPuzzles) {
     for (const puzzle of this.dungeon.floorPuzzles) {
+      if (puzzle.room) {
+        const dx = px - puzzle.room.cx, dy = py - puzzle.room.cy;
+        if (dx * dx + dy * dy > checkR2) continue;
+      }
       const ev = FloorPuzzle.update(puzzle, player, dt);
       if (ev) GameMap._handlePuzzleEvent(ev, player);
     }
@@ -224,10 +235,12 @@ GameMap.updateStep17 = function(dt, player) {
   if (this.dungeon.boulders) {
     const enemies = (window.Game && Game.enemies) ? Game.enemies : null;
     for (const boulder of this.dungeon.boulders) {
+      // Шаг 5: валуны проверяем только в зоне видимости
+      const dx = px - boulder.x, dy = py - boulder.y;
+      if (dx * dx + dy * dy > checkR2 && !boulder.active) continue;
       const ev = Boulder.update(boulder, player, enemies, dt);
       if (ev && ev.type === 'hit_player') {
         player.hp -= ev.damage;
-        // Отбрасывание игрока удалено — свободное скольжение по стенам
         player.x = Utils.clamp(player.x, 20, GameMap.mapW - 20);
         player.y = Utils.clamp(player.y, 20, GameMap.mapH - 20);
         if (window.Particles) {
@@ -242,6 +255,8 @@ GameMap.updateStep17 = function(dt, player) {
   if (this.dungeon.vanishingPlatforms) {
     const enemies = (window.Game && Game.enemies) ? Game.enemies : null;
     for (const plat of this.dungeon.vanishingPlatforms) {
+      const dx = px - plat.x, dy = py - plat.y;
+      if (dx * dx + dy * dy > checkR2 && plat.state === 'solid') continue;
       const ev = VanishingPlatform.update(plat, player, enemies, dt);
       if (ev && ev.type === 'player_fell') {
         player.hp -= ev.damage;
@@ -259,6 +274,10 @@ GameMap.updateStep17 = function(dt, player) {
   }
   if (this.dungeon.magicFloorRunes) {
     for (const rune of this.dungeon.magicFloorRunes) {
+      // Шаг 5: руны — только рядом с игроком
+      if (!rune.active) continue;
+      const dx = px - rune.x, dy = py - rune.y;
+      if (dx * dx + dy * dy > checkR2) continue;
       const ev = MagicFloorRune.update(rune, player, dt);
       if (ev) GameMap._handleMagicRuneEvent(ev, player);
     }
