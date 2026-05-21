@@ -486,6 +486,12 @@ const Game = {
     if (this.state !== 'paused' && this.state !== 'playing') return;
     Input.releaseJoystick();
 
+    // Story campaign: сохранить прогресс при выходе
+    if (window.StoryCampaign && StoryCampaign.active) {
+      StoryCampaign.exitToTavern();
+      return;
+    }
+
     GameAudio.stopMusic();
     this._clearAllPools();
 

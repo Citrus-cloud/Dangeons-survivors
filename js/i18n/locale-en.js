@@ -988,3 +988,36 @@ LOCALE.en.puzzle_error = 'ERROR!';
 LOCALE.en.puzzle_wrong_reset = 'Wrong! Resetting...';
 LOCALE.en.puzzle_label_rune = 'Rune Activation';
 LOCALE.en.puzzle_label_cipher = 'Cipher';
+
+
+/* ============================================================
+   Story Campaign — 4-chapter story mode localization
+   ============================================================ */
+
+// Menu keys
+LOCALE.en.menu_campaign = '📜 STORY';
+LOCALE.en.menu_trials = '⚔ TRIALS';
+LOCALE.en.new_game = 'New Game';
+LOCALE.en.continue_game = 'Continue';
+LOCALE.en.new_game_confirm = 'Start a new campaign? Current progress will be lost!';
+LOCALE.en.chapter_complete_title = 'CHAPTER COMPLETE!';
+LOCALE.en.campaign_back_to_tavern = '↩ Back to Tavern';
+
+// Chapter names
+LOCALE.en.chapter_1_name = 'Chapter I: Forgotten Catacombs';
+LOCALE.en.chapter_2_name = 'Chapter II: Cursed Forest';
+LOCALE.en.chapter_3_name = 'Chapter III: Fire Crucible';
+LOCALE.en.chapter_4_name = 'Chapter IV: Throne of Darkness';
+
+// Chapter descriptions
+LOCALE.en.chapter_1_desc = 'Ancient catacombs beneath the kingdom hide the first crystal shard. Undead guard every corridor.';
+LOCALE.en.chapter_2_desc = 'A cursed forest where corrupted druids protect the second shard. Nature itself has turned hostile.';
+LOCALE.en.chapter_3_desc = 'The fiery depths where the third shard was forged in elemental flame. Magma creatures lurk within.';
+LOCALE.en.chapter_4_desc = 'The Dark Throne awaits. With all three shards united, the portal opens to the final confrontation.';
+
+// Story texts — intro and chapter transitions
+LOCALE.en.story_intro = 'An ancient darkness stirs beneath the kingdom. The Seal of Three Shards, which held the Shadow Dragon imprisoned for a thousand years, is breaking. You are the last knight of the Silver Order. Find the three crystal shards before the beast awakens fully — or all will be lost.';
+LOCALE.en.story_chapter_1 = 'Deep in the forgotten catacombs, you found the first shard pulsing with pale light. The undead recoiled from its glow. But as you emerged, the earth trembled — the dragon senses the shard has been moved. The cursed forest to the north holds the second piece. Corrupted druids guard it jealously.';
+LOCALE.en.story_chapter_2 = 'The cursed druids fell, and the forest began to heal as you claimed the second shard. Two shards now sing in harmony, revealing a vision: the third lies deep within the Fire Crucible, guarded by a Magma Giant forged from the earth\'s fury. The path grows hotter with every step.';
+LOCALE.en.story_chapter_3 = 'The Magma Giant crumbles, and the third shard is yours. Three crystal fragments reunite, forming a key of blinding light. A portal tears open before you — beyond it lies the Throne of Darkness, where the Shadow Dragon awaits. There is no turning back now. Steel yourself for the final battle.';
+LOCALE.en.story_chapter_4_victory = 'The Shadow Dragon lets out a final, terrible roar as light consumes it. The three shards fuse into a perfect crystal, sealing the darkness forever. The kingdom is saved. Bards will sing of your deeds for generations. But in the deepest shadows, something stirs... perhaps the darkness is never truly gone.';

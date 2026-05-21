@@ -151,6 +151,7 @@ const UI = {
     if (this._victoryOverlay) this._victoryOverlay.classList.remove('active');
     if (this._settingsOverlay) this._settingsOverlay.classList.remove('active');
     if (this._mapSelectOverlay) this._mapSelectOverlay.classList.remove('active');
+    if (this._storyCampaignOverlay) this._storyCampaignOverlay.classList.remove('active');
     // Расширенные оверлеи
     const extIds = ['classOverlay', 'bestiaryOverlay', 'codexOverlay', 'runStatsOverlay'];
     for (const id of extIds) {
@@ -682,8 +683,8 @@ const UI = {
           <div class="camp-rep"><span class="rep-icon">⚜</span> <span id="campRepVal">0</span> <span id="campGuildLvl">(${t('level_short')} 0)</span></div>
         </div>
         <div class="camp-buttons">
-          <button id="campStartBtn" class="btn camp-btn camp-btn-main">${t('camp_start')}</button>
-          <button id="campCampaignBtn" class="btn camp-btn camp-btn-campaign">${t('camp_campaign')}</button>
+          <button id="campCampaignBtn" class="btn camp-btn camp-btn-campaign">${t('menu_campaign')}</button>
+          <button id="campStartBtn" class="btn camp-btn camp-btn-main">${t('menu_trials')}</button>
           <button id="campHeroBtn" class="btn camp-btn">${t('camp_hero')}</button>
           <button id="campTalentsBtn" class="btn camp-btn">${t('camp_talents')}</button>
           <button id="campGuildBtn" class="btn camp-btn">${t('camp_guild')}</button>
@@ -708,7 +709,7 @@ const UI = {
     });
     ov.querySelector('#campCampaignBtn').addEventListener('click', () => {
       this.hideCamp();
-      if (window.Campaign) Campaign.start();
+      this._showStoryCampaignMenu();
     });
     ov.querySelector('#campTalentsBtn').addEventListener('click', () => {
       this.hideCamp();
@@ -748,22 +749,143 @@ const UI = {
     ov.querySelector('#campTotalKills').textContent = d.totalKills;
     ov.querySelector('#campBestTime').textContent = Utils.formatTime(d.bestTime);
 
-    // Шаг 16: обновить кнопку кампании
+    // Шаг 16: обновить кнопку кампании (Story Campaign)
     const campBtn = ov.querySelector('#campCampaignBtn');
-    if (campBtn && window.Campaign) {
+    if (campBtn && window.StoryCampaignState) {
+      if (StoryCampaignState.hasSave()) {
+        const chapterNum = StoryCampaignState.currentChapter || 1;
+        campBtn.textContent = t('menu_campaign') + ' (' + chapterNum + '/' + STORY_CAMPAIGN.chapters.length + ')';
+      } else {
+        campBtn.textContent = t('menu_campaign');
+      }
+    } else if (campBtn && window.Campaign) {
       const progress = Campaign.loadProgress();
       if (progress.completed) {
         campBtn.textContent = t('camp_campaign_plus');
       } else if (progress.currentMap > 1) {
         campBtn.textContent = t('camp_campaign_map', progress.currentMap);
       } else {
-        campBtn.textContent = t('camp_campaign');
+        campBtn.textContent = t('menu_campaign');
       }
     }
   },
 
   hideCamp() {
     if (this._campOverlay) this._campOverlay.classList.remove('active');
+  },
+
+  /* ============================================================
+     Story Campaign menu — New Game / Continue
+     ============================================================ */
+
+  _storyCampaignOverlay: null,
+
+  _showStoryCampaignMenu() {
+    if (!this._storyCampaignOverlay) this._buildStoryCampaignOverlay();
+    this._updateStoryCampaignMenu();
+    this._storyCampaignOverlay.classList.add('active');
+  },
+
+  _hideStoryCampaignMenu() {
+    if (this._storyCampaignOverlay) this._storyCampaignOverlay.classList.remove('active');
+  },
+
+  _buildStoryCampaignOverlay() {
+    const ov = document.createElement('div');
+    ov.id = 'storyCampaignOverlay';
+    ov.className = 'overlay camp-overlay';
+    ov.innerHTML = `
+      <div class="camp-bg">
+        <div style="display:flex;align-items:center;gap:12px;width:100%;margin-bottom:12px;">
+          <button id="storyCampBackBtn" class="btn bestiary-back-btn-compact" title="${t('btn_back')}">←</button>
+          <h1 class="camp-title" style="font-size:1.4em;flex:1;text-align:center;margin:0;">${t('menu_campaign')}</h1>
+        </div>
+        <div id="storyCampChapterInfo" class="story-camp-chapter-info" style="
+          text-align:center; color:#e8d5b7; margin-bottom:20px; font-size:1em; line-height:1.5;
+        "></div>
+        <div id="storyCampButtons" class="camp-buttons" style="gap:12px;"></div>
+      </div>
+    `;
+    document.body.appendChild(ov);
+    this._storyCampaignOverlay = ov;
+
+    ov.querySelector('#storyCampBackBtn').addEventListener('click', () => {
+      this._hideStoryCampaignMenu();
+      this.showCamp();
+    });
+  },
+
+  _updateStoryCampaignMenu() {
+    const ov = this._storyCampaignOverlay;
+    const infoEl = ov.querySelector('#storyCampChapterInfo');
+    const btnsEl = ov.querySelector('#storyCampButtons');
+    btnsEl.innerHTML = '';
+
+    const hasSave = window.StoryCampaignState && StoryCampaignState.hasSave();
+
+    if (hasSave) {
+      // Загрузить данные для отображения
+      StoryCampaignState.load();
+      const chapter = window.STORY_CAMPAIGN
+        ? STORY_CAMPAIGN.getChapterByNum(StoryCampaignState.currentChapter)
+        : null;
+
+      if (chapter) {
+        infoEl.innerHTML = `
+          <div style="font-size:1.2em; color:#e2b347; margin-bottom:8px;">${t(chapter.name)}</div>
+          <div style="color:#a8a8a8;">${t(chapter.description)}</div>
+        `;
+      } else {
+        infoEl.textContent = '';
+      }
+
+      // Кнопка «Продолжить»
+      const continueBtn = document.createElement('button');
+      continueBtn.className = 'btn camp-btn camp-btn-campaign';
+      continueBtn.textContent = t('continue_game');
+      continueBtn.addEventListener('click', () => {
+        this._hideStoryCampaignMenu();
+        if (window.StoryCampaign) StoryCampaign.continueGame();
+      });
+      btnsEl.appendChild(continueBtn);
+
+      // Кнопка «Новая игра» (с подтверждением сброса)
+      const newGameBtn = document.createElement('button');
+      newGameBtn.className = 'btn camp-btn btn-secondary';
+      newGameBtn.textContent = t('new_game');
+      newGameBtn.addEventListener('click', () => {
+        if (confirm(t('new_game_confirm'))) {
+          this._hideStoryCampaignMenu();
+          if (window.StoryCampaign) StoryCampaign.startNewGame();
+        }
+      });
+      btnsEl.appendChild(newGameBtn);
+    } else {
+      // Нет сохранения — показать вступительный текст и кнопку «Новая игра»
+      infoEl.innerHTML = `
+        <div style="font-style:italic; color:#c9a84c; margin-bottom:8px;">📜</div>
+        <div style="color:#e8d5b7;">${t('story_intro')}</div>
+      `;
+
+      const newGameBtn = document.createElement('button');
+      newGameBtn.className = 'btn camp-btn camp-btn-campaign';
+      newGameBtn.textContent = t('new_game');
+      newGameBtn.addEventListener('click', () => {
+        this._hideStoryCampaignMenu();
+        if (window.StoryCampaign) StoryCampaign.startNewGame();
+      });
+      btnsEl.appendChild(newGameBtn);
+    }
+
+    // Кнопка «Назад» (дублирование для мобильных)
+    const backBtn = document.createElement('button');
+    backBtn.className = 'btn camp-btn';
+    backBtn.textContent = t('btn_back');
+    backBtn.addEventListener('click', () => {
+      this._hideStoryCampaignMenu();
+      this.showCamp();
+    });
+    btnsEl.appendChild(backBtn);
   },
 
   /* ============================================================
@@ -1409,6 +1531,25 @@ const UI = {
 
   /** Отрисовка цели кампании в HUD (вызывается из tick). */
   _updateCampaignObjectiveHUD(game) {
+    // Story Campaign mode display
+    if (window.StoryCampaign && StoryCampaign.active) {
+      if (!this._objectiveEl) {
+        const el = document.createElement('div');
+        el.id = 'campaignObjective';
+        el.className = 'campaign-objective';
+        const topRight = document.querySelector('.hud-top-right');
+        if (topRight) topRight.appendChild(el);
+        this._objectiveEl = el;
+      }
+      this._objectiveEl.style.display = 'block';
+      const chapter = StoryCampaign.getCurrentChapter();
+      if (chapter) {
+        this._objectiveEl.textContent = t(chapter.name);
+        this._objectiveEl.className = 'campaign-objective';
+      }
+      return;
+    }
+
     if (!window.Campaign || !Campaign.active || !Campaign.objective) {
       if (this._objectiveEl) this._objectiveEl.style.display = 'none';
       return;
