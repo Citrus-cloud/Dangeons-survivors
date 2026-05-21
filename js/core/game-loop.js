@@ -1545,6 +1545,9 @@ const Game = {
     const ctx = this.ctx;
     // Шаг 3: гарантируем crisp-pixels каждый кадр (setTransform может сбросить)
     ctx.imageSmoothingEnabled = false;
+    // Сбрасываем трансформ в базовое состояние (dpr) каждый кадр
+    // для защиты от накопления save/restore при ошибках рендеринга
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     ctx.fillStyle = '#1f1f1f';
     ctx.fillRect(0, 0, this.viewW, this.viewH);
 
@@ -1569,6 +1572,8 @@ const Game = {
       ctx.translate(0, _skyFloatOffset);
     }
 
+    // Оборачиваем весь рендер мира в try/finally для гарантированного ctx.restore()
+    try {
     GameMap.render(ctx, cam, camViewW, camViewH);
     Loot.render(ctx, this.xpDrops, cam, camViewW, camViewH);
     // Шаг 15: рендер золота
@@ -1601,6 +1606,9 @@ const Game = {
     }
 
     Projectiles.render(ctx, this.projectiles, cam, camViewW, camViewH);
+    } catch (e) {
+      console.error('[Game] world render error:', e);
+    }
 
     ctx.restore();
 
