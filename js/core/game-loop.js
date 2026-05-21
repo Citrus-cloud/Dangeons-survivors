@@ -178,6 +178,15 @@ const Game = {
     this._clearAllPools();
     if (window.GameMap && GameMap.clearGroundEffects) GameMap.clearGroundEffects();
 
+    // Деактивируем StaticMap если была активна (сюжетная кампания)
+    if (window.StaticMap && StaticMap.active) StaticMap.deactivate();
+    // Деактивируем StoryCampaign если была активна
+    if (window.StoryCampaign && StoryCampaign.active) {
+      StoryCampaign.active = false;
+      StoryCampaign.isCampaignMode = false;
+    }
+    this._storyCampaignActive = false;
+
     // Полный сброс счётчиков забега
     this.runGold = 0;
     this.bossKills = 0;

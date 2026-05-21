@@ -447,7 +447,7 @@ const StoryCampaign = {
       Game._storyCampaignChapter = chapter;
 
       // Монетизация: скрыть баннер при начале главы
-      if (window.Monetization) Monetization.onRunStart();
+      try { if (window.Monetization) Monetization.onRunStart(); } catch(e) { console.warn('[StoryCampaign] Monetization:', e); }
 
       // Музыка биома
       if (window.GameAudio) GameAudio.playMusic(chapter.biomeId || 'crypt');
