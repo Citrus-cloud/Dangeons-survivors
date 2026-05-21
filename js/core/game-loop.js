@@ -72,7 +72,7 @@ const Game = {
     this.resize();
     window.addEventListener('resize', () => this.resize());
 
-    // Пулы
+    // Пулы (увеличены размеры для оптимального переиспользования)
     this.enemies     = new ObjectPool(createEnemy,      CONFIG.POOLS.ENEMIES);
     this.projectiles = new ObjectPool(createProjectile, CONFIG.POOLS.PROJECTILES);
     this.xpDrops     = new ObjectPool(createXP,         CONFIG.POOLS.XP);
@@ -80,11 +80,28 @@ const Game = {
     // Шаг 15: пул золота
     this.goldDrops   = new ObjectPool(createGold,       GOLD_CONFIG.POOL_SIZE);
 
+    // Регистрация пулов в PoolManager (для централизованной очистки)
+    if (window.PoolManager) {
+      PoolManager.register('enemies', this.enemies);
+      PoolManager.register('projectiles', this.projectiles);
+      PoolManager.register('xpDrops', this.xpDrops);
+      PoolManager.register('particles', this.particles);
+      PoolManager.register('goldDrops', this.goldDrops);
+    }
+
     // Spatial grid для оптимизации поиска врагов
     this._enemyGrid = new SpatialGrid(128);
 
+    // Шаг 5: Фиксированный шаг обновления физики
+    this._fixedStep = 1 / 60;
+    this._accumulator = 0;
+
     // Инициализация всех модулей через реестр
     Registry.initAll();
+
+    // Шаг 5: Инициализация систем оптимизации
+    if (window.VisibilityManager) VisibilityManager.init();
+    if (window.FPSCounter) FPSCounter.init();
 
     // Инициализация системы достижений
     if (window.Achievements) Achievements.init();
@@ -374,6 +391,8 @@ const Game = {
     this.xpDrops.clearAll();
     this.particles.clearAll();
     if (this.goldDrops) this.goldDrops.clearAll();
+    // Шаг 5: Очистка кешей при переходе
+    if (window.PoolManager) PoolManager.onChapterTransition();
   },
 
   /** Построить объект статистики забега. */
@@ -502,11 +521,44 @@ const Game = {
 
   /* ----- игровой цикл ----- */
   loop(ts) {
-    const dt = Math.min(0.05, (ts - this.lastTs) / 1000);
+    // Шаг 5: FPS мониторинг
+    if (window.FPSCounter) FPSCounter.tick(ts);
+
+    let dt = Math.min(0.05, (ts - this.lastTs) / 1000);
     this.lastTs = ts;
-    if (this.state === 'playing') this.update(dt);
+
+    // Шаг 5: Коррекция dt при скрытой вкладке
+    if (window.VisibilityManager) {
+      dt = VisibilityManager.adjustDt(dt);
+    }
+
+    if (this.state === 'playing' && dt > 0) {
+      // Шаг 5: Фиксированный шаг для физики с накоплением
+      if (window.PerfMonitor) PerfMonitor.begin('update');
+      this._accumulator += dt;
+      const step = this._fixedStep;
+      // Макс 3 шага за кадр (защита от spiral of death)
+      let steps = 0;
+      while (this._accumulator >= step && steps < 3) {
+        this.update(step);
+        this._accumulator -= step;
+        steps++;
+      }
+      // Остаток (интерполяция не нужна для 2D pixel-art)
+      if (this._accumulator > step * 0.5) {
+        this.update(this._accumulator);
+        this._accumulator = 0;
+      }
+      if (window.PerfMonitor) PerfMonitor.end('update');
+    }
+
+    if (window.PerfMonitor) PerfMonitor.begin('render');
     this.render();
+    if (window.PerfMonitor) PerfMonitor.end('render');
+
     UI.tick(this);
+
+    if (window.PerfMonitor) PerfMonitor.endFrame();
     requestAnimationFrame((t) => this.loop(t));
   },
 
@@ -715,8 +767,14 @@ const Game = {
         MemoryOptimizer.cleanupDistantProjectiles(this.projectiles, mapW, mapH);
       }
     }
+    // Шаг 5: пересборка spatial grid раз в 2 кадра (не каждый кадр)
     if (this.enemies && this._enemyGrid) {
-      this._enemyGrid.rebuild(this.enemies);
+      if (!this._gridRebuildCounter) this._gridRebuildCounter = 0;
+      this._gridRebuildCounter++;
+      if (this._gridRebuildCounter >= 2) {
+        this._gridRebuildCounter = 0;
+        this._enemyGrid.rebuild(this.enemies);
+      }
     }
   },
 
@@ -1835,18 +1893,18 @@ const Game = {
 
   renderParticles(ctx, cam) {
     const minX = cam.x, minY = cam.y;
-    const maxX = cam.x + this.viewW, maxY = cam.y + this.viewH;
+    const maxX = cam.x + (this.cameraViewW || this.viewW);
+    const maxY = cam.y + (this.cameraViewH || this.viewH);
     const items = this.particles.items;
     for (let i = 0; i < items.length; i++) {
       const pa = items[i];
       if (!pa.active) continue;
-      // 'ring' может быть большой — пропускаем bbox-cull для них
-      const pad = pa.kind === 'ring' ? (pa.maxRadius || 0) : 12;
+      // Culling с учётом kind
+      const pad = pa.kind === 'ring' ? (pa.maxRadius || 0) : (pa.kind === 'text' ? 60 : 12);
       if (pa.x + pad < minX || pa.x - pad > maxX || pa.y + pad < minY || pa.y - pad > maxY) continue;
       if (window.Particles && Particles.draw) {
         Particles.draw(ctx, pa);
       } else {
-        // Фолбэк: квадрат старого формата
         const a = Math.max(0, pa.life / pa.maxLife);
         ctx.globalAlpha = a;
         ctx.fillStyle = pa.color;

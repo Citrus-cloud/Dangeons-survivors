@@ -809,47 +809,71 @@ const Enemies = {
   /** Главный апдейт всех врагов. */
   update(pool, player, dt) {
     const items = pool.items;
+    const playerX = player.x, playerY = player.y;
+
+    // Шаг 5: Сброс per-frame счётчиков частиц
+    if (window.Particles) Particles.beginFrame();
 
     // 1) Сброс флага ауры
     for (let i = 0; i < items.length; i++) {
       const e = items[i];
       if (e.active) e.captainBuffed = false;
     }
-    // 2) Капитаны баффают всех вокруг
+    // 2) Капитаны баффают всех вокруг (используем spatial grid)
     for (let i = 0; i < items.length; i++) {
       const e = items[i];
       if (!e.active || !e.cfg) continue;
       if (e.cfg.behavior !== 'captain') continue;
       const r2 = (e.cfg.auraRadius || 100) ** 2;
-      for (let j = 0; j < items.length; j++) {
-        if (i === j) continue;
-        const t = items[j];
-        if (!t.active) continue;
-        const dx = t.x - e.x, dy = t.y - e.y;
-        if (dx * dx + dy * dy <= r2) t.captainBuffed = true;
+      // Шаг 5: Используем spatial grid если доступен
+      if (window.Game && Game._enemyGrid) {
+        const nearby = Game._enemyGrid.query(e.x, e.y, e.cfg.auraRadius || 100);
+        for (let j = 0; j < nearby.length; j++) {
+          const t = nearby[j];
+          if (t !== e && t.active) t.captainBuffed = true;
+        }
+      } else {
+        for (let j = 0; j < items.length; j++) {
+          if (i === j) continue;
+          const t = items[j];
+          if (!t.active) continue;
+          const dx = t.x - e.x, dy = t.y - e.y;
+          if (dx * dx + dy * dy <= r2) t.captainBuffed = true;
+        }
       }
     }
-    // 3) Update per behavior
+    // 3) Update per behavior с EnemyThrottle (sleep-режим для далёких)
+    if (window.PerfMonitor) PerfMonitor.begin('enemyAI');
     for (let i = 0; i < items.length; i++) {
       const e = items[i];
       if (!e.active || !e.cfg) continue;
+
+      // Базовые таймеры — обновляем ВСЕГДА (даже для спящих)
       e.lifeTime += dt;
-      e.bobPhase += dt * (3.5 + (i % 5) * 0.4); // slight speed variation per enemy
+      e.bobPhase += dt * (3.5 + (i % 5) * 0.4);
       e.attackPunch = Math.max(0, e.attackPunch - dt);
-      // Шаг 7: тик таймера замедления от оружий
       if (e._slowTimer > 0) e._slowTimer -= dt;
-      // Шаг 8: тик ауры холода (убывающий таймер)
       if (e.frostSlowTimer > 0) e.frostSlowTimer -= dt;
-      // Шаг 8: кровотечение (DoT)
+
+      // Кровотечение (DoT) — всегда
       if (e.bleed && e.bleed.remaining > 0) {
         e.hp -= e.bleed.dps * dt;
         e.bleed.remaining -= dt;
         if (e.hp <= 0 && window.Game) { Game.killEnemy(e); continue; }
       }
+
+      // Шаг 5: EnemyThrottle — пропуск AI для далёких врагов
+      if (window.EnemyThrottle) {
+        const shouldUpdate = EnemyThrottle.shouldFullUpdate(e, playerX, playerY);
+        if (!shouldUpdate) continue; // Пропуск AI для этого врага в этом кадре
+      }
+
+      // Полный AI
       const fn = Behaviors[e.cfg.behavior];
       if (fn) fn(e, player, dt);
       else Behaviors.chase(e, player, dt);
     }
+    if (window.PerfMonitor) PerfMonitor.end('enemyAI');
   },
 
   /**
