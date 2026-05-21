@@ -1070,3 +1070,35 @@ LOCALE.ru.story_rune_rune_shield = 'РУНА ЗАЩИТЫ! +50% Щит';
 LOCALE.ru.story_rune_rune_summon = 'РУНА ПРИЗЫВА! Рыцарь-союзник';
 LOCALE.ru.chapter_complete_title = 'ГЛАВА ПРОЙДЕНА!';
 LOCALE.ru.btn_continue = 'Продолжить';
+
+
+/* ============================================================
+   Шаг 3: Ключи локализации для сюжетного потока кампании
+   ============================================================ */
+LOCALE.ru.next = 'Далее';
+LOCALE.ru.chapter_reward = 'НАГРАДА ЗА ГЛАВУ!';
+LOCALE.ru.need_crystals = 'Нужны 3 осколка кристалла, чтобы открыть врата';
+LOCALE.ru.congratulations = 'ПОЗДРАВЛЯЕМ!';
+LOCALE.ru.campaign_complete = 'Кампания пройдена! Древний дракон повержен, королевство спасено. Твоя легенда будет жить в веках.';
+LOCALE.ru.new_game_plus = 'Новая Игра+';
+LOCALE.ru.new_game_plus_unlocked = 'Новая Игра+ разблокирована! Переиграйте с бонусом +20% к золоту.';
+LOCALE.ru.chapter_label = 'Глава';
+LOCALE.ru.chapter_locked = 'Заблокирована';
+LOCALE.ru.play_chapter = 'Играть';
+LOCALE.ru.replay_chapter = 'Переиграть';
+LOCALE.ru.return_to_tavern = 'Вернуться в таверну';
+LOCALE.ru.story_title = 'СЮЖЕТНАЯ КАМПАНИЯ';
+LOCALE.ru.boss_defeated_title = 'БОСС ПОВЕРЖЕН!';
+LOCALE.ru.boss_arena_locked = 'АРЕНА ЗАКРЫТА!';
+LOCALE.ru.boss_arena_unlocked = 'Арена открыта!';
+LOCALE.ru.gate_opened = 'ВРАТА ОТКРЫТЫ!';
+LOCALE.ru.crystal_collected = 'ОСКОЛОК КРИСТАЛЛА ПОЛУЧЕН!';
+LOCALE.ru.camp_story_continue = '📜 Продолжить сюжет';
+LOCALE.ru.camp_story_new = '📜 Новый сюжет';
+LOCALE.ru.boss_defeated = 'Босс';
+
+LOCALE.ru.menu_campaign = '📜 СЮЖЕТ';
+LOCALE.ru.menu_trials = '⚔ ИСПЫТАНИЯ';
+LOCALE.ru.continue_game = '📜 Продолжить';
+LOCALE.ru.new_game = '📜 Новая игра';
+LOCALE.ru.new_game_confirm = 'Начать новую кампанию? Текущий прогресс будет потерян!';

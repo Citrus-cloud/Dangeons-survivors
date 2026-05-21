@@ -2041,3 +2041,64 @@ html, body {
   .hud-top-left { top: calc(10px + env(safe-area-inset-top)); }
   .hud-top-right { top: calc(10px + env(safe-area-inset-top)); }
 }
+
+
+
+/* ============================================================
+   Step 3: Story Campaign Chapter Select Cards
+   ============================================================ */
+.chapter-select-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.03);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
+}
+.chapter-select-card:active {
+  transform: scale(0.97);
+}
+.chapter-select-card.chapter-card-active {
+  border-color: #e2b347;
+  background: rgba(226,179,71,0.08);
+}
+.chapter-select-card.chapter-card-active:hover {
+  background: rgba(226,179,71,0.15);
+}
+.chapter-select-card.chapter-card-complete {
+  border-color: #2ecc71;
+  background: rgba(46,204,113,0.06);
+}
+.chapter-select-card.chapter-card-complete:hover {
+  background: rgba(46,204,113,0.12);
+}
+.chapter-select-card.chapter-card-locked {
+  border-color: rgba(255,255,255,0.05);
+  background: rgba(0,0,0,0.2);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.chapter-select-icon {
+  font-size: 1.6em;
+  min-width: 36px;
+  text-align: center;
+}
+.chapter-select-num {
+  font-size: 0.75em;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.chapter-select-name {
+  font-size: 1.05em;
+  color: #e8d5b7;
+  font-weight: bold;
+}
+.chapter-select-status {
+  font-size: 0.8em;
+  color: #aaa;
+  margin-left: auto;
+}

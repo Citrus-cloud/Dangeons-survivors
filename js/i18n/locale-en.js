@@ -1059,3 +1059,35 @@ LOCALE.en.story_rune_rune_shield = 'RUNE OF SHIELD! +50% Shield';
 LOCALE.en.story_rune_rune_summon = 'RUNE OF SUMMONING! Knight Ally';
 LOCALE.en.chapter_complete_title = 'CHAPTER COMPLETE!';
 LOCALE.en.btn_continue = 'Continue';
+
+
+/* ============================================================
+   Шаг 3: Ключи локализации для сюжетного потока кампании
+   ============================================================ */
+LOCALE.en.next = 'Next';
+LOCALE.en.chapter_reward = 'CHAPTER REWARD!';
+LOCALE.en.need_crystals = 'Need 3 Crystal Shards to open the gates';
+LOCALE.en.congratulations = 'CONGRATULATIONS!';
+LOCALE.en.campaign_complete = 'The campaign is complete! The Ancient Dragon is slain and the realm is saved. Your legend will be told for ages to come.';
+LOCALE.en.new_game_plus = 'New Game+';
+LOCALE.en.new_game_plus_unlocked = 'New Game+ unlocked! Replay with +20% gold bonus.';
+LOCALE.en.chapter_label = 'Chapter';
+LOCALE.en.chapter_locked = 'Locked';
+LOCALE.en.play_chapter = 'Play';
+LOCALE.en.replay_chapter = 'Replay';
+LOCALE.en.return_to_tavern = 'Return to tavern';
+LOCALE.en.story_title = 'STORY CAMPAIGN';
+LOCALE.en.boss_defeated_title = 'BOSS DEFEATED!';
+LOCALE.en.boss_arena_locked = 'ARENA SEALED!';
+LOCALE.en.boss_arena_unlocked = 'Arena opened!';
+LOCALE.en.gate_opened = 'THE GATES OPEN!';
+LOCALE.en.crystal_collected = 'CRYSTAL SHARD OBTAINED!';
+LOCALE.en.camp_story_continue = '📜 Continue Story';
+LOCALE.en.camp_story_new = '📜 New Story';
+LOCALE.en.boss_defeated = 'Boss';
+
+LOCALE.en.menu_campaign = '📜 STORY';
+LOCALE.en.menu_trials = '⚔ TRIALS';
+LOCALE.en.continue_game = '📜 Continue';
+LOCALE.en.new_game = '📜 New Game';
+LOCALE.en.new_game_confirm = 'Start a new campaign? Current progress will be lost!';
