@@ -102,10 +102,10 @@ const PoolManager = {
       RenderCache.clear();
     }
 
-    // Сбрасываем offscreen canvas карты
-    if (window.GameMap && GameMap._floorCache) {
-      GameMap._floorCache = null;
-    }
+    // НЕ обнуляем GameMap._floorCache здесь!
+    // Кэш пола пересоздаётся внутри generateDungeon() / StaticMap.load().
+    // Обнуление до вызова генерации приводило к чёрному экрану,
+    // если генерация бросала ошибку или вызывалась асинхронно.
   },
 };
 

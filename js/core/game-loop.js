@@ -545,25 +545,33 @@ const Game = {
     if (this.state === 'playing' && dt > 0) {
       // Шаг 5: Фиксированный шаг для физики с накоплением
       if (window.PerfMonitor) PerfMonitor.begin('update');
-      this._accumulator += dt;
-      const step = this._fixedStep;
-      // Макс 3 шага за кадр (защита от spiral of death)
-      let steps = 0;
-      while (this._accumulator >= step && steps < 3) {
-        this.update(step);
-        this._accumulator -= step;
-        steps++;
-      }
-      // Остаток (интерполяция не нужна для 2D pixel-art)
-      if (this._accumulator > step * 0.5) {
-        this.update(this._accumulator);
-        this._accumulator = 0;
+      try {
+        this._accumulator += dt;
+        const step = this._fixedStep;
+        // Макс 3 шага за кадр (защита от spiral of death)
+        let steps = 0;
+        while (this._accumulator >= step && steps < 3) {
+          this.update(step);
+          this._accumulator -= step;
+          steps++;
+        }
+        // Остаток (интерполяция не нужна для 2D pixel-art)
+        if (this._accumulator > step * 0.5) {
+          this.update(this._accumulator);
+          this._accumulator = 0;
+        }
+      } catch (e) {
+        console.error('[Game] update() error:', e);
       }
       if (window.PerfMonitor) PerfMonitor.end('update');
     }
 
     if (window.PerfMonitor) PerfMonitor.begin('render');
-    this.render();
+    try {
+      this.render();
+    } catch (e) {
+      console.error('[Game] render() error:', e);
+    }
     if (window.PerfMonitor) PerfMonitor.end('render');
 
     UI.tick(this);
