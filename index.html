@@ -16,8 +16,12 @@
   <!-- Стили -->
   <link rel="stylesheet" href="css/style.css" />
 
-  <!-- Capacitor (нативная обёртка, загружается если доступен) -->
-  <script src="https://unpkg.com/@nicedoc/capacitor-core@latest/dist/capacitor.js" onerror="console.log('[Capacitor] Not in native env, skipping.')"></script>
+  <!-- Capacitor (нативная обёртка — подключается только в нативной сборке через capacitor.config.json) -->
+  <!-- В браузерном режиме не загружаем CDN-версию, чтобы избежать блокировки и конфликтов -->
+  <script>
+    // Stub: если Capacitor не определён нативной обёрткой, ничего не делаем
+    if (!window.Capacitor) { window.Capacitor = null; }
+  </script>
 
   <!-- Иконки (программно заменяются через IconGenerator при загрузке) -->
   <link rel="icon" id="favicon" type="image/svg+xml" href="icon.svg" />
