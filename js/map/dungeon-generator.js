@@ -301,7 +301,25 @@ const GameMap = {
     this._buildWallRects(dungeon);
 
     // 10) Кеш пола (Шаг 13: биом-зависимые цвета)
-    this._buildFloorCache(dungeon, biome);
+    try {
+      this._buildFloorCache(dungeon, biome);
+    } catch (e) {
+      console.error('[GameMap] _buildFloorCache failed:', e);
+      // Гарантируем что _floorCache хотя бы пустой canvas с базовой заливкой
+      if (!this._floorCache) {
+        const fallback = document.createElement('canvas');
+        fallback.width = this.mapW;
+        fallback.height = this.mapH;
+        const fCtx = fallback.getContext('2d');
+        fCtx.fillStyle = biome ? (biome.wallColor || '#1a1a1a') : '#1a1a1a';
+        fCtx.fillRect(0, 0, this.mapW, this.mapH);
+        fCtx.fillStyle = biome ? (biome.floorColor || '#3a3a3a') : '#3a3a3a';
+        for (const r of dungeon.rooms) fCtx.fillRect(r.x, r.y, r.w, r.h);
+        fCtx.fillStyle = biome ? (biome.corridorColor || '#2a2a2a') : '#2a2a2a';
+        for (const c of dungeon.corridors) fCtx.fillRect(c.x, c.y, c.w, c.h);
+        this._floorCache = fallback;
+      }
+    }
 
     // Шаг 17: размещаем новые загадки и ловушки
     const isCampaign = !!(window.Campaign && Campaign.active);
@@ -1104,6 +1122,10 @@ const GameMap = {
     off.height = this.mapH;
     const ctx = off.getContext('2d');
 
+    // ВАЖНО: присваиваем кэш СРАЗУ, чтобы даже при ошибках в декоре
+    // рендер не получил null (чёрный экран). Рисование продолжится на этом canvas.
+    this._floorCache = off;
+
     // Шаг 13: цвета из биома
     const wallColor = biome ? biome.wallColor : '#1a1a1a';
     const corridorColor = biome ? biome.corridorColor : '#2a2a2a';
@@ -1197,8 +1219,6 @@ const GameMap = {
 
     // === Узкая плиточная текстура коридоров (отличие от комнат) ===
     this._renderCorridorNarrowTiles(ctx, dungeon, biomeId);
-
-    this._floorCache = off;
 
     // Небесный город: сгенерировать кеш фона неба
     if (biomeId === 'sky_citadel') {
@@ -2563,7 +2583,33 @@ const GameMap = {
       const sw = Math.min(viewW, this.mapW - sx) | 0;
       const sh = Math.min(viewH, this.mapH - sy) | 0;
       if (sw > 0 && sh > 0) {
-        ctx.drawImage(this._floorCache, sx, sy, sw, sh, sx, sy, sw, sh);
+        try {
+          ctx.drawImage(this._floorCache, sx, sy, sw, sh, sx, sy, sw, sh);
+        } catch (e) {
+          console.error('[GameMap] drawImage _floorCache failed:', e);
+        }
+      }
+    } else if (this.dungeon) {
+      // Fallback: _floorCache отсутствует, но dungeon есть — пересоздаём кэш
+      console.warn('[GameMap] _floorCache is null, rebuilding...');
+      try {
+        this._buildFloorCache(this.dungeon, this.currentBiome);
+      } catch (e) {
+        console.error('[GameMap] _buildFloorCache fallback failed:', e);
+      }
+      // Рисуем заливку комнат напрямую как временный фоллбэк
+      if (!this._floorCache) {
+        const biome = this.currentBiome;
+        const floorColor = biome ? (biome.floorColor || '#3a3a3a') : '#3a3a3a';
+        ctx.fillStyle = floorColor;
+        for (const r of this.dungeon.rooms) {
+          ctx.fillRect(r.x, r.y, r.w, r.h);
+        }
+        const corridorColor = biome ? (biome.corridorColor || '#2a2a2a') : '#2a2a2a';
+        ctx.fillStyle = corridorColor;
+        for (const c of this.dungeon.corridors) {
+          ctx.fillRect(c.x, c.y, c.w, c.h);
+        }
       }
     }
 
@@ -2575,31 +2621,31 @@ const GameMap = {
     }
 
     // Декор: руны на полу
-    this._renderRunes(ctx, cam, viewW, viewH);
+    try { this._renderRunes(ctx, cam, viewW, viewH); } catch(e) { console.error('[GameMap] _renderRunes:', e); }
 
     // Декор: мозаичные элементы рисуются в _floorCache, тут пропускаем
 
     // Двери секретной комнаты (если есть)
-    this._renderSecretDoor(ctx);
+    try { this._renderSecretDoor(ctx); } catch(e) { console.error('[GameMap] _renderSecretDoor:', e); }
 
     // Колонны и саркофаги
-    this._renderPillars(ctx, cam, viewW, viewH);
-    this._renderSarcophagi(ctx, cam, viewW, viewH);
+    try { this._renderPillars(ctx, cam, viewW, viewH); } catch(e) { console.error('[GameMap] _renderPillars:', e); }
+    try { this._renderSarcophagi(ctx, cam, viewW, viewH); } catch(e) { console.error('[GameMap] _renderSarcophagi:', e); }
 
     // Богатый биом-декор (D&D стиль)
-    this._renderBiomeDecor(ctx, cam, viewW, viewH);
+    try { this._renderBiomeDecor(ctx, cam, viewW, viewH); } catch(e) { console.error('[GameMap] _renderBiomeDecor:', e); }
 
     // Декор: паутина
-    this._renderWebs(ctx, cam, viewW, viewH);
+    try { this._renderWebs(ctx, cam, viewW, viewH); } catch(e) { console.error('[GameMap] _renderWebs:', e); }
 
     // Рычаги
-    this._renderLevers(ctx);
+    try { this._renderLevers(ctx); } catch(e) { console.error('[GameMap] _renderLevers:', e); }
 
     // Ловушки (под факелами, чтобы факелы перекрывали)
-    this._renderTraps(ctx, cam, viewW, viewH);
+    try { this._renderTraps(ctx, cam, viewW, viewH); } catch(e) { console.error('[GameMap] _renderTraps:', e); }
 
     // Шаг 17: новые загадки и ловушки
-    if (GameMap.renderStep17) GameMap.renderStep17(ctx, cam, viewW, viewH);
+    try { if (GameMap.renderStep17) GameMap.renderStep17(ctx, cam, viewW, viewH); } catch(e) { console.error('[GameMap] renderStep17:', e); }
 
     // Декор: факелы полностью удалены
 

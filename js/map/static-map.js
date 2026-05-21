@@ -239,6 +239,11 @@ const StaticMap = {
     const ctx = canvas.getContext('2d');
     ctx.scale(scale, scale);
 
+    // ВАЖНО: присваиваем кэш СРАЗУ, до рисования тайлов
+    // Если рисование бросит ошибку, будет хотя бы пустой canvas вместо null (чёрного экрана)
+    GameMap._floorCache = canvas;
+    GameMap._floorCacheScale = scale;
+
     const biomeColors = this._getBiomeColors(biome);
 
     for (let y = 0; y < mapData.height; y++) {
@@ -260,8 +265,7 @@ const StaticMap = {
         }
       }
     }
-    GameMap._floorCache = canvas;
-    GameMap._floorCacheScale = scale;
+    // (кэш уже присвоен в начале метода)
   },
 
 
