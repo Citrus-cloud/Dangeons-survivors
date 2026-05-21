@@ -939,3 +939,12 @@ LOCALE.en.talent_eff_instant_1 = '3% instant kill chance';
 LOCALE.en.talent_eff_instant_2 = '6% instant kill chance';
 LOCALE.en.talent_eff_double_xp_1 = '+5% double XP chance';
 LOCALE.en.talent_eff_double_xp_2 = '+12% double XP chance';
+
+
+// === Monetization ===
+LOCALE.en.ad_revive = 'Revive (watch ad)';
+LOCALE.en.ad_double_gold = '×2 Gold (watch ad)';
+LOCALE.en.ad_remove = 'Remove Ads';
+LOCALE.en.ad_remove_done = 'Ads disabled!';
+LOCALE.en.ad_revive_success = 'Revived!';
+LOCALE.en.ad_double_success = 'Gold doubled!';

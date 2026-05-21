@@ -16,6 +16,9 @@
   <!-- Стили -->
   <link rel="stylesheet" href="css/style.css" />
 
+  <!-- Capacitor (нативная обёртка, загружается если доступен) -->
+  <script src="https://unpkg.com/@nicedoc/capacitor-core@latest/dist/capacitor.js" onerror="console.log('[Capacitor] Not in native env, skipping.')"></script>
+
   <!-- Иконки (программно заменяются через IconGenerator при загрузке) -->
   <link rel="icon" id="favicon" type="image/svg+xml" href="icon.svg" />
   <link rel="apple-touch-icon" id="touchIcon" href="icon.svg" />
@@ -125,6 +128,28 @@
   </div>
 
   <!-- ============================================================
+       MONETIZATION UI — Кнопки рекламы (поверх canvas)
+       Показываются в нужные моменты через MonetizationManager.
+       ============================================================ -->
+  <div id="monetization-ui">
+    <!-- Кнопка «Воскреснуть за рекламу» (экран смерти) -->
+    <button id="adReviveBtn" class="ad-button ad-revive" onclick="Monetization.handleRevive()">
+      <span class="ad-btn-icon">▶</span>
+      <span class="ad-btn-text" data-i18n="ad_revive">Воскреснуть (реклама)</span>
+    </button>
+    <!-- Кнопка «Удвоить золото за рекламу» (экран результатов) -->
+    <button id="adDoubleGoldBtn" class="ad-button ad-double" onclick="Monetization.handleDoubleGold()">
+      <span class="ad-btn-icon">▶</span>
+      <span class="ad-btn-text" data-i18n="ad_double_gold">×2 Золото (реклама)</span>
+    </button>
+    <!-- Кнопка «Убрать рекламу» (настройки / лагерь) -->
+    <button id="noAdsBtn" class="ad-button ad-noads" onclick="Monetization.purchaseNoAds()">
+      <span class="ad-btn-icon">🚫</span>
+      <span class="ad-btn-text" data-i18n="ad_remove">Убрать рекламу</span>
+    </button>
+  </div>
+
+  <!-- ============================================================
        SCRIPTS — Порядок загрузки скриптов (критичен!)
        
        Порядок:
@@ -203,6 +228,9 @@
   <!-- 12. Кампания и урны -->
   <script src="js/meta/campaign.js"></script>
   <script src="js/systems/urns.js"></script>
+
+  <!-- 12.5. Монетизация (после UI, перед ядром) -->
+  <script src="js/monetization.js"></script>
 
   <!-- 13. Ядро (загружается последним!) -->
   <script src="js/core/registry.js"></script>

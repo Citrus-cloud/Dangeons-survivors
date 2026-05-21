@@ -315,6 +315,11 @@ window.addEventListener('load', () => {
   bestiaryFixStyle.textContent = '.bestiary-back-btn{position:absolute!important;top:12px;right:12px;z-index:10;min-width:80px;text-align:center}';
   document.head.appendChild(bestiaryFixStyle);
 
+  // 4.5. Инициализация системы монетизации (AdMob / заглушка)
+  if (window.Monetization) {
+    Monetization.initialize();
+  }
+
   // 5. Титульный экран (первый запуск) или немедленный старт
   TitleScreen.init();
   if (TitleScreen.shown) {

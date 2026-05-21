@@ -102,6 +102,9 @@ const Game = {
     // Шаг 18: музыка лагеря
     GameAudio.playMusic('camp');
 
+    // Монетизация: показать баннер в лагере при старте
+    if (window.Monetization) Monetization.showBanner();
+
     this.lastTs = performance.now();
     requestAnimationFrame((t) => this.loop(t));
   },
@@ -198,6 +201,9 @@ const Game = {
     UI.hideAll();
     this.state = 'playing';
     GameAudio.playMusic(this.lastBiomeId || 'crypt');
+
+    // Монетизация: скрыть баннер и кнопки рекламы при начале забега
+    if (window.Monetization) Monetization.onRunStart();
   },
 
   togglePause() {
@@ -397,6 +403,9 @@ const Game = {
     this.state = 'camp';
     UI.showCamp();
     GameAudio.playMusic('camp');
+
+    // Монетизация: показать баннер и interstitial при возврате в лагерь
+    if (window.Monetization) Monetization.onMenuEnter();
   },
 
   /** Сохранить мета-прогресс в конце забега и показать статистику. */
@@ -457,6 +466,9 @@ const Game = {
 
     this._clearAllPools();
     this._saveProgressAndShowStats();
+
+    // Монетизация: показать баннер, interstitial, кнопки rewarded
+    if (window.Monetization) Monetization.onRunEnd();
   },
 
   /** Обработчик кнопки рестарта (из старого Game Over). */

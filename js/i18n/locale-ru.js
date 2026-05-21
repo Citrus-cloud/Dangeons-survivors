@@ -833,3 +833,12 @@ LOCALE.ru.talent_eff_instant_1 = '3% мгновенное убийство';
 LOCALE.ru.talent_eff_instant_2 = '6% мгновенное убийство';
 LOCALE.ru.talent_eff_double_xp_1 = '+5% шанс ×2 опыта';
 LOCALE.ru.talent_eff_double_xp_2 = '+12% шанс ×2 опыта';
+
+
+// === Монетизация ===
+LOCALE.ru.ad_revive = 'Воскреснуть (реклама)';
+LOCALE.ru.ad_double_gold = '×2 Золото (реклама)';
+LOCALE.ru.ad_remove = 'Убрать рекламу';
+LOCALE.ru.ad_remove_done = 'Реклама отключена!';
+LOCALE.ru.ad_revive_success = 'Воскрешение!';
+LOCALE.ru.ad_double_success = 'Золото удвоено!';
