@@ -967,3 +967,24 @@ LOCALE.en.victory_reward_achieve = 'Achievement: Dragon Slayer';
 // === Misc ===
 LOCALE.en.exclusive_legendary = 'Legendary';
 LOCALE.en.chest_rare_find = 'Rare Find';
+
+
+
+// === Gameplay text (canvas/particles) ===
+LOCALE.en.boss_defeated = 'BOSS DEFEATED!';
+LOCALE.en.boss_phase3_rage = 'PHASE III — RAGE!';
+LOCALE.en.boss_attack = 'ATTACK!';
+LOCALE.en.boss_scream = 'SCREAM!';
+LOCALE.en.boss_vulnerable = 'VULNERABLE!';
+LOCALE.en.execute = 'EXECUTE!';
+LOCALE.en.crit = 'CRIT!';
+LOCALE.en.xp_gained = '+{0} XP';
+LOCALE.en.hp_gained = '+{0} HP';
+LOCALE.en.secret_room_opened = 'SECRET ROOM OPENED';
+LOCALE.en.altar_activated = 'ALTAR ACTIVATED!';
+LOCALE.en.key_guardian_appeared = 'KEY GUARDIAN APPEARED!';
+LOCALE.en.puzzle_solved = 'PUZZLE SOLVED!';
+LOCALE.en.puzzle_error = 'ERROR!';
+LOCALE.en.puzzle_wrong_reset = 'Wrong! Resetting...';
+LOCALE.en.puzzle_label_rune = 'Rune Activation';
+LOCALE.en.puzzle_label_cipher = 'Cipher';

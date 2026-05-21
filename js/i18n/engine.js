@@ -47,15 +47,38 @@ function setLang(lang) {
   if (lang !== 'ru' && lang !== 'en') return;
   _currentLang = lang;
   SafeStorage.setItem('d20_lang', lang);
-  // Update HTML elements with data-i18n
+
+  // 1. Update HTML elements with data-i18n
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = t(el.getAttribute('data-i18n'));
   });
-  // Rebuild dynamic camp overlays on language change
-  if (window.UI && UI._campOverlay) {
-    UI._campOverlay.remove();
-    UI._campOverlay = null;
+
+  // 2. Destroy all cached dynamic overlays so they rebuild with new language
+  if (window.UI) {
+    const overlayKeys = [
+      '_campOverlay', '_talentOverlay', '_guildOverlay',
+      '_resultsOverlay', '_dialogueOverlay', '_victoryOverlay',
+      '_settingsOverlay', '_mapSelectOverlay'
+    ];
+    for (const key of overlayKeys) {
+      if (UI[key]) {
+        UI[key].remove();
+        UI[key] = null;
+      }
+    }
   }
+  if (window.UIExtended) {
+    const extKeys = ['_classOverlay', '_bestiaryOverlay', '_codexOverlay', '_runStatsOverlay'];
+    for (const key of extKeys) {
+      if (UIExtended[key]) {
+        UIExtended[key].remove();
+        UIExtended[key] = null;
+      }
+    }
+  }
+
+  // 3. Rebuild module-level cached localized data
+  if (window._rebuildLocalizedData) _rebuildLocalizedData();
 }
 
 /** Get current language */

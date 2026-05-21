@@ -877,3 +877,92 @@ window.TALENT_DEFS = TALENT_DEFS;
 window.TALENT_MAP = TALENT_MAP;
 window.GUILD_CONFIG = GUILD_CONFIG;
 window.GUILD_QUEST_POOL = GUILD_QUEST_POOL;
+
+
+/* ---------- Перестроение локализованных данных при смене языка ---------- */
+window._rebuildLocalizedData = function() {
+  // --- Таланты: обновить name, description, effects ---
+  const TALENT_LOCALE_MAP = {
+    resurrect:         { name: 'talent_resurrect',         desc: 'talent_desc_resurrect',         effects: ['talent_eff_resurrect_1', 'talent_eff_resurrect_2'] },
+    bonus_projectiles: { name: 'talent_bonus_projectiles', desc: 'talent_desc_bonus_projectiles', effects: ['talent_eff_projectiles_1', 'talent_eff_projectiles_2'] },
+    max_hp:            { name: 'talent_max_hp',            desc: 'talent_desc_max_hp',            effects: ['talent_eff_hp_1', 'talent_eff_hp_2', 'talent_eff_hp_3'] },
+    move_speed:        { name: 'talent_move_speed',        desc: 'talent_desc_move_speed',        effects: ['talent_eff_speed_1', 'talent_eff_speed_2', 'talent_eff_speed_3'] },
+    phys_damage:       { name: 'talent_phys_damage',       desc: 'talent_desc_phys_damage',       effects: ['talent_eff_phys_1', 'talent_eff_phys_2', 'talent_eff_phys_3'] },
+    magic_damage:      { name: 'talent_magic_damage',      desc: 'talent_desc_magic_damage',      effects: ['talent_eff_magic_1', 'talent_eff_magic_2', 'talent_eff_magic_3'] },
+    cooldown_reduce:   { name: 'talent_cooldown_reduce',   desc: 'talent_desc_cooldown_reduce',   effects: ['talent_eff_cd_1', 'talent_eff_cd_2', 'talent_eff_cd_3'] },
+    crit_chance:       { name: 'talent_crit_chance',       desc: 'talent_desc_crit_chance',        effects: ['talent_eff_crit_1', 'talent_eff_crit_2', 'talent_eff_crit_3'] },
+    lifesteal:         { name: 'talent_lifesteal',         desc: 'talent_desc_lifesteal',         effects: ['talent_eff_lifesteal_1', 'talent_eff_lifesteal_2', 'talent_eff_lifesteal_3'] },
+    dodge:             { name: 'talent_dodge',             desc: 'talent_desc_dodge',             effects: ['talent_eff_dodge_1', 'talent_eff_dodge_2', 'talent_eff_dodge_3'] },
+    xp_radius:         { name: 'talent_xp_radius',        desc: 'talent_desc_xp_radius',         effects: ['talent_eff_pickup_1', 'talent_eff_pickup_2', 'talent_eff_pickup_3'] },
+    gold_bonus:        { name: 'talent_gold_bonus',        desc: 'talent_desc_gold_bonus',        effects: ['talent_eff_gold_1', 'talent_eff_gold_2', 'talent_eff_gold_3'] },
+    xp_bonus:          { name: 'talent_xp_bonus',         desc: 'talent_desc_xp_bonus',          effects: ['talent_eff_xp_1', 'talent_eff_xp_2', 'talent_eff_xp_3'] },
+    hp_regen:          { name: 'talent_hp_regen',          desc: 'talent_desc_hp_regen',          effects: ['talent_eff_regen_1', 'talent_eff_regen_2', 'talent_eff_regen_3'] },
+    damage_reduction:  { name: 'talent_damage_reduction',  desc: 'talent_desc_damage_reduction',  effects: ['talent_eff_armor_1', 'talent_eff_armor_2', 'talent_eff_armor_3'] },
+    trap_resist:       { name: 'talent_trap_resist',       desc: 'talent_desc_trap_resist',       effects: ['talent_eff_trap_1', 'talent_eff_trap_2'] },
+    iframe_extend:     { name: 'talent_iframe_extend',     desc: 'talent_desc_iframe_extend',     effects: ['talent_eff_iframe_1', 'talent_eff_iframe_2'] },
+    bleed_chance:      { name: 'talent_bleed_chance',      desc: 'talent_desc_bleed_chance',      effects: ['talent_eff_bleed_1', 'talent_eff_bleed_2'] },
+    extra_weapon_slot: { name: 'talent_extra_weapon_slot', desc: 'talent_desc_extra_weapon_slot', effects: ['guild_reward_weapon_slot'] },
+    extra_ability_slot:{ name: 'talent_extra_ability_slot',desc: 'talent_desc_extra_ability_slot', effects: ['guild_reward_ability_slot'] },
+    debuff_resist:     { name: 'talent_debuff_resist',     desc: 'talent_desc_debuff_resist',     effects: ['talent_eff_debuff_1', 'talent_eff_debuff_2'] },
+    chest_luck:        { name: 'talent_chest_luck',        desc: 'talent_desc_chest_luck',        effects: ['talent_eff_chest_1', 'talent_eff_chest_2'] },
+    explosive_kill:    { name: 'talent_explosive_kill',    desc: 'talent_desc_explosive_kill',    effects: ['talent_eff_explosive_1', 'talent_eff_explosive_2'] },
+    instant_kill:      { name: 'talent_instant_kill',      desc: 'talent_desc_instant_kill',      effects: ['talent_eff_instant_1', 'talent_eff_instant_2'] },
+    double_xp:         { name: 'talent_double_xp',        desc: 'talent_desc_double_xp',         effects: ['talent_eff_double_xp_1', 'talent_eff_double_xp_2'] },
+  };
+
+  for (const def of TALENT_DEFS) {
+    const map = TALENT_LOCALE_MAP[def.id];
+    if (!map) continue;
+    def.name = t(map.name);
+    def.description = t(map.desc);
+    def.effects = map.effects.map(k => t(k));
+  }
+
+  // --- Гильдия: обновить name и reward ---
+  const GUILD_RANK_KEYS = [
+    'guild_rank_copper', 'guild_rank_iron', 'guild_rank_bronze', 'guild_rank_silver',
+    'guild_rank_gold', 'guild_rank_platinum', 'guild_rank_adamant', 'guild_rank_mithril',
+    'guild_rank_legendary', 'guild_rank_mythic'
+  ];
+  const GUILD_REWARD_KEYS = [
+    ['guild_reward_weapon_slot', 7], ['guild_reward_lich_blade'], ['guild_reward_ability_slot', 7],
+    ['guild_reward_start_bonus'], ['guild_reward_exclusive_chance'], ['guild_reward_weapon_slot', 8],
+    ['guild_reward_archmage_staff'], ['guild_reward_ability_slot', 8],
+    ['guild_reward_start_xp'], ['guild_reward_legend']
+  ];
+  for (let i = 0; i < GUILD_CONFIG.levels.length; i++) {
+    GUILD_CONFIG.levels[i].name = t(GUILD_RANK_KEYS[i]);
+    const rk = GUILD_REWARD_KEYS[i];
+    GUILD_CONFIG.levels[i].reward = rk.length > 1 ? t(rk[0], rk[1]) : t(rk[0]);
+  }
+
+  // --- Задания гильдии: обновить desc ---
+  const QUEST_KEYS_DAILY = ['quest_kill_500','quest_kill_skeletons','quest_kill_200','quest_survive_5min','quest_collect_xp','quest_open_chests','quest_reach_wave5','quest_kill_elites'];
+  const QUEST_KEYS_WEEKLY = ['quest_kill_3_bosses','quest_kill_5000','quest_survive_15min','quest_complete_3_runs','quest_reach_wave10'];
+  for (let i = 0; i < GUILD_QUEST_POOL.daily.length; i++) {
+    GUILD_QUEST_POOL.daily[i].desc = t(QUEST_KEYS_DAILY[i]);
+  }
+  for (let i = 0; i < GUILD_QUEST_POOL.weekly.length; i++) {
+    GUILD_QUEST_POOL.weekly[i].desc = t(QUEST_KEYS_WEEKLY[i]);
+  }
+
+  // --- Кампания: обновить диалоги и названия карт ---
+  if (window.CAMPAIGN_DIALOGUES) {
+    CAMPAIGN_DIALOGUES.beforeMap1 = t('campaign_dialogue_before1');
+    CAMPAIGN_DIALOGUES.afterMap1 = t('campaign_dialogue_after1');
+    CAMPAIGN_DIALOGUES.afterMap2 = t('campaign_dialogue_after2');
+    CAMPAIGN_DIALOGUES.afterMap3 = t('campaign_dialogue_after3');
+    CAMPAIGN_DIALOGUES.mageSaved = t('campaign_dialogue_mage');
+    CAMPAIGN_DIALOGUES.afterMap4 = t('campaign_dialogue_after4');
+    CAMPAIGN_DIALOGUES.beforeBoss = t('campaign_dialogue_boss');
+    CAMPAIGN_DIALOGUES.victory = t('campaign_dialogue_victory');
+  }
+  if (window.CAMPAIGN_MAPS) {
+    const mapNameKeys = ['campaign_map1','campaign_map2','campaign_map3','campaign_map4','campaign_map5'];
+    const objDescKeys = ['campaign_obj_activate','campaign_obj_survive','campaign_obj_kill_boss','campaign_obj_rescue','campaign_obj_kill_dragon'];
+    for (let i = 0; i < CAMPAIGN_MAPS.length; i++) {
+      CAMPAIGN_MAPS[i].name = t(mapNameKeys[i]);
+      CAMPAIGN_MAPS[i].objective.description = t(objDescKeys[i]);
+    }
+  }
+};

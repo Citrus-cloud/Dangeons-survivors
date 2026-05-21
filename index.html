@@ -36,8 +36,8 @@
     <div class="title-bg-pattern"></div>
     <div class="title-runes" id="titleRunes"></div>
     <div class="title-logo">
-      <div class="title-main">Dungeon Survivors</div>
-      <div class="title-sub">D20</div>
+      <div class="title-main" data-i18n="title_main">Dungeon Survivors</div>
+      <div class="title-sub" data-i18n="title_sub">D20</div>
     </div>
     <div class="title-tap" data-i18n="title_tap">Tap to start</div>
   </div>
@@ -64,7 +64,7 @@
   <div id="hud">
     <!-- Левый верхний угол: бары здоровья и опыта -->
     <div class="hud-top-left">
-      <div id="hpBar" class="bar"><div class="fill"></div><div class="label">HP: 100/100</div></div>
+      <div id="hpBar" class="bar"><div class="fill"></div><div class="label" data-i18n="hud_hp">HP: 100/100</div></div>
       <div id="xpBar" class="bar"><div class="fill"></div><div class="label xp-level-label"></div></div>
       <!-- Мини-иконка кулдауна Magic Missile -->
       <div class="mini-cd-row">
@@ -73,10 +73,10 @@
     </div>
     <!-- Правый верхний угол: пауза, статистика -->
     <div class="hud-top-right">
-      <button id="pauseBtn" title="Pause">⏸</button>
+      <button id="pauseBtn" data-i18n="hud_pause_btn">⏸</button>
       <div id="killCount" data-i18n="hud_kills">Kills: 0</div>
       <div id="runTimer">00:00</div>
-      <div id="waveInfo">Wave 1 in 20s</div>
+      <div id="waveInfo" data-i18n="hud_wave">Wave 1 in 20s</div>
     </div>
   </div>
 
@@ -99,8 +99,8 @@
 
   <!-- Главное меню (legacy, скрыто по умолчанию) -->
   <div id="menuOverlay" class="overlay">
-    <h1>DUNGEON SURVIVORS</h1>
-    <h2>D20</h2>
+    <h1 data-i18n="title_main">DUNGEON SURVIVORS</h1>
+    <h2 data-i18n="title_sub">D20</h2>
     <p data-i18n="menu_controls">Touch — dynamic joystick. PC: WASD/Arrows.</p>
     <button id="startBtn" class="btn" data-i18n="menu_start">START</button>
   </div>
@@ -113,7 +113,7 @@
 
   <!-- Выбор улучшения при повышении уровня -->
   <div id="levelOverlay" class="overlay">
-    <h1><span data-i18n="levelup_title">LEVEL</span> <span id="lvlNum">2</span></h1>
+    <h1><span id="lvlNum">LEVEL 2</span></h1>
     <h2 data-i18n="levelup_choose">Choose an upgrade</h2>
     <div id="cards"></div>
   </div>

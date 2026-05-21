@@ -1287,7 +1287,7 @@ const Game = {
         !e.isBoss && !e.isElite && Math.random() < this.player._instantKillChance) {
       e.hp = 0;
       if (window.Particles && Particles.text) {
-        Particles.text(e.x, e.y - 20, 'EXECUTE!', 0.8, '#ff0000', 13);
+        Particles.text(e.x, e.y - 20, t('execute'), 0.8, '#ff0000', 13);
       }
       this.killEnemy(e);
       return;
@@ -1299,7 +1299,7 @@ const Game = {
       finalDmg *= 2;
       // Визуал крита
       if (window.Particles && Particles.text) {
-        Particles.text(e.x, e.y - 20, 'CRIT!', 0.6, '#ffff00', 12);
+        Particles.text(e.x, e.y - 20, t('crit'), 0.6, '#ffff00', 12);
       }
     }
 
@@ -1363,7 +1363,7 @@ const Game = {
       if (this.xpDrops) {
         Loot.dropXPRaw(this.xpDrops, e.x, e.y, xpReward);
       }
-      Particles.text(e.x, e.y - 30, `+${xpReward} XP`, 1.5, '#ffd700', 14);
+      Particles.text(e.x, e.y - 30, t('xp_gained', xpReward), 1.5, '#ffd700', 14);
     }
 
     // Шаг 8: взрывная смерть
