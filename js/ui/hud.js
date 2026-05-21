@@ -835,11 +835,13 @@ const UI = {
 
     ov.innerHTML = `
       <div class="camp-bg map-select-bg">
-        <h1 class="camp-title map-select-title">${t('map_select_title')}</h1>
+        <div style="display:flex;align-items:center;gap:12px;width:100%;margin-bottom:8px;">
+          <button id="mapBackBtn" class="btn bestiary-back-btn-compact" title="${t('btn_back')}">←</button>
+          <h1 class="camp-title map-select-title" style="flex:1;text-align:center;margin:0;">${t('map_select_title')}</h1>
+        </div>
         <div class="map-grid">${cardsHTML}</div>
         <div class="map-select-buttons">
           <button id="mapRandomBtn" class="btn camp-btn">${t('map_random')}</button>
-          <button id="mapBackBtn" class="btn camp-btn">${t('map_back')}</button>
         </div>
       </div>
     `;
@@ -918,7 +920,7 @@ const UI = {
     ov.innerHTML = `
       <div class="talent-panel">
         <div class="talent-header-bar">
-          <button id="talentBackBtn" class="btn talent-back-btn-compact" title="${t('btn_back')}">← ${t('btn_back')}</button>
+          <button id="talentBackBtn" class="btn talent-back-btn-compact" title="${t('btn_back')}">←</button>
           <h1 class="talent-title">${t('talents_title')}</h1>
           <div class="talent-gold"><span class="gold-icon">🪙</span> <span id="talentGoldVal">0</span></div>
         </div>
@@ -1007,9 +1009,10 @@ const UI = {
     ov.className = 'overlay guild-overlay';
     ov.innerHTML = `
       <div class="guild-panel-v2">
-        <div class="guild-header-v2">
-          <div class="guild-emblem">⚜</div>
-          <h1 class="guild-title-v2">${t('guild_title')}</h1>
+        <div class="guild-header-v2" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(201,168,76,0.3);background:rgba(26,18,16,0.6);">
+          <button id="guildBackBtnTop" class="btn bestiary-back-btn-compact" title="${t('btn_back')}">←</button>
+          <div class="guild-emblem" style="margin:0;">⚜</div>
+          <h1 class="guild-title-v2" style="flex:1;margin:0;">${t('guild_title')}</h1>
         </div>
 
         <div class="guild-rank-section">
@@ -1032,14 +1035,13 @@ const UI = {
         <div class="guild-content" id="guildContent"></div>
 
         <div class="guild-footer-v2">
-          <button id="guildBackBtnV2" class="btn">${t('guild_back')}</button>
         </div>
       </div>
     `;
     document.body.appendChild(ov);
     this._guildOverlay = ov;
 
-    ov.querySelector('#guildBackBtnV2').addEventListener('click', () => {
+    ov.querySelector('#guildBackBtnTop').addEventListener('click', () => {
       this._guildOverlay.classList.remove('active');
       this.showCamp();
     });

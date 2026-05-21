@@ -37,9 +37,11 @@ const UIExtended = {
     ov.className = 'overlay camp-overlay';
     ov.innerHTML = `
       <div class="camp-bg">
-        <h1 class="camp-title" style="font-size:1.4em;">${t('class_select_title')}</h1>
+        <div style="display:flex;align-items:center;gap:12px;width:100%;margin-bottom:8px;">
+          <button id="classBackBtn" class="btn bestiary-back-btn-compact" title="${t('btn_back')}">←</button>
+          <h1 class="camp-title" style="font-size:1.4em;flex:1;text-align:center;margin:0;">${t('class_select_title')}</h1>
+        </div>
         <div id="classGrid" class="class-grid"></div>
-        <button id="classBackBtn" class="btn" style="margin-top:16px;">${t('btn_back')}</button>
       </div>
     `;
     document.body.appendChild(ov);
@@ -104,7 +106,7 @@ const UIExtended = {
     ov.innerHTML = `
       <div class="bestiary-layout">
         <div class="bestiary-header">
-          <button id="bestiaryBackBtn" class="btn bestiary-back-btn-compact" title="${t('btn_back')}">← ${t('btn_back')}</button>
+          <button id="bestiaryBackBtn" class="btn bestiary-back-btn-compact" title="${t('btn_back')}">←</button>
           <h1 class="bestiary-title">${t('bestiary_title')}</h1>
           <div id="bestiaryStats" class="bestiary-stats-header"></div>
         </div>
@@ -299,14 +301,16 @@ const UIExtended = {
     ov.className = 'overlay camp-overlay';
     ov.innerHTML = `
       <div class="camp-bg" style="max-height:95vh;overflow-y:auto;">
-        <h1 class="camp-title" style="font-size:1.3em;">${t('codex_title')}</h1>
+        <div style="display:flex;align-items:center;gap:12px;width:100%;margin-bottom:8px;">
+          <button id="codexBackBtn" class="btn bestiary-back-btn-compact" title="${t('btn_back')}">←</button>
+          <h1 class="camp-title" style="font-size:1.3em;flex:1;text-align:center;margin:0;">${t('codex_title')}</h1>
+        </div>
         <div class="codex-tabs">
           <button class="codex-tab active" data-tab="weapons">${t('codex_tab_weapons')}</button>
           <button class="codex-tab" data-tab="abilities">${t('codex_tab_abilities')}</button>
           <button class="codex-tab" data-tab="evolutions">${t('codex_tab_evolutions')}</button>
         </div>
         <div id="codexContent" class="codex-content"></div>
-        <button id="codexBackBtn" class="btn" style="margin-top:12px;">${t('codex_back')}</button>
       </div>
     `;
     document.body.appendChild(ov);
