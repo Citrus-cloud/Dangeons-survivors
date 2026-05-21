@@ -2959,22 +2959,33 @@ Behaviors.illithid_arcanist = function(e, player, dt) {
 Behaviors.rakshasa = function(e, player, dt) {
   _moveTowards(e, player.x, player.y, dt, +1);
   _tryContactDamage(e, player, dt);
+  // Иллюзии не могут создавать новых иллюзий
+  if (e._isIllusion) return;
   e.specialCooldown -= dt;
   if (e.specialCooldown <= 0) {
-    const count = e.cfg.illusionCount || 2;
-    for (let i = 0; i < count; i++) {
-      const ang = Math.random() * Math.PI * 2;
-      const dist = 40 + Math.random() * 30;
-      const sx = e.x + Math.cos(ang) * dist;
-      const sy = e.y + Math.sin(ang) * dist;
-      const clone = Enemies.spawnByType(Game.enemies, e.type, sx, sy);
-      if (clone) {
-        clone.hp = clone.maxHp = e.cfg.illusionHp || 15;
-        clone.damage = Math.round(e.damage * 0.50);
-        clone._isIllusion = true;
+    // Подсчитываем текущие активные иллюзии этого типа
+    const MAX_ILLUSIONS = 4;
+    let activeIllusions = 0;
+    const items = Game.enemies.items;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].active && items[i]._isIllusion && items[i].type === e.type) activeIllusions++;
+    }
+    if (activeIllusions < MAX_ILLUSIONS) {
+      const count = Math.min(e.cfg.illusionCount || 2, MAX_ILLUSIONS - activeIllusions);
+      for (let i = 0; i < count; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const dist = 40 + Math.random() * 30;
+        const sx = e.x + Math.cos(ang) * dist;
+        const sy = e.y + Math.sin(ang) * dist;
+        const clone = Enemies.spawnByType(Game.enemies, e.type, sx, sy);
+        if (clone) {
+          clone.hp = clone.maxHp = e.cfg.illusionHp || 15;
+          clone.damage = Math.round(e.damage * 0.50);
+          clone._isIllusion = true;
+        }
       }
     }
-    e.specialCooldown = e.cfg.illusionCooldown || 5.0;
+    e.specialCooldown = 3.0; // клонирование каждые 3 секунды
     e.attackPunch = 0.12;
   }
 };
@@ -3451,8 +3462,10 @@ Behaviors.titan_elem = function(e, player, dt) {
         if (d <= 80) {
           player.webSlow = Math.max(player.webSlow || 0, 1.5);
           const kn = _norm(pdx, pdy);
+          const _oldX1 = player.x, _oldY1 = player.y;
           player.x += kn.x * 40;
           player.y += kn.y * 40;
+          if (window.Player && Player.validatePosition) Player.validatePosition(player, _oldX1, _oldY1);
         }
         break;
       case 'earth':
@@ -4381,8 +4394,10 @@ Behaviors.gravity_aberration = function(e, player, dt) {
     if (dist <= (e.cfg.gravPulseRadius || 100) && dist > 10) {
       const pullDist = e.cfg.gravPullDist || 30;
       const n = _norm(dx, dy);
+      const _oldX2 = player.x, _oldY2 = player.y;
       player.x += n.x * pullDist;
       player.y += n.y * pullDist;
+      if (window.Player && Player.validatePosition) Player.validatePosition(player, _oldX2, _oldY2);
       e.attackPunch = 0.1;
     }
   }
@@ -4579,20 +4594,31 @@ Behaviors.bone_hydra_enemy = function(e, player, dt) {
 Behaviors.dream_weaver = function(e, player, dt) {
   _moveTowards(e, player.x, player.y, dt, +1);
   _tryContactDamage(e, player, dt);
+  // Иллюзии не могут создавать новых иллюзий
+  if (e._isIllusion) return;
   e.specialCooldown -= dt;
   if (e.specialCooldown <= 0) {
-    e.specialCooldown = e.cfg.illusionCooldown || 6.0;
-    const count = e.cfg.illusionCount || 2;
-    for (let i = 0; i < count; i++) {
-      if (window.Enemies && window.Game && Game.enemies) {
-        const ang = (Math.PI * 2 / count) * i + Math.random() * 0.5;
-        const sx = e.x + Math.cos(ang) * 40;
-        const sy = e.y + Math.sin(ang) * 40;
-        const illusion = Enemies.spawnByType(Game.enemies, e.type, sx, sy);
-        if (illusion) {
-          illusion.hp = e.cfg.illusionHp || 1;
-          illusion.maxHp = illusion.hp;
-          illusion._isIllusion = true;
+    e.specialCooldown = 3.0; // клонирование каждые 3 секунды
+    // Подсчитываем текущие активные иллюзии этого типа
+    const MAX_ILLUSIONS = 4;
+    let activeIllusions = 0;
+    const items = Game.enemies.items;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].active && items[i]._isIllusion && items[i].type === e.type) activeIllusions++;
+    }
+    if (activeIllusions < MAX_ILLUSIONS) {
+      const count = Math.min(e.cfg.illusionCount || 2, MAX_ILLUSIONS - activeIllusions);
+      for (let i = 0; i < count; i++) {
+        if (window.Enemies && window.Game && Game.enemies) {
+          const ang = (Math.PI * 2 / count) * i + Math.random() * 0.5;
+          const sx = e.x + Math.cos(ang) * 40;
+          const sy = e.y + Math.sin(ang) * 40;
+          const illusion = Enemies.spawnByType(Game.enemies, e.type, sx, sy);
+          if (illusion) {
+            illusion.hp = e.cfg.illusionHp || 1;
+            illusion.maxHp = illusion.hp;
+            illusion._isIllusion = true;
+          }
         }
       }
     }
@@ -4876,8 +4902,10 @@ Behaviors.abyssal_maw = function(e, player, dt) {
   if (dist <= (e.cfg.pullRadius || 120) && dist > 5) {
     const pullStr = (e.cfg.pullSpeed || 3);
     const n = _norm(e.x - player.x, e.y - player.y);
+    const _oldX3 = player.x, _oldY3 = player.y;
     player.x += n.x * pullStr;
     player.y += n.y * pullStr;
+    if (window.Player && Player.validatePosition) Player.validatePosition(player, _oldX3, _oldY3);
   }
   // Пожирание (DPS при очень близком контакте)
   if (dist <= (e.cfg.devourRange || 25)) {

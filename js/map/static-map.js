@@ -521,8 +521,10 @@ const StaticMap = {
       else player.hp -= dmg;
       // Отбрасывание
       const dist = Math.hypot(dx, dy) || 1;
+      const _oldXS = player.x, _oldYS = player.y;
       player.x += (dx / dist) * 40;
       player.y += (dy / dist) * 40;
+      if (window.Player && Player.validatePosition) Player.validatePosition(player, _oldXS, _oldYS);
       if (window.Particles) {
         Particles.burst(cx, cy, 12, { color: '#9b59b6', speedMin: 80, speedMax: 200,
           lifeMin: 0.3, lifeMax: 0.7, sizeMin: 3, sizeMax: 6 });

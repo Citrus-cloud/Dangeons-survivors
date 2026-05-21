@@ -593,6 +593,41 @@ const Player = {
     ctx.arc(player.x, player.y, pickupR, 0, Math.PI * 2);
     ctx.stroke();
   },
+
+  /**
+   * Валидация позиции игрока после внешнего смещения (отбрасывание, притяжение и т.п.)
+   * Если новая позиция внутри стены — использует moveWithCollision для скольжения,
+   * либо откатывает к исходной позиции.
+   * 
+   * @param {Object} player - Объект героя
+   * @param {number} oldX - Предыдущая X-позиция (до смещения)
+   * @param {number} oldY - Предыдущая Y-позиция (до смещения)
+   */
+  validatePosition(player, oldX, oldY) {
+    const rad = player.size * 0.35;
+    if (window.GameMap && GameMap.dungeon && GameMap.rectIsWalkable) {
+      if (!GameMap.rectIsWalkable(player.x, player.y, rad)) {
+        // Новая позиция невалидна — пробуем через moveWithCollision
+        const dx = player.x - oldX;
+        const dy = player.y - oldY;
+        const res = GameMap.moveWithCollision(oldX, oldY, dx, dy, rad, 0.25);
+        if (GameMap.rectIsWalkable(res.x, res.y, rad)) {
+          player.x = res.x;
+          player.y = res.y;
+        } else {
+          // Полный откат — остаёмся на месте
+          player.x = oldX;
+          player.y = oldY;
+        }
+      }
+    }
+    // Границы карты
+    const half = player.size / 2;
+    const mapW = (window.GameMap && GameMap.mapW) ? GameMap.mapW : CONFIG.MAP.W;
+    const mapH = (window.GameMap && GameMap.mapH) ? GameMap.mapH : CONFIG.MAP.H;
+    player.x = Utils.clamp(player.x, half, mapW - half);
+    player.y = Utils.clamp(player.y, half, mapH - half);
+  },
 };
 
 window.Player = Player;
