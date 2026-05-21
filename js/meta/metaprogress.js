@@ -21,8 +21,8 @@ const TALENT_DEFS = [
     maxLevel: 2,
     costs: [10000, 20000],
     effects: [
-      '1 resurrect per run with 30% HP',
-      '2 resurrects per run with 100% HP',
+      t('talent_eff_resurrect_1'),
+      t('talent_eff_resurrect_2'),
     ],
   },
   // === 2. Увеличение снарядов (обязательный) ===
@@ -30,12 +30,12 @@ const TALENT_DEFS = [
     id: 'bonus_projectiles',
     name: t('talent_bonus_projectiles'),
     icon: '✶',
-    description: 'Extra projectiles for all weapons.',
+    description: t('talent_desc_bonus_projectiles'),
     maxLevel: 2,
     costs: [8000, 16000],
     effects: [
-      '+1 projectile to all weapons',
-      '+2 projectiles to all weapons',
+      t('talent_eff_projectiles_1'),
+      t('talent_eff_projectiles_2'),
     ],
   },
   // === 3. Закалка ===
@@ -43,167 +43,167 @@ const TALENT_DEFS = [
     id: 'max_hp',
     name: t('talent_max_hp'),
     icon: '❤',
-    description: 'Increases maximum health.',
+    description: t('talent_desc_max_hp'),
     maxLevel: 3,
     costs: [500, 1500, 4000],
-    effects: ['+20 max HP', '+40 max HP', '+70 max HP'],
+    effects: [t('talent_eff_hp_1'), t('talent_eff_hp_2'), t('talent_eff_hp_3')],
   },
   // === 4. Быстрые ноги ===
   {
     id: 'move_speed',
     name: t('talent_move_speed'),
     icon: '👟',
-    description: 'Increases movement speed.',
+    description: t('talent_desc_move_speed'),
     maxLevel: 3,
     costs: [600, 1800, 5000],
-    effects: ['+8% speed', '+16% speed', '+25% speed'],
+    effects: [t('talent_eff_speed_1'), t('talent_eff_speed_2'), t('talent_eff_speed_3')],
   },
   // === 5. Грубая сила ===
   {
     id: 'phys_damage',
     name: t('talent_phys_damage'),
     icon: '⚔',
-    description: 'Increases physical damage.',
+    description: t('talent_desc_phys_damage'),
     maxLevel: 3,
     costs: [800, 2500, 6000],
-    effects: ['+10% phys. damage', '+20% phys. damage', '+35% phys. damage'],
+    effects: [t('talent_eff_phys_1'), t('talent_eff_phys_2'), t('talent_eff_phys_3')],
   },
   // === 6. Магическая мощь ===
   {
     id: 'magic_damage',
     name: t('talent_magic_damage'),
     icon: '📖',
-    description: 'Increases magic damage.',
+    description: t('talent_desc_magic_damage'),
     maxLevel: 3,
     costs: [800, 2500, 6000],
-    effects: ['+10% magic damage', '+20% magic damage', '+35% magic damage'],
+    effects: [t('talent_eff_magic_1'), t('talent_eff_magic_2'), t('talent_eff_magic_3')],
   },
   // === 7. Скорострельность ===
   {
     id: 'cooldown_reduce',
     name: t('talent_cooldown_reduce'),
     icon: '⏱',
-    description: 'Reduces all weapon cooldowns.',
+    description: t('talent_desc_cooldown_reduce'),
     maxLevel: 3,
     costs: [1000, 3000, 7000],
-    effects: ['-8% cooldowns', '-15% cooldowns', '-22% cooldowns'],
+    effects: [t('talent_eff_cd_1'), t('talent_eff_cd_2'), t('talent_eff_cd_3')],
   },
   // === 8. Критический удар ===
   {
     id: 'crit_chance',
     name: t('talent_crit_chance'),
     icon: '💥',
-    description: 'Chance to deal double damage.',
+    description: t('talent_desc_crit_chance'),
     maxLevel: 3,
     costs: [1200, 3500, 8000],
-    effects: ['+5% crit chance', '+10% crit chance', '+16% crit chance'],
+    effects: [t('talent_eff_crit_1'), t('talent_eff_crit_2'), t('talent_eff_crit_3')],
   },
   // === 9. Вампиризм ===
   {
     id: 'lifesteal',
     name: t('talent_lifesteal'),
     icon: '🩸',
-    description: 'Healing from damage dealt.',
+    description: t('talent_desc_lifesteal'),
     maxLevel: 3,
     costs: [1500, 4000, 9000],
-    effects: ['+3% lifesteal', '+6% lifesteal', '+10% lifesteal'],
+    effects: [t('talent_eff_lifesteal_1'), t('talent_eff_lifesteal_2'), t('talent_eff_lifesteal_3')],
   },
   // === 10. Уворот ===
   {
     id: 'dodge',
     name: t('talent_dodge'),
     icon: '💨',
-    description: 'Chance to completely avoid a hit.',
+    description: t('talent_desc_dodge'),
     maxLevel: 3,
     costs: [1500, 4500, 10000],
-    effects: ['+5% dodge', '+10% dodge', '+15% dodge'],
+    effects: [t('talent_eff_dodge_1'), t('talent_eff_dodge_2'), t('talent_eff_dodge_3')],
   },
   // === 11. Магнит опыта ===
   {
     id: 'xp_radius',
     name: t('talent_xp_radius'),
     icon: '◎',
-    description: 'Increases XP and gold pickup radius.',
+    description: t('talent_desc_xp_radius'),
     maxLevel: 3,
     costs: [500, 1200, 3000],
-    effects: ['+25% pickup radius', '+50% pickup radius', '+80% pickup radius'],
+    effects: [t('talent_eff_pickup_1'), t('talent_eff_pickup_2'), t('talent_eff_pickup_3')],
   },
   // === 12. Золотая лихорадка ===
   {
     id: 'gold_bonus',
     name: t('talent_gold_bonus'),
     icon: '🪙',
-    description: 'More gold per run.',
+    description: t('talent_desc_gold_bonus'),
     maxLevel: 3,
     costs: [600, 1500, 4000],
-    effects: ['+10% gold', '+20% gold', '+35% gold'],
+    effects: [t('talent_eff_gold_1'), t('talent_eff_gold_2'), t('talent_eff_gold_3')],
   },
   // === 13. Учёность ===
   {
     id: 'xp_bonus',
     name: t('talent_xp_bonus'),
     icon: '📚',
-    description: 'More XP from kills.',
+    description: t('talent_desc_xp_bonus'),
     maxLevel: 3,
     costs: [600, 1500, 4000],
-    effects: ['+10% XP', '+20% XP', '+35% XP'],
+    effects: [t('talent_eff_xp_1'), t('talent_eff_xp_2'), t('talent_eff_xp_3')],
   },
   // === 14. Регенерация ===
   {
     id: 'hp_regen',
     name: t('talent_hp_regen'),
     icon: '💚',
-    description: 'Constant health regeneration.',
+    description: t('talent_desc_hp_regen'),
     maxLevel: 3,
     costs: [800, 2000, 5000],
-    effects: ['+1 HP/s', '+2 HP/s', '+3.5 HP/s'],
+    effects: [t('talent_eff_regen_1'), t('talent_eff_regen_2'), t('talent_eff_regen_3')],
   },
   // === 15. Стойкость ===
   {
     id: 'damage_reduction',
     name: t('talent_damage_reduction'),
     icon: '🛡',
-    description: 'Reduces damage taken.',
+    description: t('talent_desc_damage_reduction'),
     maxLevel: 3,
     costs: [1000, 3000, 7000],
-    effects: ['+5% armor', '+10% armor', '+16% armor'],
+    effects: [t('talent_eff_armor_1'), t('talent_eff_armor_2'), t('talent_eff_armor_3')],
   },
   // === 16. Ловкач ===
   {
     id: 'trap_resist',
     name: t('talent_trap_resist'),
     icon: '🪤',
-    description: 'Reduces trap damage.',
+    description: t('talent_desc_trap_resist'),
     maxLevel: 2,
     costs: [1000, 3000],
-    effects: ['-30% trap damage', '-55% trap damage'],
+    effects: [t('talent_eff_trap_1'), t('talent_eff_trap_2')],
   },
   // === 17. Неуязвимость ===
   {
     id: 'iframe_extend',
     name: t('talent_iframe_extend'),
     icon: '✨',
-    description: 'Increases invincibility frames after hit.',
+    description: t('talent_desc_iframe_extend'),
     maxLevel: 2,
     costs: [2000, 5000],
-    effects: ['+0.2s invincibility', '+0.5s invincibility'],
+    effects: [t('talent_eff_iframe_1'), t('talent_eff_iframe_2')],
   },
   // === 18. Жажда крови ===
   {
     id: 'bleed_chance',
     name: t('talent_bleed_chance'),
     icon: '🗡',
-    description: 'Chance to apply bleed.',
+    description: t('talent_desc_bleed_chance'),
     maxLevel: 2,
     costs: [1500, 4500],
-    effects: ['+8% bleed chance', '+16% bleed chance'],
+    effects: [t('talent_eff_bleed_1'), t('talent_eff_bleed_2')],
   },
   // === 19. Арсенал ===
   {
     id: 'extra_weapon_slot',
     name: t('talent_extra_weapon_slot'),
     icon: '🎒',
-    description: 'Additional weapon slot.',
+    description: t('talent_desc_extra_weapon_slot'),
     maxLevel: 1,
     costs: [12000],
     effects: [t('guild_reward_weapon_slot')],
@@ -213,7 +213,7 @@ const TALENT_DEFS = [
     id: 'extra_ability_slot',
     name: t('talent_extra_ability_slot'),
     icon: '🔮',
-    description: 'Additional ability slot.',
+    description: t('talent_desc_extra_ability_slot'),
     maxLevel: 1,
     costs: [12000],
     effects: [t('guild_reward_ability_slot')],
@@ -223,50 +223,50 @@ const TALENT_DEFS = [
     id: 'debuff_resist',
     name: t('talent_debuff_resist'),
     icon: '🧪',
-    description: 'Reduces debuff duration.',
+    description: t('talent_desc_debuff_resist'),
     maxLevel: 2,
     costs: [1500, 4000],
-    effects: ['-20% debuff duration', '-40% debuff duration'],
+    effects: [t('talent_eff_debuff_1'), t('talent_eff_debuff_2')],
   },
   // === 22. Удачливый охотник ===
   {
     id: 'chest_luck',
     name: t('talent_chest_luck'),
     icon: '🎰',
-    description: 'Better chest loot rolls.',
+    description: t('talent_desc_chest_luck'),
     maxLevel: 2,
     costs: [2000, 6000],
-    effects: ['+1 to min d20 roll', '+2 to min d20 roll'],
+    effects: [t('talent_eff_chest_1'), t('talent_eff_chest_2')],
   },
   // === 23. Взрывная смерть ===
   {
     id: 'explosive_kill',
     name: t('talent_explosive_kill'),
     icon: '💣',
-    description: 'Chance of explosion on regular enemy kill.',
+    description: t('talent_desc_explosive_kill'),
     maxLevel: 2,
     costs: [3000, 8000],
-    effects: ['8% explosion chance on kill', '15% explosion chance on kill'],
+    effects: [t('talent_eff_explosive_1'), t('talent_eff_explosive_2')],
   },
   // === 24. Мгновенная казнь ===
   {
     id: 'instant_kill',
     name: t('talent_instant_kill'),
     icon: '☠',
-    description: 'Chance to instantly kill a regular enemy.',
+    description: t('talent_desc_instant_kill'),
     maxLevel: 2,
     costs: [5000, 15000],
-    effects: ['3% instant kill chance', '6% instant kill chance'],
+    effects: [t('talent_eff_instant_1'), t('talent_eff_instant_2')],
   },
   // === 25. Двойной опыт ===
   {
     id: 'double_xp',
     name: t('talent_double_xp'),
     icon: '⚡',
-    description: 'Chance to get double XP.',
+    description: t('talent_desc_double_xp'),
     maxLevel: 2,
     costs: [2000, 6000],
-    effects: ['+5% double XP chance', '+12% double XP chance'],
+    effects: [t('talent_eff_double_xp_1'), t('talent_eff_double_xp_2')],
   },
 ];
 
@@ -698,6 +698,13 @@ const MetaProgress = {
     this.data.totalRuns += 1;
     if (runTime > this.data.bestTime) this.data.bestTime = runTime;
     if (kills > (this.data.bestKills || 0)) this.data.bestKills = kills;
+
+    // --- Достижения: проверка выживания и количества забегов ---
+    if (window.Achievements) {
+      Achievements.check('survive_time', runTime);
+      Achievements.check('runs', this.data.totalRuns);
+      Achievements.check('bosses', this.data.totalBossKills);
+    }
     // Bug fix: сохраняем killsByType для бестиария
     if (!this.data.killsByType) this.data.killsByType = {};
     if (window.Game && Game.killsByType) {

@@ -86,6 +86,9 @@ const Game = {
     // Инициализация всех модулей через реестр
     Registry.initAll();
 
+    // Инициализация системы достижений
+    if (window.Achievements) Achievements.init();
+
     // UI bindings
     document.getElementById('startBtn').addEventListener('click',   () => this.startNewGame());
     document.getElementById('restartBtn').addEventListener('click', () => this._handleRestartBtn());
@@ -105,7 +108,12 @@ const Game = {
 
   /** Шаг 20: вызывается после закрытия тайтлового экрана (первый запуск). */
   _afterTitleDismissed() {
-    Game.init();
+    // Показать обучение при первом запуске, затем инициализировать игру
+    if (window.Tutorial && Tutorial.shouldShow()) {
+      Tutorial.show(() => { Game.init(); });
+    } else {
+      Game.init();
+    }
   },
 
   resize() {
@@ -1313,6 +1321,11 @@ const Game = {
     }
     e.active = false;
     this.kills += 1;
+
+    // --- Достижения: проверка убийств ---
+    if (window.Achievements) {
+      Achievements.check('kills', this.kills);
+    }
 
     // Клинок короля-лича: призыв скелета при убийстве (если гильдия >= 2)
     if (this.player && this.player.weaponSlots) {
