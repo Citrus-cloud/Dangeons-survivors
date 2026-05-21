@@ -35,19 +35,21 @@ const STORY_CAMPAIGN = {
       name: 'chapter_1_name',           // ключ локализации
       description: 'chapter_1_desc',     // ключ локализации
       unlockCondition: null,             // первая глава открыта всегда
-      mapData: null,                     // будет заполнено на шаге 2
-      biomeId: 'crypt',                  // биом для генерации карты
+      mapData: 'chapter1',                // ключ в STORY_MAPS
+      biomeId: 'catacombs',              // биом для визуальной темы
       bossId: 'boss_skeleton_knight',    // мини-босс главы
       requiredItems: ['crystal_shard_1'],// сюжетные предметы для сбора
       rewards: {
         gold: 300,
         reputation: 50,
         items: ['crystal_shard_1'],
+        uniqueWeapon: 'bone_blade',
       },
-      storyKeyAfter: 'story_chapter_1', // ключ сюжетной вставки после главы
-      waveConfig: {                      // конфигурация волн (для шага 2)
+      storyKeyBefore: 'story_chapter_1_intro',
+      storyKeyAfter: 'story_chapter_1',
+      waveConfig: {
         maxWaves: 8,
-        enemyTypes: ['skeleton', 'zombie', 'ghost', 'bone_crawler'],
+        enemyTypes: ['skeleton', 'archer', 'spider', 'ghost'],
         spawnRate: 1.0,
       },
     },
@@ -57,19 +59,21 @@ const STORY_CAMPAIGN = {
       name: 'chapter_2_name',
       description: 'chapter_2_desc',
       unlockCondition: { completedChapter: 'catacombs' },
-      mapData: null,
-      biomeId: 'forest_ruins',
+      mapData: 'chapter2',                // ключ в STORY_MAPS
+      biomeId: 'cursed_forest',
       bossId: 'boss_ancient_ent',
       requiredItems: ['crystal_shard_2'],
       rewards: {
         gold: 500,
         reputation: 75,
         items: ['crystal_shard_2'],
+        uniqueWeapon: 'vine_whip',
       },
+      storyKeyBefore: 'story_chapter_2_intro',
       storyKeyAfter: 'story_chapter_2',
       waveConfig: {
         maxWaves: 10,
-        enemyTypes: ['vine_creeper', 'root_shambler', 'fungal_man', 'spore_carrier'],
+        enemyTypes: ['goblin', 'rotgolem', 'bat', 'spider'],
         spawnRate: 1.2,
       },
     },
@@ -79,19 +83,22 @@ const STORY_CAMPAIGN = {
       name: 'chapter_3_name',
       description: 'chapter_3_desc',
       unlockCondition: { completedChapter: 'cursed_forest' },
-      mapData: null,
-      biomeId: 'fire_mines',
-      bossId: 'boss_magma_giant',
+      mapData: 'chapter3',                // ключ в STORY_MAPS
+      biomeId: 'fire_crucible',
+      bossId: 'boss_fire_lord',
+      guardianBossId: 'boss_magma_giant',
       requiredItems: ['crystal_shard_3'],
       rewards: {
         gold: 700,
         reputation: 100,
         items: ['crystal_shard_3'],
+        uniqueWeapon: 'flame_sword',
       },
+      storyKeyBefore: 'story_chapter_3_intro',
       storyKeyAfter: 'story_chapter_3',
       waveConfig: {
         maxWaves: 12,
-        enemyTypes: ['fire_elem', 'magma_crab', 'salamander', 'ember_moth'],
+        enemyTypes: ['fire_elem', 'ooze', 'goblin', 'hell_hound'],
         spawnRate: 1.4,
       },
     },
@@ -101,20 +108,24 @@ const STORY_CAMPAIGN = {
       name: 'chapter_4_name',
       description: 'chapter_4_desc',
       unlockCondition: { completedChapter: 'fire_crucible', requiredItems: ['crystal_shard_1', 'crystal_shard_2', 'crystal_shard_3'] },
-      mapData: null,
-      biomeId: 'castle',
+      mapData: 'chapter4',                // ключ в STORY_MAPS
+      biomeId: 'dark_throne',
       bossId: 'boss_dark_knight',        // мини-босс (страж)
       finalBossId: 'boss_ancient_dragon', // финальный босс
+      miniBosses: ['boss_lich', 'boss_dark_knight'],
       requiredItems: [],
+      unlockRequiresAll: ['crystal_shard_1', 'crystal_shard_2', 'crystal_shard_3'],
       rewards: {
         gold: 1500,
         reputation: 200,
         items: ['dragon_slayer_trophy'],
+        uniqueWeapon: 'dragon_bane',
       },
+      storyKeyBefore: 'story_chapter_4_intro',
       storyKeyAfter: 'story_chapter_4_victory',
       waveConfig: {
         maxWaves: 15,
-        enemyTypes: ['death_knight', 'shadow', 'demon_berserker', 'nether_hound'],
+        enemyTypes: ['shadow', 'captain', 'cultist', 'mage'],
         spawnRate: 1.6,
       },
     },
@@ -274,7 +285,7 @@ const StoryCampaign = {
   },
 
   /**
-   * Начать главу — инициализирует карту главы.
+   * Начать главу — инициализирует карту главы через StaticMap.
    * @param {string} chapterId — ID главы
    */
   startChapter(chapterId) {
@@ -297,16 +308,98 @@ const StoryCampaign = {
     };
     StoryCampaignState.save();
 
-    // Инициализация карты главы (заглушка для шага 2)
-    // На шаге 2 здесь будет вызов генерации конкретной карты
-    if (window.Game) {
-      // Используем существующий механизм запуска с биомом главы
-      Game.startNewGame(chapter.biomeId);
+    // Показать вступительный текст главы
+    const introKey = chapter.storyKeyBefore;
+    const doStart = () => {
+      this._initChapterMap(chapter);
+    };
 
-      // Пометить что мы в сюжетном режиме
+    if (introKey) {
+      this._showStoryModal(introKey, doStart);
+    } else {
+      doStart();
+    }
+  },
+
+  /**
+   * Инициализация карты главы через StaticMap.
+   * @param {Object} chapter — объект главы
+   */
+  _initChapterMap(chapter) {
+    if (!window.Game) return;
+
+    // Загружаем статическую карту из STORY_MAPS
+    const mapKey = chapter.mapData;
+    const mapData = (window.STORY_MAPS && STORY_MAPS[mapKey]) || null;
+
+    if (mapData && window.StaticMap) {
+      // Используем предопределённую карту
+      const biome = { id: chapter.biomeId, name: t(chapter.name) };
+
+      // Очистка перед загрузкой
+      Game._clearAllPools && Game._clearAllPools();
+      if (window.GameMap && GameMap.clearGroundEffects) GameMap.clearGroundEffects();
+      if (window.Bosses) { Bosses.current = null; Bosses.guardian = null; }
+      Game.chest = null; Game.secretChest = null; Game.bossChest = null;
+
+      // Загружаем статическую карту
+      StaticMap.load(mapData, biome);
+
+      // Создаём/перемещаем игрока
+      const startPos = StaticMap.getStartPosition();
+      if (!Game.player || Game.player.hp <= 0) {
+        Game.player = Player.create(startPos.x, startPos.y);
+        if (window.UI) UI.rebuildSlots(Game.player.weaponSlots.length, Game.player.abilitySlots.length);
+        Game.kills = 0;
+        Game.runTime = 0;
+        Game.waveIndex = 0;
+        Game.runGold = 0;
+        Game.bossKills = 0;
+      } else {
+        Game.player.x = startPos.x;
+        Game.player.y = startPos.y;
+      }
+
+      // Настройка волн
+      Game.waveTimer = CONFIG.WAVE.INITIAL_DELAY;
+      Game.chestTimer = CONFIG.CHEST.FIRST_DELAY;
+      Game.mapNumber = chapter.chapterNum;
+
+      // Инициализация боссов
+      if (window.Bosses && !Bosses.globalRotation.length) Bosses.init();
+
+      // Переключить состояние
+      if (window.UI) UI.hideAll();
+      Game.state = 'playing';
+      Game._storyCampaignActive = true;
+      Game._storyCampaignChapter = chapter;
+
+      // Спавн мини-босса по таймеру (30 сек)
+      this._scheduleBossSpawn(chapter);
+
+      // Показать название карты
+      if (window.UI && UI.showCampaignMapName) {
+        UI.showCampaignMapName(t(chapter.name));
+      }
+    } else {
+      // Фоллбек: процедурная генерация (как раньше)
+      Game.startNewGame && Game.startNewGame(chapter.biomeId);
       Game._storyCampaignActive = true;
       Game._storyCampaignChapter = chapter;
     }
+  },
+
+  /**
+   * Запланировать спавн мини-босса.
+   */
+  _scheduleBossSpawn(chapter) {
+    if (!chapter.bossId) return;
+    setTimeout(() => {
+      if (!this.active || this.currentChapterId !== chapter.id) return;
+      if (window.StaticMap && StaticMap.active) {
+        StaticMap.spawnMiniBoss(chapter.bossId);
+      }
+    }, 30000); // 30 секунд на исследование перед боссом
   },
 
   /**
@@ -425,6 +518,61 @@ const StoryCampaign = {
   },
 
   /* ─────────── Обработка событий ─────────── */
+
+  /**
+   * Обновление каждый кадр (вызывается из game-loop).
+   */
+  update(dt) {
+    if (!this.active) return;
+    if (!window.Game || !Game.player) return;
+
+    StoryCampaignState.chapterProgress.timeSpent += dt;
+
+    // Обновляем статическую карту (триггеры, ловушки, руны)
+    if (window.StaticMap && StaticMap.active) {
+      StaticMap.update(dt, Game.player);
+    }
+
+    // Обновляем руна-баффы игрока
+    this._updateRuneBuffs(Game.player, dt);
+  },
+
+  /**
+   * Обновление руна-баффов.
+   */
+  _updateRuneBuffs(player, dt) {
+    if (player._runeAttackTimer > 0) {
+      player._runeAttackTimer -= dt;
+      if (player._runeAttackTimer <= 0) player._runeAttackBuff = 0;
+    }
+    if (player._runeSpeedTimer > 0) {
+      player._runeSpeedTimer -= dt;
+      if (player._runeSpeedTimer <= 0) player._runeSpeedBuff = 0;
+    }
+    if (player._runeRegenTimer > 0) {
+      player._runeRegenTimer -= dt;
+      if (player._runeRegen) {
+        player.hp = Math.min(player.maxHp, player.hp + player._runeRegen * dt);
+      }
+      if (player._runeRegenTimer <= 0) player._runeRegen = 0;
+    }
+    if (player._runeFireTimer > 0) {
+      player._runeFireTimer -= dt;
+      if (player._runeFireTimer <= 0) player._runeFireDmg = 0;
+    }
+    if (player._runeFireResistTimer > 0) {
+      player._runeFireResistTimer -= dt;
+      if (player._runeFireResistTimer <= 0) player._runeFireResist = 0;
+    }
+    if (player._runeShieldTimer > 0) {
+      player._runeShieldTimer -= dt;
+      if (player._runeShieldTimer <= 0) player._runeShield = 0;
+    }
+    if (player._tileSlowTimer > 0) {
+      player._tileSlowTimer -= dt;
+      if (player._tileSlowTimer <= 0) player._tileSlow = 0;
+    }
+  },
 
   /**
    * Вызывается когда мини-босс главы убит.

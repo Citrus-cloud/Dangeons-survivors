@@ -1021,3 +1021,41 @@ LOCALE.en.story_chapter_1 = 'Deep in the forgotten catacombs, you found the firs
 LOCALE.en.story_chapter_2 = 'The cursed druids fell, and the forest began to heal as you claimed the second shard. Two shards now sing in harmony, revealing a vision: the third lies deep within the Fire Crucible, guarded by a Magma Giant forged from the earth\'s fury. The path grows hotter with every step.';
 LOCALE.en.story_chapter_3 = 'The Magma Giant crumbles, and the third shard is yours. Three crystal fragments reunite, forming a key of blinding light. A portal tears open before you — beyond it lies the Throne of Darkness, where the Shadow Dragon awaits. There is no turning back now. Steel yourself for the final battle.';
 LOCALE.en.story_chapter_4_victory = 'The Shadow Dragon lets out a final, terrible roar as light consumes it. The three shards fuse into a perfect crystal, sealing the darkness forever. The kingdom is saved. Bards will sing of your deeds for generations. But in the deepest shadows, something stirs... perhaps the darkness is never truly gone.';
+
+
+/* ============================================================
+   Story Campaign — Chapter names, descriptions, dialogues
+   ============================================================ */
+LOCALE.en.chapter_1_name = 'Forgotten Catacombs';
+LOCALE.en.chapter_1_desc = 'Dark underground corridors, crypts, and mushroom grottos. A Skeleton Knight guards the first crystal shard.';
+LOCALE.en.chapter_2_name = 'Cursed Forest';
+LOCALE.en.chapter_2_desc = 'Dense forest, swamps, and druid ruins. The Ancient Ent protects the second shard.';
+LOCALE.en.chapter_3_name = 'Crucible of Fire';
+LOCALE.en.chapter_3_desc = 'Volcanic caves, lava rivers, and elemental forges. The Fire Lord holds the third shard.';
+LOCALE.en.chapter_4_name = 'Throne Hall of Darkness';
+LOCALE.en.chapter_4_desc = 'A gothic castle with dark libraries and the dragon\'s throne. Collect all shards to face the Ancient Dragon.';
+LOCALE.en.story_intro = 'Three crystal shards, scattered across the realm, hold the key to the Dragon\'s Throne. Only by reuniting them can you break the seal and face the ancient evil. Your journey begins in the forgotten catacombs beneath the old city...';
+LOCALE.en.story_chapter_1_intro = 'The catacombs stretch endlessly beneath the earth. Centuries of the dead rest here — but not peacefully. Skeleton warriors patrol the corridors, and giant spiders nest in the mushroom grottos. Find the Crystal Shard and escape alive.';
+LOCALE.en.story_chapter_1 = 'The first shard pulses with cold light in your hand. The Skeleton Knight is defeated, but the darkness only grows stronger. The Cursed Forest awaits — where druids once performed their rituals...';
+LOCALE.en.story_chapter_2_intro = 'The forest is alive with malice. Poisonous vines reach for the unwary, wolf packs hunt in the shadows, and an Ancient Ent guards the druid\'s secret. Two keys are needed to reach the heart of the woods.';
+LOCALE.en.story_chapter_2 = 'The second shard joins the first. The Ancient Ent falls, its wooden body crumbling to dust. But fire burns on the horizon — the Crucible of Fire calls you forward.';
+LOCALE.en.story_chapter_3_intro = 'Heat sears your lungs. Rivers of lava flow between obsidian walls. Fire elementals patrol their domain, and the Fire Lord commands them from his throne of molten metal. Cross the bridges, survive the geysers, claim the final shard.';
+LOCALE.en.story_chapter_3 = 'Three shards united! The Crystal of Power is nearly complete. Its radiance pushes back the darkness. Now only the Throne Hall of Darkness remains — where the Ancient Dragon waits upon his throne of bones.';
+LOCALE.en.story_chapter_4_intro = 'The castle gates groan open. Shadows dance in the torchlight. Dark knights and cultists serve the dragon\'s will. Defeat the Lich in the library and the Shadow Knight in the armory to claim the keys. Then... face your destiny.';
+LOCALE.en.story_chapter_4_victory = 'The Ancient Dragon is slain! The Crystal of Power shatters the curse upon the land. Light floods the throne room as centuries of darkness dissolve. You are the Dragon Slayer — hero of the realm! (Reward: +1500 gold, +200 reputation, Dragon Bane weapon)';
+LOCALE.en.story_cursed = 'CURSED!';
+LOCALE.en.story_door_opened = 'DOOR OPENED!';
+LOCALE.en.story_key_found = 'KEY FOUND!';
+LOCALE.en.story_item_found = 'ITEM FOUND!';
+LOCALE.en.story_rune_rune_power = 'RUNE OF POWER! +30% ATK';
+LOCALE.en.story_rune_rune_speed = 'RUNE OF SPEED! +20% SPD';
+LOCALE.en.story_rune_rune_life = 'RUNE OF LIFE! +50% HP';
+LOCALE.en.story_rune_rune_regen = 'RUNE OF REGEN! 3%/s';
+LOCALE.en.story_rune_rune_nature = 'RUNE OF NATURE! Ally Wolf';
+LOCALE.en.story_rune_rune_firepower = 'RUNE OF FIRE! +Fire DMG';
+LOCALE.en.story_rune_rune_fireresist = 'RUNE OF RESISTANCE! -50% Fire';
+LOCALE.en.story_rune_rune_explosion = 'RUNE OF EXPLOSION! AoE!';
+LOCALE.en.story_rune_rune_shield = 'RUNE OF SHIELD! +50% Shield';
+LOCALE.en.story_rune_rune_summon = 'RUNE OF SUMMONING! Knight Ally';
+LOCALE.en.chapter_complete_title = 'CHAPTER COMPLETE!';
+LOCALE.en.btn_continue = 'Continue';
