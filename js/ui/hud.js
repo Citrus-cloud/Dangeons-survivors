@@ -157,6 +157,8 @@ const UI = {
       const el = document.getElementById(id);
       if (el) el.classList.remove('active');
     }
+    // Скрыть кнопки монетизации
+    if (window.Monetization) Monetization.hideDeathAdButtons();
   },
 
   showPause() { this.hideAll(); this.pauseOverlay.classList.add('active'); },
@@ -1608,6 +1610,9 @@ const UI = {
           <div class="settings-row settings-row-btn">
             <button id="resetProgressBtn" class="btn settings-reset-btn">🗑 ${t('settings_reset')}</button>
           </div>
+          <div class="settings-row settings-row-btn" id="settingsNoAdsRow">
+            <button id="settingsNoAdsBtn" class="btn settings-noads-btn">🚫 ${t('ad_remove') || 'Убрать рекламу'}</button>
+          </div>
         </div>
         <div class="settings-footer">
           <button id="settingsBackBtn" class="btn">${t('settings_back')}</button>
@@ -1667,6 +1672,22 @@ const UI = {
         location.reload();
       }
     });
+
+    // No Ads (монетизация)
+    const noAdsBtn = ov.querySelector('#settingsNoAdsBtn');
+    const noAdsRow = ov.querySelector('#settingsNoAdsRow');
+    if (window.Monetization && Monetization.isPremium()) {
+      if (noAdsRow) noAdsRow.style.display = 'none';
+    }
+    if (noAdsBtn) {
+      noAdsBtn.addEventListener('click', () => {
+        if (window.Monetization) {
+          Monetization.purchaseNoAds().then(() => {
+            if (noAdsRow) noAdsRow.style.display = 'none';
+          });
+        }
+      });
+    }
 
     // Back button
     ov.querySelector('#settingsBackBtn').addEventListener('click', () => {

@@ -1735,3 +1735,145 @@ html, body {
   font-size: 12px;
   color: var(--accent-gold-bright);
 }
+
+
+
+/* ============================================================
+   27. MONETIZATION UI — Кнопки рекламы и покупок
+   
+   Кнопки отображаются поверх canvas с высоким z-index.
+   Скрыты по умолчанию (display:none), показываются через JS.
+   ============================================================ */
+
+/* Контейнер всех кнопок монетизации */
+#monetization-ui {
+  position: fixed;
+  bottom: 60px;
+  left: 0; right: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 50;
+  pointer-events: none;
+  padding: 0 20px;
+}
+#monetization-ui.active {
+  display: flex;
+}
+
+/* Базовый стиль кнопки рекламы */
+.ad-button {
+  display: none; /* скрыты по умолчанию, показываются через JS */
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 24px;
+  min-width: 220px;
+  min-height: 48px;
+  border: 2px solid #d4a017;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #4a3800 0%, #2a2000 100%);
+  color: #ffd700;
+  font-family: var(--font-title);
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 4px 12px rgba(212, 160, 23, 0.3), 0 2px 4px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  transition: transform 0.1s ease, box-shadow 0.15s ease, background 0.15s;
+  -webkit-tap-highlight-color: rgba(255, 215, 0, 0.3);
+  touch-action: manipulation;
+}
+.ad-button:hover {
+  background: linear-gradient(180deg, #5a4800 0%, #3a2800 100%);
+  box-shadow: 0 4px 16px rgba(212, 160, 23, 0.5), 0 2px 6px rgba(0,0,0,0.5);
+  border-color: #ffd700;
+}
+.ad-button:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 2px 6px rgba(212, 160, 23, 0.3);
+}
+.ad-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Иконка на кнопке (символ play / запрета) */
+.ad-btn-icon {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* Текст кнопки */
+.ad-btn-text {
+  font-size: 14px;
+  letter-spacing: 0.3px;
+}
+
+/* Вариант: кнопка «Воскреснуть» — зеленоватый оттенок */
+.ad-button.ad-revive {
+  border-color: #4caf50;
+  background: linear-gradient(180deg, #1a4a1a 0%, #0a2a0a 100%);
+  color: #a5ff8a;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3), 0 2px 4px rgba(0,0,0,0.5);
+}
+.ad-button.ad-revive:hover {
+  background: linear-gradient(180deg, #2a5a2a 0%, #1a3a1a 100%);
+  box-shadow: 0 4px 16px rgba(76, 175, 80, 0.5), 0 2px 6px rgba(0,0,0,0.5);
+  border-color: #66ff66;
+}
+
+/* Вариант: кнопка «Удвоить золото» — золотой (по умолчанию) */
+.ad-button.ad-double {
+  /* Использует базовые стили .ad-button */
+}
+
+/* Вариант: кнопка «Убрать рекламу» — фиолетовый/premium */
+.ad-button.ad-noads {
+  border-color: #9b59b6;
+  background: linear-gradient(180deg, #2a1a4a 0%, #1a0a3a 100%);
+  color: #d4a5ff;
+  box-shadow: 0 4px 12px rgba(155, 89, 182, 0.3), 0 2px 4px rgba(0,0,0,0.5);
+  min-width: 180px;
+  font-size: 13px;
+}
+.ad-button.ad-noads:hover {
+  background: linear-gradient(180deg, #3a2a5a 0%, #2a1a4a 100%);
+  box-shadow: 0 4px 16px rgba(155, 89, 182, 0.5), 0 2px 6px rgba(0,0,0,0.5);
+  border-color: #c39bd3;
+}
+
+/* Эмулированный баннер (браузер) */
+#emuBanner {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 50px;
+  background: rgba(0,0,0,0.85);
+  color: #aaa;
+  font-size: 12px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  border-top: 1px solid #444;
+  font-family: monospace;
+}
+
+/* Адаптив: на маленьких экранах кнопки компактнее */
+@media (max-width: 400px) {
+  .ad-button {
+    min-width: 180px;
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+  .ad-btn-text {
+    font-size: 12px;
+  }
+  #monetization-ui {
+    bottom: 55px;
+    gap: 8px;
+  }
+}
