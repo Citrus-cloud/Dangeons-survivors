@@ -310,10 +310,7 @@ window.addEventListener('load', () => {
   // 3. Инициализация пользовательского интерфейса
   UI.init();
 
-  // 4. Исправление позиционирования кнопки "назад" в бестиарии
-  const bestiaryFixStyle = document.createElement('style');
-  bestiaryFixStyle.textContent = '.bestiary-back-btn{position:absolute!important;top:12px;right:12px;z-index:10;min-width:80px;text-align:center}';
-  document.head.appendChild(bestiaryFixStyle);
+  // 4. Bestiary back button now handled via CSS design system (no fix needed)
 
   // 4.5. Инициализация системы монетизации (AdMob / заглушка)
   if (window.Monetization) {
