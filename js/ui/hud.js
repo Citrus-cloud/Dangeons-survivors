@@ -468,9 +468,9 @@ const UI = {
       '<div class="d20-title">' + t('chest_evo_title') + '</div>' +
       `<div class="d20-sub">${t('chest_roll_label')} <span class="d20-mini crit">${roll}</span></div>` +
       '<div class="evo-row">' +
-        `<div class="evo-card"><div class="evo-icon" data-sprite-id="${w.id}">${w.icon}</div><div class="evo-name">${w.name}</div><div class="evo-lvl">ур. ${Utils.roman(w.level)}</div></div>` +
+        `<div class="evo-card"><div class="evo-icon" data-sprite-id="${w.id}">${w.icon}</div><div class="evo-name">${w.name}</div><div class="evo-lvl">${t('lv')} ${Utils.roman(w.level)}</div></div>` +
         '<div class="evo-plus">+</div>' +
-        `<div class="evo-card"><div class="evo-icon" data-sprite-id="${a.id}">${a.icon}</div><div class="evo-name">${a.name}</div><div class="evo-lvl">ур. ${Utils.roman(a.level)}</div></div>` +
+        `<div class="evo-card"><div class="evo-icon" data-sprite-id="${a.id}">${a.icon}</div><div class="evo-name">${a.name}</div><div class="evo-lvl">${t('lv')} ${Utils.roman(a.level)}</div></div>` +
         '<div class="evo-arrow">→</div>' +
         `<div class="evo-card evo-result"><div class="evo-icon" data-sprite-id="${r.resultId || ''}">${r.resultIcon}</div><div class="evo-name">${r.resultName}</div><div class="evo-desc">${r.desc}</div></div>` +
       '</div>' +
@@ -917,12 +917,14 @@ const UI = {
     ov.className = 'overlay talent-overlay';
     ov.innerHTML = `
       <div class="talent-panel">
-        <h1 class="talent-title">${t('talents_title')}</h1>
-        <div class="talent-gold"><span class="gold-icon">🪙</span> <span id="talentGoldVal">0</span></div>
+        <div class="talent-header-bar">
+          <button id="talentBackBtn" class="btn talent-back-btn-compact" title="${t('btn_back')}">← ${t('btn_back')}</button>
+          <h1 class="talent-title">${t('talents_title')}</h1>
+          <div class="talent-gold"><span class="gold-icon">🪙</span> <span id="talentGoldVal">0</span></div>
+        </div>
         <div id="talentGrid" class="talent-grid"></div>
         <div class="talent-footer">
           <button id="talentResetBtn" class="btn btn-secondary">${t('talents_reset')}</button>
-          <button id="talentBackBtn" class="btn">${t('talents_back')}</button>
         </div>
       </div>
     `;
@@ -1246,18 +1248,18 @@ const UI = {
     ov.className = 'overlay results-overlay';
     ov.innerHTML = `
       <div class="results-panel">
-        <h1 class="results-title">ЗАБЕГ ОКОНЧЕН</h1>
+        <h1 class="results-title">${t('results_title')}</h1>
         <div class="results-stats">
-          <div class="res-row"><span>Время:</span><span id="resTime">00:00</span></div>
-          <div class="res-row"><span>Убийств:</span><span id="resKills">0</span></div>
-          <div class="res-row"><span>Уровень:</span><span id="resLevel">1</span></div>
+          <div class="res-row"><span>${t('stats_time')}:</span><span id="resTime">00:00</span></div>
+          <div class="res-row"><span>${t('stats_kills')}:</span><span id="resKills">0</span></div>
+          <div class="res-row"><span>${t('stats_level')}:</span><span id="resLevel">1</span></div>
           <div class="res-divider"></div>
-          <div class="res-row gold-row"><span>🪙 Собрано:</span><span id="resGoldCollected">0</span></div>
-          <div class="res-row gold-row"><span>🪙 Бонус за ур.:</span><span id="resGoldBonus">0</span></div>
-          <div class="res-row gold-row total"><span>🪙 ИТОГО:</span><span id="resGoldTotal">0</span></div>
-          <div class="res-row rep-row"><span>⚜ Репутация:</span><span id="resRepGained">+0</span></div>
+          <div class="res-row gold-row"><span>🪙 ${t('results_gold_collected')}:</span><span id="resGoldCollected">0</span></div>
+          <div class="res-row gold-row"><span>🪙 ${t('results_gold_bonus')}:</span><span id="resGoldBonus">0</span></div>
+          <div class="res-row gold-row total"><span>🪙 ${t('results_gold_total')}:</span><span id="resGoldTotal">0</span></div>
+          <div class="res-row rep-row"><span>⚜ ${t('results_rep')}:</span><span id="resRepGained">+0</span></div>
         </div>
-        <button id="resToCampBtn" class="btn camp-btn-main">Вернуться в лагерь</button>
+        <button id="resToCampBtn" class="btn camp-btn-main">${t('results_to_camp')}</button>
       </div>
     `;
     document.body.appendChild(ov);
@@ -1353,7 +1355,7 @@ const UI = {
       <div class="dialogue-panel">
         <div class="dialogue-border"></div>
         <p id="dialogueText" class="dialogue-text"></p>
-        <button id="dialogueNextBtn" class="btn dialogue-btn">Далее ➤</button>
+        <button id="dialogueNextBtn" class="btn dialogue-btn">${t('dialogue_next')}</button>
       </div>
     `;
     document.body.appendChild(ov);
@@ -1388,15 +1390,15 @@ const UI = {
     ov.className = 'overlay victory-overlay';
     ov.innerHTML = `
       <div class="victory-panel">
-        <h1 class="victory-title">🐉 ПОБЕДА! 🐉</h1>
-        <h2 class="victory-sub">Древний дракон повержен!</h2>
+        <h1 class="victory-title">🐉 ${t('victory_title')} 🐉</h1>
+        <h2 class="victory-sub">${t('victory_sub')}</h2>
         <p id="victoryText" class="victory-text"></p>
         <div class="victory-rewards">
-          <div>🪙 +1000 золота</div>
-          <div>⚜ +200 репутации</div>
-          <div>🏆 Достижение: Победитель дракона</div>
+          <div>🪙 ${t('victory_reward_gold')}</div>
+          <div>⚜ ${t('victory_reward_rep')}</div>
+          <div>🏆 ${t('victory_reward_achieve')}</div>
         </div>
-        <button id="victoryBtn" class="btn camp-btn-main">В лагерь</button>
+        <button id="victoryBtn" class="btn camp-btn-main">${t('death_restart')}</button>
       </div>
     `;
     document.body.appendChild(ov);
