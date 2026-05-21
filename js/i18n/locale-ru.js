@@ -836,9 +836,27 @@ LOCALE.ru.talent_eff_double_xp_2 = '+12% шанс ×2 опыта';
 
 
 // === Монетизация ===
-LOCALE.ru.ad_revive = 'Воскреснуть (реклама)';
-LOCALE.ru.ad_double_gold = '×2 Золото (реклама)';
+LOCALE.ru.ad_revive = '▶️ Воскреснуть';
+LOCALE.ru.ad_double_gold = '▶️ ×2 Золото';
 LOCALE.ru.ad_remove = 'Убрать рекламу';
 LOCALE.ru.ad_remove_done = 'Реклама отключена!';
 LOCALE.ru.ad_revive_success = 'Воскрешение!';
 LOCALE.ru.ad_double_success = 'Золото удвоено!';
+
+// === Результаты забега (локализация) ===
+LOCALE.ru.results_title = 'ЗАБЕГ ОКОНЧЕН';
+LOCALE.ru.results_gold_collected = 'Собрано';
+LOCALE.ru.results_gold_bonus = 'Бонус за ур.';
+LOCALE.ru.results_gold_total = 'ИТОГО';
+LOCALE.ru.results_rep = 'Репутация';
+LOCALE.ru.results_to_camp = 'Вернуться в лагерь';
+
+// === Диалоги и победа ===
+LOCALE.ru.dialogue_next = 'Далее ➤';
+LOCALE.ru.victory_sub = 'Древний дракон повержен!';
+LOCALE.ru.victory_reward_gold = '+1000 золота';
+LOCALE.ru.victory_reward_rep = '+200 репутации';
+LOCALE.ru.victory_reward_achieve = 'Достижение: Победитель дракона';
+
+// === Разное ===
+LOCALE.ru.exclusive_legendary = 'Легендарное';

@@ -1197,7 +1197,7 @@ const Game = {
     if (available.length === 0) return null;
     const info = available[Math.floor(Math.random() * available.length)];
     return {
-      title: `⭐ Легендарное: ${info.name}`,
+      title: `⭐ ${t('exclusive_legendary')}: ${info.name}`,
       desc: info.desc,
       id: info.id,
       apply(p) {

@@ -942,9 +942,27 @@ LOCALE.en.talent_eff_double_xp_2 = '+12% double XP chance';
 
 
 // === Monetization ===
-LOCALE.en.ad_revive = 'Revive (watch ad)';
-LOCALE.en.ad_double_gold = '×2 Gold (watch ad)';
+LOCALE.en.ad_revive = '▶️ Revive';
+LOCALE.en.ad_double_gold = '▶️ ×2 Gold';
 LOCALE.en.ad_remove = 'Remove Ads';
 LOCALE.en.ad_remove_done = 'Ads disabled!';
 LOCALE.en.ad_revive_success = 'Revived!';
 LOCALE.en.ad_double_success = 'Gold doubled!';
+
+// === Run Results (localized) ===
+LOCALE.en.results_title = 'RUN COMPLETE';
+LOCALE.en.results_gold_collected = 'Collected';
+LOCALE.en.results_gold_bonus = 'Level bonus';
+LOCALE.en.results_gold_total = 'TOTAL';
+LOCALE.en.results_rep = 'Reputation';
+LOCALE.en.results_to_camp = 'Return to camp';
+
+// === Dialogue & Victory ===
+LOCALE.en.dialogue_next = 'Next ➤';
+LOCALE.en.victory_sub = 'The Ancient Dragon is slain!';
+LOCALE.en.victory_reward_gold = '+1000 gold';
+LOCALE.en.victory_reward_rep = '+200 reputation';
+LOCALE.en.victory_reward_achieve = 'Achievement: Dragon Slayer';
+
+// === Misc ===
+LOCALE.en.exclusive_legendary = 'Legendary';

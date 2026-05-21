@@ -104,6 +104,7 @@ const UIExtended = {
     ov.innerHTML = `
       <div class="bestiary-layout">
         <div class="bestiary-header">
+          <button id="bestiaryBackBtn" class="btn bestiary-back-btn-compact" title="${t('btn_back')}">← ${t('btn_back')}</button>
           <h1 class="bestiary-title">${t('bestiary_title')}</h1>
           <div id="bestiaryStats" class="bestiary-stats-header"></div>
         </div>
@@ -119,9 +120,6 @@ const UIExtended = {
               </div>
             </div>
           </div>
-        </div>
-        <div class="bestiary-footer">
-          <button id="bestiaryBackBtn" class="btn bestiary-back-btn">${t('bestiary_back')}</button>
         </div>
       </div>
     `;
