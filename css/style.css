@@ -1,56 +1,77 @@
 /* === TABLE OF CONTENTS ===
-   1. Variables & Reset
-   2. Title Screen
-   3. Loading Screen
-   4. Game Canvas & HUD
-   5. Slot Columns (Weapons & Abilities)
-   6. Dynamic Joystick
-   7. Overlays (common base)
-   8. Buttons (fantasy styled)
-   9. Level Up Cards
-  10. Chest & D20 / Evolution
-  11. Camp / Tavern
-  12. Talent Grid
-  13. Guild
-  14. Run Results
-  15. Campaign
-  16. Trap Warning
-  17. Settings
-  18. Gold HUD (in-run)
-  19. Responsive / Mobile
-  20. Class Select
-  21. Bestiary
-  22. Codex (Book)
-  23. Run Stats
-  24. Pause Exit Button
-  25. Map Select Screen
-  26. Language Switcher
+   1. Variables & Reset        — CSS-переменные, сброс стилей
+   2. Title Screen             — Титульный экран первого запуска
+   3. Loading Screen           — Экран загрузки (анимация d20)
+   4. Game Canvas & HUD        — Игровой холст и информационные бары
+   5. Slot Columns             — Слоты оружия (слева) и пассивок (справа)
+   6. Dynamic Joystick         — Виртуальный джойстик (мобильные)
+   7. Overlays (common base)   — Базовые стили оверлеев
+   8. Buttons (fantasy styled) — Кнопки в стиле фэнтези
+   9. Level Up Cards           — Карточки выбора при повышении уровня
+  10. Chest & D20 / Evolution  — Сундуки, бросок d20, эволюции
+  11. Camp / Tavern            — Экран лагеря (хаб между забегами)
+  12. Talent Grid              — Сетка талантов (мета-прокачка)
+  13. Guild                    — Гильдия (репутация, ранги, задания)
+  14. Run Results              — Результаты забега (статистика)
+  15. Campaign                 — Экран кампании (выбор карт)
+  16. Trap Warning             — Предупреждение о ловушках
+  17. Settings                 — Настройки (громкость, язык)
+  18. Gold HUD (in-run)        — Счётчик золота во время забега
+  19. Responsive / Mobile      — Адаптивные стили для мобильных
+  20. Class Select             — Выбор класса героя
+  21. Bestiary                 — Бестиарий (энциклопедия врагов)
+  22. Codex (Book)             — Кодекс (оружия и пассивки)
+  23. Run Stats                — Детальная статистика забега
+  24. Pause Exit Button        — Кнопка выхода из паузы
+  25. Map Select Screen        — Экран выбора карты
+  26. Language Switcher        — Переключатель языка
    === END TOC === */
 
 /* ============================================================
-   Dungeon Survivors: D20 — Final UI/UX (Step 20)
-   Dark Fantasy theme: warm blacks, gold accents, parchment text
+   Dungeon Survivors: D20 — Стили интерфейса
+   
+   Тема: Dark Fantasy
+   Палитра: тёплые чёрные тона, золотые акценты, пергаментный текст
+   Шрифты: Georgia (заголовки), Segoe UI (текст), Courier New (моно)
    ============================================================ */
 
+/* ============================================================
+   1. CSS-ПЕРЕМЕННЫЕ И СБРОС
+   Все цвета, шрифты и размеры определены как переменные для
+   простого изменения темы и масштабирования.
+   ============================================================ */
 :root {
-  --bg-dark: #1a1210;
-  --bg-panel: #221a14;
-  --bg-button: #3a2218;
-  --accent-gold: #c9a84c;
-  --accent-gold-bright: #f0d060;
-  --accent-red: #8b3a3a;
-  --accent-red-bright: #c0392b;
-  --parchment: #d4c5a9;
-  --text-light: #e8dcc8;
-  --text-dark: #2a1f14;
-  --text-muted: #a89880;
-  --border-gold: #c9a84c;
-  --border-dim: #6b5a3a;
-  --shadow-dark: rgba(0,0,0,0.6);
-  --font-title: Georgia, 'Times New Roman', serif;
-  --font-body: 'Segoe UI', system-ui, sans-serif;
-  --font-mono: 'Courier New', Consolas, monospace;
-  --ui-scale: 1;
+  /* --- Фоны --- */
+  --bg-dark: #1a1210;              /* Основной фон (тёмно-коричневый) */
+  --bg-panel: #221a14;             /* Фон панелей/карточек */
+  --bg-button: #3a2218;            /* Фон кнопок */
+
+  /* --- Акцентные цвета --- */
+  --accent-gold: #c9a84c;          /* Золото (основной акцент) */
+  --accent-gold-bright: #f0d060;   /* Яркое золото (hover, активные) */
+  --accent-red: #8b3a3a;           /* Красный (HP-бар) */
+  --accent-red-bright: #c0392b;    /* Яркий красный (опасность) */
+
+  /* --- Текст --- */
+  --parchment: #d4c5a9;            /* Пергаментный (описания) */
+  --text-light: #e8dcc8;           /* Светлый текст (основной) */
+  --text-dark: #2a1f14;            /* Тёмный текст (на светлом фоне) */
+  --text-muted: #a89880;           /* Приглушённый (подсказки) */
+
+  /* --- Рамки --- */
+  --border-gold: #c9a84c;          /* Золотая рамка (активные элементы) */
+  --border-dim: #6b5a3a;           /* Тусклая рамка (неактивные) */
+
+  /* --- Тени --- */
+  --shadow-dark: rgba(0,0,0,0.6);  /* Глубокая тень */
+
+  /* --- Шрифты --- */
+  --font-title: Georgia, 'Times New Roman', serif;        /* Заголовки */
+  --font-body: 'Segoe UI', system-ui, sans-serif;        /* Основной текст */
+  --font-mono: 'Courier New', Consolas, monospace;        /* Числа, коды */
+
+  /* --- Масштаб UI --- */
+  --ui-scale: 1;                   /* Множитель размера UI (для адаптива) */
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }

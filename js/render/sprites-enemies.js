@@ -1,16 +1,33 @@
 'use strict';
 /* ============================================================
-   sprites.js — Визуальный редизайн: детализированные спрайты врагов.
+   sprites-enemies.js — Детализированные спрайты врагов (dark fantasy).
    
-   Используются градиенты, свечения, тени, внутренние детали.
-   Кешируются в ENEMY_SPRITES на оффскрин-канвасах.
-   Стилистика: dark fantasy, контрастные цвета, объёмность.
+   Назначение:
+   Генерирует все спрайты врагов программно через Canvas API.
+   Спрайты кэшируются в ENEMY_SPRITES{} как offscreen canvas.
+   Стилистика: тёмное фэнтези, контрастные цвета, объёмность.
    
-   API (не изменён):
-   - initSprites()          — генерирует все спрайты, вызвать 1 раз
-   - getEnemySprite(id)     — возвращает offscreen canvas спрайта
-   - getSpriteDisplaySize(id) — размер отображения
-   - ENEMY_SPRITES          — кеш {id: canvas}
+   Техники отрисовки:
+   • Радиальные/линейные градиенты для объёма
+   • Внешнее свечение (glow) для магических врагов
+   • Детали: глаза, оружие, символы, текстуры
+   
+   API:
+   • initSprites() — Генерирует все спрайты (вызвать 1 раз)
+   • getEnemySprite(id) → canvas — Получить спрайт по ID типа
+   • getSpriteDisplaySize(id) → number — Размер для отрисовки
+   • ENEMY_SPRITES{} — Кэш {id: HTMLCanvasElement}
+   
+   Утилиты рисования:
+   • _createSpriteCanvas(size) — Создать canvas заданного размера
+   • _px(ctx, x, y, color) — Нарисовать один пиксель
+   • _rect(ctx, x, y, w, h, color) — Залитый прямоугольник
+   • _gradCircle(ctx, cx, cy, r, colors) — Градиентный круг
+   • _gradEllipse(ctx, cx, cy, rx, ry, colors) — Градиентный эллипс
+   • _glow(ctx, cx, cy, r, color) — Внешнее свечение
+   • _addOutline(ctx, size, color) — Обводка спрайта
+   
+   Экспорт: window.{ENEMY_SPRITES, initSprites, getEnemySprite, getSpriteDisplaySize}
    ============================================================ */
 
 const ENEMY_SPRITES = {};

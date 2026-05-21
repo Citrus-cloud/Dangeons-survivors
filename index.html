@@ -2,20 +2,33 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
+  <!-- Viewport: полноэкранный режим, без масштабирования (мобильная игра) -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <!-- PWA: разрешить запуск как standalone-приложение -->
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <!-- Цвет темы браузера (тёмно-коричневый фэнтези) -->
   <meta name="theme-color" content="#1a1210" />
   <meta name="description" content="Dungeon Survivors: D20 — Bullet Heaven в D&D-сеттинге" />
   <title>Dungeon Survivors — D20</title>
+
+  <!-- Стили -->
   <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Иконки (программно заменяются через IconGenerator при загрузке) -->
   <link rel="icon" id="favicon" type="image/svg+xml" href="icon.svg" />
   <link rel="apple-touch-icon" id="touchIcon" href="icon.svg" />
+
+  <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json" />
 </head>
 <body>
-  <!-- Title Screen -->
+
+  <!-- ============================================================
+       TITLE SCREEN — Титульный экран (первый запуск)
+       Показывается один раз, затем пропускается.
+       ============================================================ -->
   <div id="titleScreen">
     <div class="title-bg-pattern"></div>
     <div class="title-runes" id="titleRunes"></div>
@@ -26,24 +39,36 @@
     <div class="title-tap" data-i18n="title_tap">Нажмите, чтобы начать</div>
   </div>
 
-  <!-- Loading Screen -->
+  <!-- ============================================================
+       LOADING SCREEN — Экран загрузки (переход между картами)
+       Показывает анимацию кубика d20.
+       ============================================================ -->
   <div id="loadingScreen">
     <div class="loading-die" id="loadingDie">20</div>
     <div class="loading-text" data-i18n="loading">Загрузка...</div>
   </div>
 
-  <!-- Canvas -->
+  <!-- ============================================================
+       GAME CANVAS — Основной игровой холст
+       Рендер: карта, герой, враги, снаряды, эффекты.
+       ============================================================ -->
   <canvas id="game"></canvas>
 
-  <!-- HUD -->
+  <!-- ============================================================
+       HUD — Игровой интерфейс (поверх canvas)
+       Включает: HP/XP бары, кулдаун, счётчики, кнопку паузы.
+       ============================================================ -->
   <div id="hud">
+    <!-- Левый верхний угол: бары здоровья и опыта -->
     <div class="hud-top-left">
       <div id="hpBar" class="bar"><div class="fill"></div><div class="label">HP: 100/100</div></div>
       <div id="xpBar" class="bar"><div class="fill"></div><div class="label xp-level-label"></div></div>
+      <!-- Мини-иконка кулдауна Magic Missile -->
       <div class="mini-cd-row">
         <div id="cdMissile" class="mini-cd"><div class="cd-fill"></div><div class="cd-icon">✦</div></div>
       </div>
     </div>
+    <!-- Правый верхний угол: пауза, статистика -->
     <div class="hud-top-right">
       <button id="pauseBtn" title="Пауза">⏸</button>
       <div id="killCount" data-i18n="hud_kills">Убийств: 0</div>
@@ -52,14 +77,24 @@
     </div>
   </div>
 
-  <!-- Слоты: оружие слева, пассивки справа -->
+  <!-- ============================================================
+       SLOTS — Слоты оружия (слева) и пассивок (справа)
+       Динамически заполняются из Player.weaponSlots/abilitySlots.
+       ============================================================ -->
   <div id="weaponSlots"  class="slot-col left"></div>
   <div id="abilitySlots" class="slot-col right"></div>
 
-  <!-- Динамический джойстик -->
+  <!-- ============================================================
+       JOYSTICK — Динамический виртуальный джойстик (мобильные)
+       Появляется в точке касания, скрывается при отпускании.
+       ============================================================ -->
   <div id="joystick"><div class="stick"></div></div>
 
-  <!-- Меню (legacy, hidden by default) -->
+  <!-- ============================================================
+       OVERLAYS — Оверлеи состояний игры
+       ============================================================ -->
+
+  <!-- Главное меню (legacy, скрыто по умолчанию) -->
   <div id="menuOverlay" class="overlay">
     <h1>DUNGEON SURVIVORS</h1>
     <h2>D20</h2>
@@ -73,14 +108,14 @@
     <button id="resumeBtn" class="btn" data-i18n="pause_resume">Продолжить</button>
   </div>
 
-  <!-- Левелап -->
+  <!-- Выбор улучшения при повышении уровня -->
   <div id="levelOverlay" class="overlay">
     <h1><span data-i18n="levelup_title">УРОВЕНЬ</span> <span id="lvlNum">2</span></h1>
     <h2 data-i18n="levelup_choose">Выберите улучшение</h2>
     <div id="cards"></div>
   </div>
 
-  <!-- Game Over -->
+  <!-- Экран смерти (Game Over) -->
   <div id="gameOverOverlay" class="overlay">
     <h1 data-i18n="death_title">ВЫ ПОГИБЛИ</h1>
     <p><span data-i18n="stats_time">Время</span>: <span id="goTime">00:00</span></p>
@@ -89,21 +124,52 @@
     <button id="restartBtn" class="btn" data-i18n="death_restart">В лагерь</button>
   </div>
 
-  <!-- Скрипты -->
+  <!-- ============================================================
+       SCRIPTS — Порядок загрузки скриптов (критичен!)
+       
+       Порядок:
+       1. Утилиты (error-handler, safe-storage)
+       2. Локализация (i18n engine + словари)
+       3. Конфигурация (constants, biome-fixes)
+       4. Вспомогательные утилиты (render-cache, spatial-grid, performance)
+       5. Аудио
+       6. Карта (dungeon-generator, traps, pathfinding)
+       7. Системы (particles, loot, sprites, enemies, bosses, weapons...)
+       8. Мета (metaprogress, classes, bestiary, codex)
+       9. Ввод (input)
+       10. Игрок (player)
+       11. UI (hud, overlays)
+       12. Кампания и урны
+       13. Ядро (registry, game-loop, state-machine — последними!)
+       ============================================================ -->
+
+  <!-- 1. Утилиты -->
   <script src="js/utils/error-handler.js"></script>
   <script src="js/utils/safe-storage.js"></script>
+
+  <!-- 2. Локализация -->
   <script src="js/i18n/engine.js"></script>
   <script src="js/i18n/locale-ru.js"></script>
   <script src="js/i18n/locale-en.js"></script>
+
+  <!-- 3. Конфигурация -->
   <script src="js/config/constants.js"></script>
   <script src="js/config/biome-fixes.js"></script>
+
+  <!-- 4. Вспомогательные утилиты -->
   <script src="js/utils/render-cache.js"></script>
   <script src="js/utils/spatial-grid.js"></script>
   <script src="js/utils/performance.js"></script>
+
+  <!-- 5. Аудио -->
   <script src="js/audio/audio.js"></script>
+
+  <!-- 6. Карта -->
   <script src="js/map/dungeon-generator.js"></script>
   <script src="js/map/traps.js"></script>
   <script src="js/map/pathfinding.js"></script>
+
+  <!-- 7. Системы и сущности -->
   <script src="js/systems/particles.js"></script>
   <script src="js/meta/metaprogress.js"></script>
   <script src="js/systems/loot.js"></script>
@@ -116,17 +182,30 @@
   <script src="js/systems/abilities.js"></script>
   <script src="js/systems/evolutions.js"></script>
   <script src="js/systems/puzzles.js"></script>
+
+  <!-- 8. Мета-системы -->
   <script src="js/meta/classes.js"></script>
   <script src="js/meta/bestiary.js"></script>
   <script src="js/meta/codex.js"></script>
+
+  <!-- 9. Ввод -->
   <script src="js/input/input.js"></script>
+
+  <!-- 10. Игрок -->
   <script src="js/entities/player.js"></script>
+
+  <!-- 11. UI -->
   <script src="js/ui/hud.js"></script>
   <script src="js/ui/overlays.js"></script>
+
+  <!-- 12. Кампания и урны -->
   <script src="js/meta/campaign.js"></script>
   <script src="js/systems/urns.js"></script>
+
+  <!-- 13. Ядро (загружается последним!) -->
   <script src="js/core/registry.js"></script>
   <script src="js/core/game-loop.js"></script>
   <script src="js/core/state-machine.js"></script>
+
 </body>
 </html>

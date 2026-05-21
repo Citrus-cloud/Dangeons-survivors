@@ -1,23 +1,50 @@
 'use strict';
 /* ============================================================
-   enemies.js — враги (Шаг 4).
+   enemies.js — Система врагов (AI, спавн, поведения, смерть).
 
    Архитектура:
-   - Один класс данных createEnemy() (используется пулом).
-   - Каждый враг хранит ссылку на конфиг ENEMY_TYPES[id] и
-     текущее состояние (state, таймеры и т.п.).
-   - Enemies.update(pool, player, dt) — главный цикл, диспетчер
-     поведения по cfg.behavior.
-   - Enemies.spawnWave(pool, player, count, waveIndex) — формирует
-     волну из доступных тиров с весами.
-   - Enemies.spawnByType(pool, id, x, y) — спавн одиночного врага
-     (используется и для child-спавнов: паучки, слизни, призывы).
-   - Enemies.handleDeath(e, gameCtx) — последствия смерти:
-     лужи, splitOnDeath, взрывы.
-   - Enemies.render(ctx, ...) — отрисовка по shape.
-   - Поддержка мимика: Enemies.tryMimicSpawn(player, runTime, state).
+   ─────────────
+   • createEnemy()         — Фабрика данных для ObjectPool.
+   • Behaviors{}           — Набор функций-стратегий (паттерн Strategy).
+   • Enemies.update()      — Главный цикл AI для всех активных врагов.
+   • Enemies.spawnWave()   — Спавн волны из доступных тиров с весами.
+   • Enemies.spawnByType() — Спавн одиночного врага по ID типа.
+   • Enemies.handleDeath() — Обработка смерти: лужи, split, взрывы.
+   • Enemies.render()      — Отрисовка по shape (rect/diamond/oval/circle).
+   • Enemies.tryMimicSpawn() — Спавн мимика (особый режим).
+
+   Поведения (Behaviors):
+   ─────────────────────
+   chase      — Простая погоня + контактный урон
+   goblin     — Hit-and-run (подбежать → ударить → отбежать)
+   archer     — Держать дистанцию + стрелять снарядами
+   gas        — Плавно приближаться, при смерти — взрыв (не бьёт в ближнем)
+   mage       — Телепорт + стрельба маг-снарядами
+   spider     — Рывки (dash) + контактный урон
+   ooze       — Погоня + оставляет слизистый след (замедление)
+   captain    — Погоня + аура баффа ближайшим врагам
+   fire_elem  — Погоня + горящий след (DPS)
+   bat        — Синусоидальный полёт + контактный урон
+   rotgolem   — Погоня + споры при получении урона
+   shadow     — Цикл видим/невидим + backstab
+   dragonet   — Держать дистанцию + огненное дыхание (конус)
+   cultist    — Держать дистанцию + призыв скелетов
+   mimic      — Неподвижен до активации → погоня
+
+   Зависимости:
+   CONFIG, ENEMY_TYPES, ENEMY_TIERS, Utils, GameMap, Pathfinding,
+   Particles, Player, Game, Loot
+
+   Экспорт: window.{createEnemy, Enemies}
    ============================================================ */
 
+/**
+ * Фабрика объекта-врага для ObjectPool.
+ * Все поля инициализируются значениями по умолчанию.
+ * При спавне конкретного типа — перезаписываются в spawnByType().
+ * 
+ * @returns {Object} Пустой объект врага с флагом active: false
+ */
 function createEnemy() {
   return {
     active: false,

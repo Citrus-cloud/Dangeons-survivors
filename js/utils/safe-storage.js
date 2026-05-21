@@ -1,8 +1,23 @@
 'use strict';
 /* ============================================================
    safe-storage.js — Безопасная обёртка над localStorage.
-   В Private Browsing (Safari, некоторые WebView) localStorage
-   может бросать исключения. Fallback: in-memory хранилище.
+   
+   Проблема:
+   В режиме Private Browsing (Safari, некоторые WebView)
+   localStorage может бросать исключения при записи.
+   
+   Решение:
+   При недоступности localStorage используется in-memory fallback.
+   Данные сохраняются только на время сессии (не персистентно).
+   
+   API:
+   • SafeStorage.getItem(key) → string|null
+   • SafeStorage.setItem(key, value)
+   • SafeStorage.removeItem(key)
+   
+   Важно: Загружается ПЕРВЫМ среди утилит (до i18n и всех модулей).
+   
+   Экспорт: window.SafeStorage
    ============================================================ */
 
 const SafeStorage = (function() {

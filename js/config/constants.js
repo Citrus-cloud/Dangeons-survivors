@@ -1,197 +1,346 @@
 'use strict';
 /* ============================================================
-   constants.js
-   Глобальный конфиг, утилиты и пул объектов.
-   Экспортируется в window.{CONFIG, Utils, ObjectPool}.
+   constants.js — Главный конфигурационный файл игры.
+   
+   Содержит:
+   - CONFIG: все числовые параметры игры (карта, игрок, враги, волны и т.д.)
+   - Utils: математические утилиты (clamp, lerp, rand, dist2 и т.д.)
+   - ObjectPool: переиспользуемый пул сущностей с .active флагом
+   - ENEMY_TYPES: таблица всех типов монстров с параметрами
+   - ENEMY_TIERS: группировка врагов по тирам с привязкой к волнам
+   - BOSS_CONFIG / BOSS_TYPES: конфигурация боссов
+   - BIOMES: определение биомов для бесконечного режима
+   - BIOME_TRAP_CONFIG: параметры ловушек по биомам
+   - PORTAL_CONFIG / INFINITE_MODE: настройки бесконечного режима
+   - STEP17_CONFIG: загадки и новые ловушки
+   
+   Экспортируется в window.{CONFIG, Utils, ObjectPool, ENEMY_TYPES, 
+   ENEMY_TIERS, BOSS_CONFIG, BOSS_TYPES, BIOMES, ...}.
    ============================================================ */
 
+/* ============================================================
+   CONFIG — Центральный объект настроек игры.
+   Все числовые параметры вынесены сюда для удобства балансировки.
+   ============================================================ */
 const CONFIG = {
-  MAP: { W: 2000, H: 2000, TILE_SIZE: 80 },
+  /* --- Карта --- */
+  MAP: {
+    W: 2000,          // Ширина игрового мира (px)
+    H: 2000,          // Высота игрового мира (px)
+    TILE_SIZE: 80,    // Размер одного тайла (px)
+  },
 
+  /* --- Герой (Player) --- */
   PLAYER: {
-    SIZE: 24,               // Уменьшен в 2 раза (было 48)
-    SPEED: 180,             // px/sec
-    MAX_HP: 100,
-    PICKUP_RADIUS: 40,
-    TRAIL_INTERVAL: 0.05,
-    SLOTS_WEAPONS: 6,
-    SLOTS_ABILITIES: 6,
+    SIZE: 24,               // Размер хитбокса героя (px)
+    SPEED: 180,             // Скорость движения (px/sec)
+    MAX_HP: 100,            // Начальное максимальное здоровье
+    PICKUP_RADIUS: 40,      // Радиус автоподбора лута (px)
+    TRAIL_INTERVAL: 0.05,   // Интервал генерации следа (sec)
+    SLOTS_WEAPONS: 6,       // Количество слотов под оружие
+    SLOTS_ABILITIES: 6,     // Количество слотов под пассивки
   },
 
-  // Встроенная способность героя (не занимает слот) — Magic Missile
+  /* --- Magic Missile (встроенная способность, не занимает слот) --- */
   MISSILE: {
-    COOLDOWN: 3.0,
-    SPEED: 380,
-    DAMAGE: 25,
-    RADIUS: 6,
-    LIFETIME: 3.0,
-    COUNT: 1,
-    SPREAD: 0.25,
+    COOLDOWN: 3.0,    // Перезарядка (sec)
+    SPEED: 380,       // Скорость полёта снаряда (px/sec)
+    DAMAGE: 25,       // Базовый урон
+    RADIUS: 6,        // Радиус снаряда (px)
+    LIFETIME: 3.0,    // Время жизни снаряда (sec)
+    COUNT: 1,         // Базовое количество снарядов за выстрел
+    SPREAD: 0.25,     // Угол разброса между снарядами (rad)
   },
 
+  /* --- Враги (базовые параметры по умолчанию) --- */
   ENEMY: {
-    SIZE: 28,
-    SPEED: 55,              // Шаг 3: уменьшено в 2 раза (было 110)
-    HP: 20,
-    DAMAGE: 10,
-    HIT_INTERVAL: 0.6,
-    XP_MIN: 5,
-    XP_MAX: 10,
+    SIZE: 28,             // Базовый размер врага (px)
+    SPEED: 55,            // Базовая скорость (px/sec)
+    HP: 20,               // Базовое здоровье
+    DAMAGE: 10,           // Контактный урон
+    HIT_INTERVAL: 0.6,    // Минимальный интервал между ударами (sec)
+    XP_MIN: 5,            // Минимум XP за убийство
+    XP_MAX: 10,           // Максимум XP за убийство
   },
 
-  // Шаг 3: сундук с броском d20
+  /* --- Сундуки (появляются на карте с бросками d20) --- */
   CHEST: {
-    INTERVAL: 180,          // секунды между появлениями (3 минуты)
-    FIRST_DELAY: 180,       // первый сундук через столько секунд после старта
-    SPAWN_MIN_DIST: 300,    // мин. расстояние от героя при спавне
-    SPAWN_MAX_DIST: 600,    // макс. расстояние
-    SIZE: 30,               // визуальный размер
-    PICKUP_RADIUS: 28,      // радиус подбора (центр героя ↔ центр сундука)
-    DROP_CHANCE: 0.03,      // шанс выпадения сундука с обычного моба (3%)
-    MIN_WAVE: 5,            // сундуки появляются только с 5-й волны
+    INTERVAL: 180,          // Интервал появления сундуков (sec, 3 минуты)
+    FIRST_DELAY: 180,       // Задержка перед первым сундуком (sec)
+    SPAWN_MIN_DIST: 300,    // Мин. расстояние от героя при спавне (px)
+    SPAWN_MAX_DIST: 600,    // Макс. расстояние от героя при спавне (px)
+    SIZE: 30,               // Визуальный размер сундука (px)
+    PICKUP_RADIUS: 28,      // Радиус подбора (px)
+    DROP_CHANCE: 0.03,      // Шанс дропа сундука с моба (3%)
+    MIN_WAVE: 5,            // Сундуки появляются только с 5-й волны
   },
 
+  /* --- Волны врагов --- */
   WAVE: {
-    INTERVAL: 20,
-    BASE: 3,
-    PER_WAVE: 2,
-    SPAWN_DIST_MIN: 400,
-    SPAWN_DIST_MAX: 600,
-    INITIAL_DELAY: 1.5,
+    INTERVAL: 20,           // Интервал между волнами (sec)
+    BASE: 3,                // Базовое количество врагов в волне
+    PER_WAVE: 2,            // Прирост врагов за каждую волну
+    SPAWN_DIST_MIN: 400,    // Мин. дистанция спавна от героя (px)
+    SPAWN_DIST_MAX: 600,    // Макс. дистанция спавна от героя (px)
+    INITIAL_DELAY: 1.5,     // Задержка перед первой волной (sec)
   },
 
+  /* --- Опыт (XP) и прокачка --- */
   XP: {
-    BASE: 100,
-    GROWTH: 1.20,           // +20% к предыдущему уровню (100 → 120 → 144 → ...)
-    MAGNET_SPEED: 360,
+    BASE: 100,              // XP для первого уровня
+    GROWTH: 1.20,           // Множитель роста порога (+20% за уровень)
+    MAGNET_SPEED: 360,      // Скорость притяжения XP-кристаллов (px/sec)
   },
 
+  /* --- Объектные пулы (размеры) --- */
   POOLS: {
-    ENEMIES: 80,
-    PROJECTILES: 120,       // Шаг 7: расширено до 120 (20 оружий)
-    PARTICLES: 100,         // Шаг 19: ограничено до 100 для мобильных
-    XP: 200,
-    GROUND_EFFECTS: 30,     // Шаг 4: лужи/следы (гниль, слизь, огонь)
+    ENEMIES: 80,            // Макс. одновременных врагов
+    PROJECTILES: 120,       // Макс. одновременных снарядов
+    PARTICLES: 100,         // Макс. частиц (лимит для мобильных)
+    XP: 200,                // Макс. XP-кристаллов на карте
+    GROUND_EFFECTS: 30,     // Макс. наземных эффектов (лужи/следы)
   },
 
-  // Параметры джойстика (экранные пиксели)
+  /* --- Виртуальный джойстик (мобильное управление) --- */
   JOYSTICK: {
-    BASE_RADIUS: 35,
-    STICK_RADIUS: 18,
-    MAX_OFFSET: 50,
-    DEAD_ZONE: 0.12,        // нормализованный, чтобы не шевелилось от микро-движений
+    BASE_RADIUS: 35,        // Радиус основания джойстика (px)
+    STICK_RADIUS: 18,       // Радиус стика (px)
+    MAX_OFFSET: 50,         // Макс. отклонение стика от центра (px)
+    DEAD_ZONE: 0.12,        // Мёртвая зона (нормализованная, 0-1)
   },
 
-  // Шаг 5: процедурная генерация подземелья
+  /* --- Процедурная генерация подземелья --- */
   DUNGEON: {
-    SEED: 0,                  // фиксированный сид; 0 — случайный (Math.random)
-    GRID_CELL: 20,            // размер ячейки сетки коллизий (px)
-    ROOMS_MIN: 5,
-    ROOMS_MAX: 8,
-    ROOM_W_MIN: 200, ROOM_W_MAX: 400,
-    ROOM_H_MIN: 150, ROOM_H_MAX: 300,
-    ROOM_PADDING: 80,         // мин. расстояние между комнатами
-    CORRIDOR_W_MIN: 80,
-    CORRIDOR_W_MAX: 120,
-    PILLARS_PER_ROOM_MIN: 3,
-    PILLARS_PER_ROOM_MAX: 6,
-    PILLAR_SIZE: 24,
-    WALL_THICKNESS: 16,       // толщина "стен" вокруг комнат/коридоров (визуальная)
-    SPIKE_TRAPS: 4,           // 3..5 штук
-    FIRE_TRAPS: 3,            // 2..4 штук
-    SARCOPHAGI: 2,
-    TORCH_SPACING: 130,       // расстояние между факелами вдоль стен
-    RUNES_PER_ROOM: 4,        // 3..5 декоративных рун
+    SEED: 0,                  // Сид генерации; 0 = случайный (Math.random)
+    GRID_CELL: 20,            // Размер ячейки сетки коллизий (px)
+    ROOMS_MIN: 5,             // Мин. количество комнат
+    ROOMS_MAX: 8,             // Макс. количество комнат
+    ROOM_W_MIN: 200,          // Мин. ширина комнаты (px)
+    ROOM_W_MAX: 400,          // Макс. ширина комнаты (px)
+    ROOM_H_MIN: 150,          // Мин. высота комнаты (px)
+    ROOM_H_MAX: 300,          // Макс. высота комнаты (px)
+    ROOM_PADDING: 80,         // Мин. расстояние между комнатами (px)
+    CORRIDOR_W_MIN: 80,       // Мин. ширина коридора (px)
+    CORRIDOR_W_MAX: 120,      // Макс. ширина коридора (px)
+    PILLARS_PER_ROOM_MIN: 3,  // Мин. колонн в комнате
+    PILLARS_PER_ROOM_MAX: 6,  // Макс. колонн в комнате
+    PILLAR_SIZE: 24,          // Размер колонны (px)
+    WALL_THICKNESS: 16,       // Толщина стен (визуальная, px)
+    SPIKE_TRAPS: 4,           // Количество шипов (3-5 на карту)
+    FIRE_TRAPS: 3,            // Количество огненных ловушек (2-4)
+    SARCOPHAGI: 2,            // Количество саркофагов (декор)
+    TORCH_SPACING: 130,       // Расстояние между факелами (px)
+    RUNES_PER_ROOM: 4,        // Декоративных рун в комнате (3-5)
   },
 
-  // Параметры ловушек
+  /* --- Ловушки --- */
   TRAP: {
+    // Шипы (выскакивают из пола)
     SPIKE: {
-      W: 36, H: 36,
-      HIDDEN_TIME: 2.0,
-      ACTIVE_TIME: 1.5,
-      WARN_TIME: 0.5,
-      DAMAGE: 15,
+      W: 36, H: 36,           // Размер хитбокса
+      HIDDEN_TIME: 2.0,       // Время в скрытом состоянии (sec)
+      ACTIVE_TIME: 1.5,       // Время активности (sec)
+      WARN_TIME: 0.5,         // Предупреждение перед активацией (sec)
+      DAMAGE: 15,             // Урон при касании
     },
+    // Огненная струя (стреляет из стены)
     FIRE: {
-      W: 32, H: 32,
-      INTERVAL: 4.0,
-      WARN_TIME: 0.5,
-      RANGE: 100,
-      WIDTH: 40,              // ширина струи огня
-      DAMAGE: 20,
-      DOT_DPS: 5,
-      DOT_TIME: 2.0,
+      W: 32, H: 32,           // Размер источника
+      INTERVAL: 4.0,          // Интервал между активациями (sec)
+      WARN_TIME: 0.5,         // Предупреждение (sec)
+      RANGE: 100,             // Дальность струи (px)
+      WIDTH: 40,              // Ширина струи (px)
+      DAMAGE: 20,             // Прямой урон
+      DOT_DPS: 5,             // Урон горения в секунду
+      DOT_TIME: 2.0,          // Длительность горения (sec)
     },
   },
 
-  // Загадка с рычагами
+  /* --- Загадка с рычагами --- */
   LEVER: {
-    W: 22, H: 22,
-    INTERACT_RADIUS: 30,
-    RESET_DELAY: 2.0,         // через сколько сбрасываются при неверной комбинации
-    COUNT: 3,
+    W: 22, H: 22,             // Размер хитбокса рычага
+    INTERACT_RADIUS: 30,      // Радиус взаимодействия (px)
+    RESET_DELAY: 2.0,         // Время сброса при ошибке (sec)
+    COUNT: 3,                 // Количество рычагов в загадке
   },
 };
 
 
 /* ============================================================
-   Utils
+   Utils — Набор математических и вспомогательных функций.
+   
+   Используется повсеместно в проекте для:
+   - Математических операций (clamp, lerp, rand)
+   - Работы с векторами (dist2, len, norm)
+   - Форматирования данных (formatTime, roman)
    ============================================================ */
 const Utils = {
+  /**
+   * Ограничивает значение в диапазоне [a, b].
+   * @param {number} v - Значение
+   * @param {number} a - Минимум
+   * @param {number} b - Максимум
+   * @returns {number} Ограниченное значение
+   */
   clamp(v, a, b) { return v < a ? a : (v > b ? b : v); },
-  lerp(a, b, t)  { return a + (b - a) * t; },
-  rand(a, b)     { return a + Math.random() * (b - a); },
-  randInt(a, b)  { return Math.floor(Utils.rand(a, b + 1)); },
-  dist2(ax, ay, bx, by) { const dx = ax - bx, dy = ay - by; return dx * dx + dy * dy; },
-  len(x, y)      { return Math.hypot(x, y); },
+
+  /**
+   * Линейная интерполяция между a и b.
+   * @param {number} a - Начальное значение
+   * @param {number} b - Конечное значение
+   * @param {number} t - Параметр интерполяции (0..1)
+   * @returns {number} Интерполированное значение
+   */
+  lerp(a, b, t) { return a + (b - a) * t; },
+
+  /**
+   * Случайное число в диапазоне [a, b).
+   * @param {number} a - Минимум (включительно)
+   * @param {number} b - Максимум (исключительно)
+   * @returns {number} Случайное дробное число
+   */
+  rand(a, b) { return a + Math.random() * (b - a); },
+
+  /**
+   * Случайное целое число в диапазоне [a, b] (включительно).
+   * @param {number} a - Минимум
+   * @param {number} b - Максимум
+   * @returns {number} Случайное целое число
+   */
+  randInt(a, b) { return Math.floor(Utils.rand(a, b + 1)); },
+
+  /**
+   * Квадрат расстояния между двумя точками (без sqrt для производительности).
+   * @param {number} ax - X первой точки
+   * @param {number} ay - Y первой точки
+   * @param {number} bx - X второй точки
+   * @param {number} by - Y второй точки
+   * @returns {number} Квадрат евклидова расстояния
+   */
+  dist2(ax, ay, bx, by) {
+    const dx = ax - bx;
+    const dy = ay - by;
+    return dx * dx + dy * dy;
+  },
+
+  /**
+   * Длина вектора (x, y).
+   * @param {number} x - Компонента X
+   * @param {number} y - Компонента Y
+   * @returns {number} Длина вектора
+   */
+  len(x, y) { return Math.hypot(x, y); },
+
+  /**
+   * Нормализация вектора (приведение к единичной длине).
+   * Безопасен при нулевой длине — возвращает (0, 0) -> (1, 0) не произойдёт деления на 0.
+   * @param {number} x - Компонента X
+   * @param {number} y - Компонента Y
+   * @returns {{x: number, y: number}} Нормализованный вектор
+   */
   norm(x, y) {
-    const l = Math.hypot(x, y) || 1;
-    return { x: x / l, y: y / l };
+    const length = Math.hypot(x, y) || 1;
+    return { x: x / length, y: y / length };
   },
+
+  /**
+   * Форматирует секунды в строку MM:SS.
+   * @param {number} sec - Количество секунд
+   * @returns {string} Отформатированное время (например, "05:32")
+   */
   formatTime(sec) {
-    const s = Math.max(0, Math.floor(sec));
-    const m = Math.floor(s / 60);
-    const ss = s % 60;
-    return String(m).padStart(2, '0') + ':' + String(ss).padStart(2, '0');
+    const totalSeconds = Math.max(0, Math.floor(sec));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
   },
-  // Римские цифры I..V (для отображения уровня предмета)
+
+  /**
+   * Преобразует число (1-5) в римскую цифру для отображения уровня.
+   * @param {number} n - Число (1..5)
+   * @returns {string} Римская цифра или строковое представление
+   */
   roman(n) {
-    return ['', 'I', 'II', 'III', 'IV', 'V'][Utils.clamp(n | 0, 0, 5)] || String(n);
+    const numerals = ['', 'I', 'II', 'III', 'IV', 'V'];
+    return numerals[Utils.clamp(n | 0, 0, 5)] || String(n);
   },
 };
 
 
 /* ============================================================
-   ObjectPool — переиспользуемый пул сущностей с .active флагом.
+   ObjectPool — Паттерн «Пул объектов» для переиспользования сущностей.
+   
+   Зачем: Избегаем частого создания/удаления объектов (GC pressure).
+   Каждый объект в пуле имеет флаг .active:
+     - true = используется в игре
+     - false = свободен для переиспользования
+   
+   Пример использования:
+     const pool = new ObjectPool(() => ({ x: 0, y: 0, active: false }), 50);
+     const obj = pool.spawn();   // Получаем свободный объект
+     obj.active = false;          // Возвращаем в пул
    ============================================================ */
 class ObjectPool {
+  /**
+   * @param {Function} factory - Фабрика для создания новых объектов
+   * @param {number} size - Начальный размер пула
+   */
   constructor(factory, size) {
     this.items = new Array(size);
-    for (let i = 0; i < size; i++) this.items[i] = factory();
+    for (let i = 0; i < size; i++) {
+      this.items[i] = factory();
+    }
   }
+
+  /**
+   * Найти и активировать свободный объект из пула.
+   * @returns {Object|null} Свободный объект или null, если пул исчерпан
+   */
   spawn() {
     for (let i = 0, n = this.items.length; i < n; i++) {
-      const it = this.items[i];
-      if (!it.active) { it.active = true; return it; }
+      const item = this.items[i];
+      if (!item.active) {
+        item.active = true;
+        return item;
+      }
     }
-    return null;
+    return null; // Пул исчерпан
   }
+
+  /**
+   * Выполнить функцию для каждого активного объекта.
+   * @param {Function} fn - Callback(item, index)
+   */
   forEachActive(fn) {
     for (let i = 0, n = this.items.length; i < n; i++) {
-      const it = this.items[i];
-      if (it.active) fn(it, i);
+      const item = this.items[i];
+      if (item.active) fn(item, i);
     }
   }
+
+  /**
+   * Подсчитать количество активных объектов.
+   * @returns {number} Количество активных объектов
+   */
   countActive() {
-    let c = 0;
-    for (let i = 0; i < this.items.length; i++) if (this.items[i].active) c++;
-    return c;
+    let count = 0;
+    for (let i = 0; i < this.items.length; i++) {
+      if (this.items[i].active) count++;
+    }
+    return count;
   }
-  clearAll() { for (const it of this.items) it.active = false; }
+
+  /**
+   * Деактивировать все объекты (сброс пула).
+   */
+  clearAll() {
+    for (const item of this.items) {
+      item.active = false;
+    }
+  }
 }
 
-// Экспорт в глобальную область (без бандлера)
+// Экспорт в глобальную область (проект без бандлера)
 window.CONFIG = CONFIG;
 window.Utils = Utils;
 window.ObjectPool = ObjectPool;
