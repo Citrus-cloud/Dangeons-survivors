@@ -307,17 +307,31 @@ const GameMap = {
       console.error('[GameMap] _buildFloorCache failed:', e);
       // Гарантируем что _floorCache хотя бы пустой canvas с базовой заливкой
       if (!this._floorCache) {
-        const fallback = document.createElement('canvas');
-        fallback.width = this.mapW;
-        fallback.height = this.mapH;
-        const fCtx = fallback.getContext('2d');
-        fCtx.fillStyle = biome ? (biome.wallColor || '#1a1a1a') : '#1a1a1a';
-        fCtx.fillRect(0, 0, this.mapW, this.mapH);
-        fCtx.fillStyle = biome ? (biome.floorColor || '#3a3a3a') : '#3a3a3a';
-        for (const r of dungeon.rooms) fCtx.fillRect(r.x, r.y, r.w, r.h);
-        fCtx.fillStyle = biome ? (biome.corridorColor || '#2a2a2a') : '#2a2a2a';
-        for (const c of dungeon.corridors) fCtx.fillRect(c.x, c.y, c.w, c.h);
-        this._floorCache = fallback;
+        try {
+          const MAX_FB = 2048;
+          const fbScale = Math.min(1, MAX_FB / Math.max(this.mapW, this.mapH));
+          const fbW = Math.floor(this.mapW * fbScale);
+          const fbH = Math.floor(this.mapH * fbScale);
+          const fallback = document.createElement('canvas');
+          fallback.width = fbW;
+          fallback.height = fbH;
+          const fCtx = fallback.getContext('2d');
+          if (fCtx) {
+            if (fbScale < 1) fCtx.scale(fbScale, fbScale);
+            fCtx.fillStyle = biome ? (biome.wallColor || '#1a1a1a') : '#1a1a1a';
+            fCtx.fillRect(0, 0, this.mapW, this.mapH);
+            fCtx.fillStyle = biome ? (biome.floorColor || '#3a3a3a') : '#3a3a3a';
+            for (const r of dungeon.rooms) fCtx.fillRect(r.x, r.y, r.w, r.h);
+            fCtx.fillStyle = biome ? (biome.corridorColor || '#2a2a2a') : '#2a2a2a';
+            for (const c of dungeon.corridors) fCtx.fillRect(c.x, c.y, c.w, c.h);
+          }
+          this._floorCache = fallback;
+          this._floorCacheScale = fbScale;
+        } catch (e2) {
+          console.error('[GameMap] fallback canvas creation failed:', e2);
+          this._floorCache = null;
+          this._floorCacheScale = 1;
+        }
       }
     }
 
@@ -1116,15 +1130,35 @@ const GameMap = {
   },
 
   _buildFloorCache(dungeon, biome) {
-    // Кешируем целое подземелье в один offscreen canvas размером с карту.
+    // Кешируем целое подземелье в один offscreen canvas.
+    // Ограничиваем размер для мобильных устройств (GPU memory limit).
+    const MAX_CACHE_DIM = 2048;
+    const scale = Math.min(1, MAX_CACHE_DIM / Math.max(this.mapW, this.mapH));
+    const cacheW = Math.floor(this.mapW * scale);
+    const cacheH = Math.floor(this.mapH * scale);
+
     const off = document.createElement('canvas');
-    off.width = this.mapW;
-    off.height = this.mapH;
+    off.width = cacheW;
+    off.height = cacheH;
     const ctx = off.getContext('2d');
+
+    // Проверка: если context не создан (GPU failure), создаём минимальный фоллбэк
+    if (!ctx) {
+      console.error('[GameMap] _buildFloorCache: getContext failed');
+      this._floorCache = null;
+      this._floorCacheScale = 1;
+      return;
+    }
+
+    // Масштабируем контекст: все дальнейшие вызовы рисуют в мировых координатах
+    if (scale < 1) {
+      ctx.scale(scale, scale);
+    }
 
     // ВАЖНО: присваиваем кэш СРАЗУ, чтобы даже при ошибках в декоре
     // рендер не получил null (чёрный экран). Рисование продолжится на этом canvas.
     this._floorCache = off;
+    this._floorCacheScale = scale;
 
     // Шаг 13: цвета из биома
     const wallColor = biome ? biome.wallColor : '#1a1a1a';
@@ -2578,13 +2612,24 @@ const GameMap = {
 
     // Кешированный пол (offscreen canvas — основная оптимизация Шаг 5)
     if (this._floorCache) {
+      const scale = this._floorCacheScale || 1;
       const sx = Math.max(0, cam.x) | 0;
       const sy = Math.max(0, cam.y) | 0;
       const sw = Math.min(viewW, this.mapW - sx) | 0;
       const sh = Math.min(viewH, this.mapH - sy) | 0;
       if (sw > 0 && sh > 0) {
         try {
-          ctx.drawImage(this._floorCache, sx, sy, sw, sh, sx, sy, sw, sh);
+          if (scale === 1) {
+            // Без масштабирования: 1:1 пиксели
+            ctx.drawImage(this._floorCache, sx, sy, sw, sh, sx, sy, sw, sh);
+          } else {
+            // Масштабированный кэш: пересчитываем координаты источника
+            const ssx = (sx * scale) | 0;
+            const ssy = (sy * scale) | 0;
+            const ssw = (sw * scale) | 0;
+            const ssh = (sh * scale) | 0;
+            ctx.drawImage(this._floorCache, ssx, ssy, ssw, ssh, sx, sy, sw, sh);
+          }
         } catch (e) {
           console.error('[GameMap] drawImage _floorCache failed:', e);
         }
@@ -2598,25 +2643,14 @@ const GameMap = {
         console.error('[GameMap] _buildFloorCache fallback failed:', e);
       }
       // Рисуем заливку комнат напрямую как временный фоллбэк
-      if (!this._floorCache) {
-        const biome = this.currentBiome;
-        const floorColor = biome ? (biome.floorColor || '#3a3a3a') : '#3a3a3a';
-        ctx.fillStyle = floorColor;
-        for (const r of this.dungeon.rooms) {
-          ctx.fillRect(r.x, r.y, r.w, r.h);
-        }
-        const corridorColor = biome ? (biome.corridorColor || '#2a2a2a') : '#2a2a2a';
-        ctx.fillStyle = corridorColor;
-        for (const c of this.dungeon.corridors) {
-          ctx.fillRect(c.x, c.y, c.w, c.h);
-        }
-      }
+      this._renderDirectFallback(ctx);
     }
 
     if (!this.dungeon) {
       // Совместимость: если подземелье не сгенерено
       ctx.fillStyle = '#2a2a2a';
       ctx.fillRect(0, 0, this.mapW, this.mapH);
+      if (window.PerfMonitor) PerfMonitor.end('mapRender');
       return;
     }
 
@@ -2664,6 +2698,22 @@ const GameMap = {
     this.renderPortal(ctx, cam, viewW, viewH);
 
     if (window.PerfMonitor) PerfMonitor.end('mapRender');
+  },
+
+  /** Прямая отрисовка комнат/коридоров (без кэша) — аварийный фоллбэк. */
+  _renderDirectFallback(ctx) {
+    if (!this.dungeon) return;
+    const biome = this.currentBiome;
+    const floorColor = biome ? (biome.floorColor || '#3a3a3a') : '#3a3a3a';
+    ctx.fillStyle = floorColor;
+    for (const r of this.dungeon.rooms) {
+      ctx.fillRect(r.x, r.y, r.w, r.h);
+    }
+    const corridorColor = biome ? (biome.corridorColor || '#2a2a2a') : '#2a2a2a';
+    ctx.fillStyle = corridorColor;
+    for (const c of this.dungeon.corridors) {
+      ctx.fillRect(c.x, c.y, c.w, c.h);
+    }
   },
 
   /* ============================================================
