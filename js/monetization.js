@@ -55,22 +55,35 @@ const Monetization = (function() {
 
   /** Проверяет, является ли приложение нативным (Capacitor). */
   function _detectNative() {
-    return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+    try {
+      return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+    } catch (e) {
+      console.warn('[Monetization] _detectNative error:', e);
+      return false;
+    }
   }
 
   /** Определяет платформу (android/ios). */
   function _detectPlatform() {
-    if (window.Capacitor && window.Capacitor.getPlatform) {
-      const p = window.Capacitor.getPlatform();
-      if (p === 'ios') return 'ios';
+    try {
+      if (window.Capacitor && window.Capacitor.getPlatform) {
+        const p = window.Capacitor.getPlatform();
+        if (p === 'ios') return 'ios';
+      }
+    } catch (e) {
+      // Ignore errors from broken Capacitor
     }
     return 'android';
   }
 
   /** Получить AdMob-плагин из Capacitor. */
   function _getAdMobPlugin() {
-    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob) {
-      return window.Capacitor.Plugins.AdMob;
+    try {
+      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob) {
+        return window.Capacitor.Plugins.AdMob;
+      }
+    } catch (e) {
+      // Ignore errors from broken Capacitor
     }
     // Попытка через глобальный AdMob (если подключен через CDN)
     if (window.AdMob) return window.AdMob;
@@ -154,7 +167,7 @@ const Monetization = (function() {
     async showBanner() {
       if (this.isPremium() || _bannerVisible) return;
 
-      if (!_isNative) {
+      if (!_isNative || !_admob) {
         console.log('[Monetization][Emu] showBanner()');
         _bannerVisible = true;
         this._showEmulatedBanner(true);
@@ -182,7 +195,7 @@ const Monetization = (function() {
     async hideBanner() {
       if (!_bannerVisible) return;
 
-      if (!_isNative) {
+      if (!_isNative || !_admob) {
         console.log('[Monetization][Emu] hideBanner()');
         _bannerVisible = false;
         this._showEmulatedBanner(false);
@@ -395,7 +408,8 @@ const Monetization = (function() {
             'position:fixed;bottom:0;left:0;right:0;height:50px;' +
             'background:rgba(0,0,0,0.85);color:#aaa;font-size:12px;' +
             'display:flex;align-items:center;justify-content:center;' +
-            'z-index:9999;border-top:1px solid #444;font-family:monospace;';
+            'z-index:9999;border-top:1px solid #444;font-family:monospace;' +
+            'pointer-events:none;';
           banner.textContent = '[AdMob Banner — Test Mode]';
           document.body.appendChild(banner);
         }

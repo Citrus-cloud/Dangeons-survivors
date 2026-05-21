@@ -313,15 +313,27 @@ window.addEventListener('load', () => {
   // 4. Bestiary back button now handled via CSS design system (no fix needed)
 
   // 4.5. Инициализация системы монетизации (AdMob / заглушка)
+  //      Оборачиваем в try-catch, чтобы ошибка монетизации
+  //      не блокировала запуск игры.
   if (window.Monetization) {
-    Monetization.initialize();
+    try {
+      Monetization.initialize().catch(function(err) {
+        console.warn('[Boot] Monetization.initialize() rejected:', err);
+      });
+    } catch (e) {
+      console.warn('[Boot] Monetization.initialize() threw:', e);
+    }
   }
 
   // 5. Титульный экран (первый запуск) или немедленный старт
   TitleScreen.init();
   if (TitleScreen.shown) {
     // Не первый запуск — сразу инициализируем игру
-    Game.init();
+    try {
+      Game.init();
+    } catch (e) {
+      console.error('[Boot] Game.init() failed:', e);
+    }
   }
   // Иначе Game.init() вызовется после закрытия титульного экрана
 

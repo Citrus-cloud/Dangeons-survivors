@@ -120,7 +120,11 @@ const Game = {
     GameAudio.playMusic('camp');
 
     // Монетизация: показать баннер в лагере при старте
-    if (window.Monetization) Monetization.showBanner();
+    try {
+      if (window.Monetization) Monetization.showBanner();
+    } catch (e) {
+      console.warn('[Game] Monetization.showBanner() failed:', e);
+    }
 
     this.lastTs = performance.now();
     requestAnimationFrame((t) => this.loop(t));
@@ -129,10 +133,16 @@ const Game = {
   /** Шаг 20: вызывается после закрытия тайтлового экрана (первый запуск). */
   _afterTitleDismissed() {
     // Показать обучение при первом запуске, затем инициализировать игру
-    if (window.Tutorial && Tutorial.shouldShow()) {
-      Tutorial.show(() => { Game.init(); });
-    } else {
-      Game.init();
+    try {
+      if (window.Tutorial && Tutorial.shouldShow()) {
+        Tutorial.show(() => { Game.init(); });
+      } else {
+        Game.init();
+      }
+    } catch (e) {
+      console.error('[Game] _afterTitleDismissed failed:', e);
+      // Аварийная попытка запуска без Tutorial
+      try { Game.init(); } catch (e2) { console.error('[Game] init fallback failed:', e2); }
     }
   },
 
@@ -220,7 +230,7 @@ const Game = {
     GameAudio.playMusic(this.lastBiomeId || 'crypt');
 
     // Монетизация: скрыть баннер и кнопки рекламы при начале забега
-    if (window.Monetization) Monetization.onRunStart();
+    try { if (window.Monetization) Monetization.onRunStart(); } catch(e) { console.warn('[Monetization]', e); }
   },
 
   togglePause() {
@@ -424,7 +434,7 @@ const Game = {
     GameAudio.playMusic('camp');
 
     // Монетизация: показать баннер и interstitial при возврате в лагерь
-    if (window.Monetization) Monetization.onMenuEnter();
+    try { if (window.Monetization) Monetization.onMenuEnter(); } catch(e) { console.warn('[Monetization]', e); }
   },
 
   /** Сохранить мета-прогресс в конце забега и показать статистику. */
@@ -487,7 +497,7 @@ const Game = {
     this._saveProgressAndShowStats();
 
     // Монетизация: показать баннер, interstitial, кнопки rewarded
-    if (window.Monetization) Monetization.onRunEnd();
+    try { if (window.Monetization) Monetization.onRunEnd(); } catch(e) { console.warn('[Monetization]', e); }
   },
 
   /** Обработчик кнопки рестарта (из старого Game Over). */
