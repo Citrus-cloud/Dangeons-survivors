@@ -2,14 +2,6 @@
   "appId": "com.dungeonsurvivors.d20",
   "appName": "Dungeon Survivors D20",
   "webDir": "www",
-  "plugins": {
-    "AdMob": {
-      "androidAppId": "ca-app-pub-3940256099942544~3347511713",
-      "iosAppId": "ca-app-pub-3940256099942544~1458002511",
-      "testDevices": [],
-      "initializeForTesting": true
-    }
-  },
   "server": {
     "androidScheme": "https"
   }
