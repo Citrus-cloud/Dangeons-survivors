@@ -1,8 +1,7 @@
 {
   "appId": "com.dungeonsurvivors.d20",
   "appName": "Dungeon Survivors D20",
-  "webDir": ".",
-  "bundledWebRuntime": false,
+  "webDir": "www",
   "plugins": {
     "AdMob": {
       "androidAppId": "ca-app-pub-3940256099942544~3347511713",
