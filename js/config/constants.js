@@ -387,7 +387,7 @@ const ENEMY_TYPES = {
     w: 28, h: 28, hp: 40, speed: 32, damage: 15,
     xp: [10, 14], behavior: 'chase', tier: 1, dropChance: 0.7,
     spawnWeight: 3, hitInterval: 0.8, wobble: 2,
-    deathPuddle: { kind: 'rot', chance: 0.30, radius: 40, life: 3, slow: 0.30 },
+    deathPuddle: { kind: 'rot', chance: 0.30, radius: 40, life: 3, slow: 0.15 },
   },
   goblin: {
     id: 'goblin', name: t('enemy_goblin'), letter: 'G',
@@ -415,7 +415,7 @@ const ENEMY_TYPES = {
     xp: [8, 12], behavior: 'ooze', tier: 2, dropChance: 0.6,
     spawnWeight: 3, hitInterval: 0.7, wobble: 1.5,
     trailEvery: 0.5,
-    trail: { kind: 'slime', radius: 22, life: 2, slow: 0.20 },
+    trail: { kind: 'slime', radius: 22, life: 2, slow: 0.10 },
     splitOnDeath: { childId: 'slimeling', count: 2 },
   },
   gasspore: {
@@ -642,7 +642,7 @@ const ENEMY_TYPES = {
     w: 28, h: 28, hp: 30, speed: 50, damage: 12,
     xp: [16, 20], behavior: 'basilisk', tier: 3, dropChance: 0.65,
     spawnWeight: 2, hitInterval: 0.7, wobble: 1.5,
-    gazeCooldown: 6.0, gazeRange: 80, gazeSlowPct: 0.60, gazeSlowDuration: 2.0, gazeDamage: 12,
+    gazeCooldown: 18.0, gazeRange: 80, gazeSlowPct: 0.30, gazeSlowDuration: 1.2, gazeDamage: 12,
   },
   medusa: {
     id: 'medusa', name: t('enemy_medusa'), letter: 'M',
@@ -678,7 +678,7 @@ const ENEMY_TYPES = {
     xp: [16, 20], behavior: 'water_elem', tier: 3, dropChance: 0.65,
     spawnWeight: 2, hitInterval: 0.7, wobble: 2,
     trailEvery: 0.5,
-    trail: { kind: 'water', radius: 20, life: 3, slow: 0.15, dps: 0 },
+    trail: { kind: 'water', radius: 20, life: 3, slow: 0.08, dps: 0 },
     waveCooldown: 4.0, waveRange: 100, waveDamage: 14, waveKnockback: 40,
   },
   beholder_spore: {
@@ -837,7 +837,7 @@ const ENEMY_TYPES = {
     w: 48, h: 48, hp: 120, speed: 22, damage: 30,
     xp: [65, 75], behavior: 'eldritch_horror', tier: 5, dropChance: 1.0,
     spawnWeight: 0, hitInterval: 0.8, wobble: 0,
-    abyssCry: { cooldown: 5.0, radius: 150, slowPct: 0.50, duration: 3.0 },
+    abyssCry: { cooldown: 15.0, radius: 150, slowPct: 0.25, duration: 1.5 },
     rareSpawn: true, maxPerRun: 1,
     auraGlow: true,
   },
@@ -972,11 +972,11 @@ const BOSS_TYPES = {
     // Атаки
     attacks: {
       bite: { damage: 20, poisonDps: 5, poisonDuration: 3.0, range: 40 },
-      web: { cooldown: 5.0, speed: 300, slowPct: 0.50, slowDuration: 2.0 },
+      web: { cooldown: 15.0, speed: 300, slowPct: 0.25, slowDuration: 1.0 },
       spawnMinions: { hpThreshold: 0.50, count: 4, childId: 'spider', triggered: false },
     },
     trailEvery: 0.6,     // оставляет паутину (лужи замедления)
-    trail: { kind: 'slime', radius: 24, life: 3, slow: 0.35 },
+    trail: { kind: 'slime', radius: 24, life: 3, slow: 0.18 },
     hitInterval: 0.8,
   },
 
@@ -1021,8 +1021,8 @@ BOSS_TYPES.boss_ice_lord = {
   letter: 'I',
   // Атаки
   attacks: {
-    iceBolt: { cooldown: 2.0, damage: 18, speed: 280, slowPct: 0.40, slowDuration: 2.0 },
-    frostNova: { cooldown: 6.0, damage: 20, radius: 120, slowPct: 0.50, slowDuration: 3.0 },
+    iceBolt: { cooldown: 6.0, damage: 18, speed: 280, slowPct: 0.20, slowDuration: 1.0 },
+    frostNova: { cooldown: 18.0, damage: 20, radius: 120, slowPct: 0.25, slowDuration: 1.5 },
     iceSpikes: { cooldown: 8.0, damage: 15, count: 6, speed: 220 },  // веер ледяных шипов
     deathShatter: { damage: 30, radius: 130 },
   },
@@ -1127,7 +1127,7 @@ BOSS_TYPES.boss_ice_serpent = {
   hitInterval: 0.8,
   // Атаки
   attacks: {
-    iceBreath: { cooldown: 3.0, damage: 22, range: 120, arc: 90, slowPct: 0.60, slowDuration: 2.0 },
+    iceBreath: { cooldown: 9.0, damage: 22, range: 120, arc: 90, slowPct: 0.30, slowDuration: 1.0 },
     tailSweep: { cooldown: 5.0, damage: 18, radius: 80, knockback: 50 },
     iceStorm: { damage: 10, radius: 100, dps: true }, // включается при фазе 2 (постоянный AoE)
   },
@@ -1818,7 +1818,7 @@ ENEMY_TYPES.ettercap = {
   w: 24, h: 24, hp: 22, speed: 55, damage: 10,
   xp: [14, 16], behavior: 'ettercap', tier: 3, dropChance: 0.60,
   spawnWeight: 2, hitInterval: 0.7, wobble: 1.5,
-  webCooldown: 5.0, webRadius: 50, webSlow: 0.60, webDuration: 3.0,
+  webCooldown: 15.0, webRadius: 50, webSlow: 0.30, webDuration: 1.5,
 };
 
 ENEMY_TYPES.fungal_man = {
@@ -1845,7 +1845,7 @@ ENEMY_TYPES.cave_bear = {
   w: 36, h: 24, hp: 50, speed: 55, damage: 18,
   xp: [23, 27], behavior: 'cave_bear', tier: 3, dropChance: 0.75,
   spawnWeight: 2, hitInterval: 0.8, wobble: 1,
-  roarCooldown: 6.0, roarRadius: 80, roarSlowPct: 0.30, roarSlowDuration: 2.0,
+  roarCooldown: 18.0, roarRadius: 80, roarSlowPct: 0.15, roarSlowDuration: 1.0,
 };
 
 ENEMY_TYPES.ogre = {
@@ -1983,10 +1983,10 @@ ENEMY_TYPES.ice_elem = {
   w: 32, h: 32, hp: 40, speed: 28, damage: 12,
   xp: [20, 24], behavior: 'ice_elem', tier: 4, dropChance: 0.75,
   spawnWeight: 1, hitInterval: 0.8, wobble: 1,
-  breathCooldown: 4.0, breathRange: 90, breathSlowPct: 0.50, breathSlowDuration: 2.0,
+  breathCooldown: 12.0, breathRange: 90, breathSlowPct: 0.25, breathSlowDuration: 1.0,
   wallCooldown: 5.0, wallLength: 60, wallDuration: 4.0,
   explodeOnDeath: { radius: 60, damage: 10 },
-  deathSlow: { radius: 60, slowPct: 0.80, duration: 1.0 },
+  deathSlow: { radius: 60, slowPct: 0.40, duration: 0.7 },
 };
 
 
@@ -2104,7 +2104,7 @@ ENEMY_TYPES.star_spawn = {
   spawnWeight: 1, hitInterval: 0.7, wobble: 2,
   psionicCooldown: 3.0, psionicRadius: 80, psionicDamage: 20, disorientDuration: 1.0,
   summonCooldown: 5.0, summonChildId: 'gasspore', summonCount: 2,
-  deathZone: { radius: 100, slowPct: 0.50, duration: 5.0 },
+  deathZone: { radius: 100, slowPct: 0.25, duration: 3.0 },
 };
 
 
@@ -3117,7 +3117,7 @@ BOSS_TYPES.boss_bone_hydra = {
   hitInterval: 0.8,
   attacks: {
     fireHead:      { cooldown: 2.5, damage: 20, speed: 260, type: 'fire' },
-    iceHead:       { cooldown: 3.0, damage: 16, speed: 240, type: 'ice', slowPct: 0.40, slowDur: 2.0 },
+    iceHead:       { cooldown: 3.0, damage: 16, speed: 240, type: 'ice', slowPct: 0.20, slowDur: 1.0 },
     poisonHead:    { cooldown: 2.0, damage: 8, speed: 220, type: 'poison', dotDps: 6, dotDur: 3.0 },
     lightningHead: { cooldown: 2.5, damage: 22, speed: 300, type: 'lightning' },
     darkHead:      { cooldown: 3.5, damage: 25, speed: 200, type: 'dark', radius: 60 },

@@ -310,7 +310,7 @@ const Game = {
         id: w.id,
         weaponId: w.id,
         title: `${w.name} ${Utils.roman(w.level)} → ${Utils.roman(next)}`,
-        desc: t('levelup_upgrade_desc', next, w.maxLevel),
+        desc: w.desc || t('levelup_upgrade_desc', next, w.maxLevel),
         apply(player) {
           const tgt = Player.findWeapon(player, w.id);
           if (tgt) tgt.upgrade();
@@ -349,7 +349,7 @@ const Game = {
         id: a.id,
         abilityId: a.id,
         title: `${a.name} ${Utils.roman(a.level)} → ${Utils.roman(next)}`,
-        desc: a.effectText ? a.effectText.call ? `${t('levelup_upgrade_desc', next, a.maxLevel || 5)}` : a.desc : a.desc,
+        desc: a.desc || t('levelup_upgrade_desc', next, a.maxLevel || 5),
         apply(player) {
           const tgt = Player.findAbility(player, a.id);
           if (tgt) tgt.upgrade(player);
@@ -598,9 +598,9 @@ const Game = {
       // здесь подкорректируем позицию: поскольку Player уже сдвинулся,
       // компенсируем "лишнее" движение, если есть slow > 0.
       let totalSlow = eff.slow || 0;
-      // Шаг 6: замедление от паутины босса
+      // Шаг 6: замедление от паутины босса (снижена сила)
       if (this.player.webSlow && this.player.webSlow > 0) {
-        totalSlow = Math.max(totalSlow, 0.50);
+        totalSlow = Math.max(totalSlow, 0.25);
       }
       // Шаг 17: замедление от ледяной руны
       if (this.player._iceSlow && this.player._iceSlowTimer > 0) {
@@ -612,6 +612,10 @@ const Game = {
       if (this.player._stunTimer && this.player._stunTimer > 0) {
         totalSlow = 1.0;
         this.player._stunTimer -= dt;
+      }
+      // Глобальный лимит замедления (максимум 50% — чтобы игрок мог маневрировать)
+      if (totalSlow > 0 && (!this.player._stunTimer || this.player._stunTimer <= 0)) {
+        totalSlow = Math.min(totalSlow, 0.50);
       }
       if (totalSlow > 0) {
         const move = Input.getMove();
