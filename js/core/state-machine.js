@@ -310,6 +310,9 @@ window.addEventListener('load', () => {
   // 3. Инициализация пользовательского интерфейса
   UI.init();
 
+  // 3.5. Apply localization to all static HTML elements (data-i18n)
+  if (window.applyTranslations) applyTranslations();
+
   // 4. Bestiary back button now handled via CSS design system (no fix needed)
 
   // 4.5. Инициализация системы монетизации (AdMob / заглушка)

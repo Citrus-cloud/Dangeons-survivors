@@ -84,8 +84,16 @@ function setLang(lang) {
 /** Get current language */
 function getLang() { return _currentLang; }
 
+/** Apply current language to all data-i18n elements (initial page load). */
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+}
+
 window.t = t;
 window.setLang = setLang;
 window.getLang = getLang;
+window.applyTranslations = applyTranslations;
 window.LOCALE = LOCALE;
 

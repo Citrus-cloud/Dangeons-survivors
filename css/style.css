@@ -1869,26 +1869,28 @@ html, body {
    22. MONETIZATION UI
    ============================================================ */
 #monetization-ui {
-  position: fixed; bottom: 60px; left: 0; right: 0;
-  display: none; flex-direction: column; align-items: center;
-  gap: 10px; z-index: 50; pointer-events: none; padding: 0 20px;
+  position: fixed; bottom: 70px; left: 0; right: 0;
+  display: none; flex-direction: row; flex-wrap: wrap;
+  align-items: center; justify-content: center;
+  gap: 12px; z-index: 50; pointer-events: none; padding: 0 16px;
 }
 #monetization-ui.active { display: flex; }
 
 .ad-button {
   display: none; align-items: center; justify-content: center;
-  gap: 8px; padding: 14px 24px;
-  min-width: 220px; min-height: 48px;
+  gap: 8px; padding: 12px 20px;
+  min-width: 160px; max-width: 220px; min-height: 44px;
   border: 2px solid #d4a017; border-radius: var(--border-radius-sm);
   background: linear-gradient(180deg, #4a3800 0%, #2a2000 100%);
   color: #ffd700; font-family: var(--font-title);
-  font-size: 15px; font-weight: bold;
+  font-size: 14px; font-weight: bold;
   cursor: pointer; pointer-events: auto;
   box-shadow: 0 4px 12px rgba(212, 160, 23, 0.3), 0 2px 4px rgba(0, 0, 0, 0.5);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
   transition: transform 0.1s ease, box-shadow 0.15s ease, background 0.15s;
   -webkit-tap-highlight-color: rgba(255, 215, 0, 0.3);
   touch-action: manipulation;
+  flex-shrink: 0;
 }
 .ad-button:hover {
   background: linear-gradient(180deg, #5a4800 0%, #3a2800 100%);
@@ -2019,6 +2021,14 @@ html, body {
   /* Map grid mobile */
   .map-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 4px; }
   .map-card-preview { max-width: 100px; }
+
+  /* Monetization buttons: stack vertically on small screens */
+  #monetization-ui {
+    flex-direction: column; bottom: 60px; gap: 10px;
+  }
+  .ad-button {
+    min-width: 180px; max-width: 80vw; font-size: 13px; padding: 10px 16px;
+  }
 }
 
 
