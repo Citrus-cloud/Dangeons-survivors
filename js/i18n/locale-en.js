@@ -256,6 +256,12 @@ LOCALE.en.upgrade_multishot = '+1 Projectile';
 LOCALE.en.upgrade_multishot_desc = 'Magic Missile fires +1 projectile.';
 LOCALE.en.upgrade_heal = 'Heal 30%';
 LOCALE.en.upgrade_heal_desc = 'Instantly restores 30% max HP.';
+// --- Upgrade description system ---
+LOCALE.en.upgrade_weapon_full = 'Dmg +{0}% (→{1}), CD -{2}% (→{3}s)';
+LOCALE.en.upgrade_weapon_dmg_only = 'Dmg +{0}% (→{1})';
+LOCALE.en.upgrade_weapon_new_stats = 'Base dmg: {0}, CD: {1}s';
+LOCALE.en.upgrade_ability_effect = '{0} → {1}';
+LOCALE.en.upgrade_ability_lv1 = 'Lv.1: {0}';
 LOCALE.en.campaign_map1 = 'Cursed Crypt';
 LOCALE.en.campaign_map2 = 'Ice Pass';
 LOCALE.en.campaign_map3 = 'Fire Depths';

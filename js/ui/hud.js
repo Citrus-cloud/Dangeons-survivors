@@ -208,7 +208,7 @@ const UI = {
           `<div class="card-icon">${c.icon || '★'}</div>` +
           levelHtml +
           `<div class="card-title">${c.title}</div>` +
-          `<div class="card-desc">${c.desc}</div>`;
+          `<div class="card-desc">${UI._formatCardDesc(c.desc)}</div>`;
         // Шаг 2: пиксельный спрайт в карте левелапа
         const cardIconEl = el.querySelector('.card-icon');
         const spriteId = c.weaponId || c.abilityId || c.resultId || c.id;
@@ -443,7 +443,7 @@ const UI = {
         el.innerHTML =
           `<div class="card-icon">${c.icon || '★'}</div>` +
           `<div class="card-title">${c.title}</div>` +
-          `<div class="card-desc">${c.desc}</div>`;
+          `<div class="card-desc">${UI._formatCardDesc(c.desc)}</div>`;
         // Применяем пиксельный спрайт (как в showLevelUp)
         const cardIconEl = el.querySelector('.card-icon');
         const spriteId = c.weaponId || c.abilityId || c.resultId || c.id;
@@ -612,6 +612,20 @@ const UI = {
     if (roll >= 19) return 'crit';
     if (roll >= 11) return 'good';
     return 'low';
+  },
+
+  /**
+   * Format card description: splits on newline, wraps the second part
+   * (effect data) in a highlighted span.
+   * @param {string} desc - The description string (may contain \n)
+   * @returns {string} HTML string with effect styling
+   */
+  _formatCardDesc(desc) {
+    if (!desc) return '';
+    const parts = desc.split('\n');
+    if (parts.length <= 1) return desc;
+    // First part: general description, second part: effect stats
+    return parts[0] + '<span class="card-effect">' + parts.slice(1).join(' ') + '</span>';
   },
 
   /** Apply pixel sprites to all elements with data-sprite-id within a container. */

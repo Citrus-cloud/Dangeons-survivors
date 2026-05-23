@@ -283,12 +283,16 @@ const Game = {
     if (Player.hasFreeWeaponSlot(p)) {
       for (const info of WEAPON_INFO) {
         if (Player.findWeapon(p, info.id)) continue; // уже есть — не предлагать "новое"
+        // Генерируем описание с базовыми характеристиками
+        const newDesc = (window.UpgradeDescriptions)
+          ? UpgradeDescriptions.weaponNew(info.id)
+          : info.desc;
         all.push({
           kind: 'weapon',
           icon: info.icon,
           id: info.id,
           title: t('levelup_new_weapon', info.name),
-          desc: info.desc,
+          desc: newDesc || info.desc,
           apply(player) {
             const w = WEAPON_FACTORIES[info.id]();
             Player.addWeapon(player, w);
@@ -304,13 +308,17 @@ const Game = {
       if (!w) continue;
       if (w.level >= w.maxLevel) continue;
       const next = w.level + 1;
+      // Генерируем точное описание улучшения
+      const upgradeDesc = (window.UpgradeDescriptions)
+        ? UpgradeDescriptions.weaponUpgrade(w, next)
+        : t('levelup_upgrade_desc', next, w.maxLevel);
       all.push({
         kind: 'weapon',
         icon: w.icon,
         id: w.id,
         weaponId: w.id,
         title: `${w.name} ${Utils.roman(w.level)} → ${Utils.roman(next)}`,
-        desc: w.desc || t('levelup_upgrade_desc', next, w.maxLevel),
+        desc: upgradeDesc,
         apply(player) {
           const tgt = Player.findWeapon(player, w.id);
           if (tgt) tgt.upgrade();
@@ -322,12 +330,16 @@ const Game = {
     if (Player.hasFreeAbilitySlot(p)) {
       for (const info of ABILITY_INFO) {
         if (Player.findAbility(p, info.id)) continue;
+        // Генерируем описание с эффектом 1-го уровня
+        const newDesc = (window.UpgradeDescriptions)
+          ? UpgradeDescriptions.abilityNew(info.id)
+          : info.desc;
         all.push({
           kind: 'ability',
           icon: info.icon,
           id: info.id,
           title: t('levelup_new_ability', info.name),
-          desc: info.desc,
+          desc: newDesc || info.desc,
           apply(player) {
             const a = ABILITY_FACTORIES[info.id]();
             Player.addAbility(player, a);
@@ -343,13 +355,17 @@ const Game = {
       if (!a) continue;
       if (a.level >= a.maxLevel) continue;
       const next = a.level + 1;
+      // Генерируем точное описание с текущим и следующим эффектом
+      const upgradeDesc = (window.UpgradeDescriptions)
+        ? UpgradeDescriptions.abilityUpgrade(a, next)
+        : (a.desc || t('levelup_upgrade_desc', next, a.maxLevel || 5));
       all.push({
         kind: 'ability',
         icon: a.icon,
         id: a.id,
         abilityId: a.id,
         title: `${a.name} ${Utils.roman(a.level)} → ${Utils.roman(next)}`,
-        desc: a.desc || t('levelup_upgrade_desc', next, a.maxLevel || 5),
+        desc: upgradeDesc,
         apply(player) {
           const tgt = Player.findAbility(player, a.id);
           if (tgt) tgt.upgrade(player);

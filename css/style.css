@@ -749,6 +749,18 @@ html, body {
 .card .card-desc {
   font-size: 11px; line-height: 1.35;
   color: var(--text-light);
+  white-space: pre-line;
+}
+.card .card-desc .card-effect {
+  display: block;
+  margin-top: 4px;
+  padding-top: 3px;
+  border-top: 1px solid rgba(201, 168, 76, 0.2);
+  color: var(--accent-gold);
+  font-weight: bold;
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .card.weapon .card-icon { background: rgba(220, 130, 80, 0.12); border-color: rgba(220, 130, 80, 0.3); }
 .card.ability .card-icon { background: rgba(120, 200, 120, 0.12); border-color: rgba(120, 200, 120, 0.3); }

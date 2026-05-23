@@ -1674,6 +1674,8 @@ window.EarthquakeWeapon = EarthquakeWeapon;
 window.WEAPON_FACTORIES = WEAPON_FACTORIES;
 window.WEAPON_INFO = WEAPON_INFO;
 window.MAX_WEAPON_LEVEL = MAX_WEAPON_LEVEL;
+window.WEAPON_LEVEL_DAMAGE = WEAPON_LEVEL_DAMAGE;
+window.WEAPON_LEVEL_CD_MUL = WEAPON_LEVEL_CD_MUL;
 window.createProjectile = createProjectile;
 window.Projectiles = Projectiles;
 
