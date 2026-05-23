@@ -1440,8 +1440,8 @@ Behaviors.basilisk = function(e, player, dt) {
       if (Player.takeDamage) Player.takeDamage(player, dmg, e);
       else player.hp -= dmg;
       // Замедление через webSlow (переиспользование)
-      player.webSlow = Math.max(player.webSlow || 0, e.cfg.gazeSlowDuration || 2.0);
-      e.attackCooldown = e.cfg.gazeCooldown || 6.0;
+      player.webSlow = Math.max(player.webSlow || 0, e.cfg.gazeSlowDuration || 1.2);
+      e.attackCooldown = e.cfg.gazeCooldown || 8.0;
       e.attackPunch = 0.15;
       if (window.Particles) {
         Particles.burst(e.x, e.y, 4, {
@@ -1956,9 +1956,9 @@ Behaviors.eldritch_horror = function(e, player, dt) {
     const pdx = player.x - e.x, pdy = player.y - e.y;
     if (pdx * pdx + pdy * pdy <= (ac.radius || 150) * (ac.radius || 150)) {
       // Slow player
-      player.webSlow = Math.max(player.webSlow || 0, ac.duration || 3.0);
+      player.webSlow = Math.max(player.webSlow || 0, ac.duration || 1.8);
     }
-    e._abyssCd = ac.cooldown || 5.0;
+    e._abyssCd = ac.cooldown || 7.0;
     e.attackPunch = 0.2;
     if (window.Particles) {
       Particles.ring(e.x, e.y, ac.radius || 150, 0.6, 'rgba(50,0,80,0.7)', 5);
@@ -2487,9 +2487,9 @@ Behaviors.cave_bear = function(e, player, dt) {
     const d2 = pdx * pdx + pdy * pdy;
     const r = e.cfg.roarRadius || 80;
     if (d2 <= r * r) {
-      player.webSlow = Math.max(player.webSlow || 0, e.cfg.roarSlowDuration || 2.0);
+      player.webSlow = Math.max(player.webSlow || 0, e.cfg.roarSlowDuration || 1.2);
     }
-    e.specialCooldown = e.cfg.roarCooldown || 6.0;
+    e.specialCooldown = e.cfg.roarCooldown || 8.0;
     e.attackPunch = 0.15;
     if (window.Particles) {
       Particles.ring(e.x, e.y, r, 0.3, 'rgba(139,90,43,0.5)', 3);
@@ -2775,8 +2775,8 @@ Behaviors.ice_elem = function(e, player, dt) {
       const dmg = e.damage;
       if (Player.takeDamage) Player.takeDamage(player, dmg, e);
       else player.hp -= dmg;
-      player.webSlow = Math.max(player.webSlow || 0, e.cfg.breathSlowDuration || 2.0);
-      e.attackCooldown = e.cfg.breathCooldown || 4.0;
+      player.webSlow = Math.max(player.webSlow || 0, e.cfg.breathSlowDuration || 1.2);
+      e.attackCooldown = e.cfg.breathCooldown || 5.0;
       e.attackPunch = 0.12;
       if (window.Particles) {
         Particles.burst(e.x, e.y, 4, {
@@ -3180,7 +3180,7 @@ Behaviors.ancient_dragon = function(e, player, dt) {
   const auraR = e.cfg.auraRadius || 120;
   if (pdx * pdx + pdy * pdy <= auraR * auraR) {
     // Замедление как webSlow (стакается)
-    player.webSlow = Math.max(player.webSlow || 0, 0.3);
+    player.webSlow = Math.max(player.webSlow || 0, 0.2);
   }
   // Используем adult_dragon поведение
   Behaviors.adult_dragon(e, player, dt);
