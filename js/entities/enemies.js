@@ -793,9 +793,12 @@ const Enemies = {
       }
       const e = this.spawnByType(pool, typeId, ex, ey);
       if (e) {
-        // Шаг 19: масштабирование HP/урона по волне (спек формула)
-        const waveHpMul = 1 + waveIndex * 0.1;
-        const waveDmgMul = 1 + waveIndex * 0.08;
+        // Прогрессия по волнам:
+        // Волна 1: урон снижен на 30% (×0.7), HP базовое (×1.0)
+        // Волна 2+: кумулятивный прирост +3% урона и +2% HP за каждую волну
+        //           относительно базового значения (начиная со 2-й волны)
+        const waveHpMul  = waveIndex <= 1 ? 1.0 : 1 + (waveIndex - 1) * 0.02;
+        const waveDmgMul = waveIndex <= 1 ? 0.7 : 1 + (waveIndex - 1) * 0.03;
         // Шаг 13: множители сложности карты (накладываются поверх)
         const totalHpMul = waveHpMul * diffMul.hpMul;
         const totalDmgMul = waveDmgMul * diffMul.dmgMul;
