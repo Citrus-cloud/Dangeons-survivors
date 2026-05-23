@@ -3183,7 +3183,7 @@ Behaviors.ancient_dragon = function(e, player, dt) {
   const auraR = e.cfg.auraRadius || 120;
   if (pdx * pdx + pdy * pdy <= auraR * auraR) {
     // Замедление как webSlow (стакается)
-    player.webSlow = Math.max(player.webSlow || 0, 0.3);
+    player.webSlow = Math.max(player.webSlow || 0, 0.1);
   }
   // Используем adult_dragon поведение
   Behaviors.adult_dragon(e, player, dt);

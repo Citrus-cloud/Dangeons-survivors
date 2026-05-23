@@ -2147,7 +2147,6 @@ Bosses._updatePuzzleSphinx = function(boss, player, dt) {
 
   // Фаза 3: постоянная уязвимость, ярость
   if (phase3) {
-    boss._sphinxInvuln = false;
     // Комбо-атаки: луч + столбы быстрее
     if (boss._beamCd <= 0) {
       boss._beamCd = atk.eyeBeam.cooldown * (cfg.phase3CdMul || 0.50);
@@ -2171,11 +2170,10 @@ Bosses._updatePuzzleSphinx = function(boss, player, dt) {
     return;
   }
 
-  // Фазы 1-2: система загадок (неуязвимость)
+  // Фазы 1-2: система загадок (неуязвимость ТОЛЬКО во время загадки)
   if (boss._puzzleCd <= 0 && !boss._puzzleActive) {
     boss._puzzleActive = true;
     boss._puzzleTimer = atk.puzzleWindow || 3.0;
-    boss._sphinxInvuln = true;
     // Генерируем «правильную руну» (упрощённо: случайная из 4)
     boss._correctRune = Math.floor(Math.random() * (atk.runeCount || 4));
     if (phase2) {
@@ -2188,7 +2186,6 @@ Bosses._updatePuzzleSphinx = function(boss, player, dt) {
 
   if (boss._puzzleActive) {
     boss._puzzleTimer -= dt;
-    boss._sphinxInvuln = true;
     // Проверка: герой должен подойти к правильной «руне»
     // Упрощённая механика: если герой в определённой зоне, загадка решена
     // Руны размещены по 4 углам вокруг босса
@@ -2200,9 +2197,8 @@ Bosses._updatePuzzleSphinx = function(boss, player, dt) {
     const playerToRune = Math.hypot(player.x - runeX, player.y - runeY);
 
     if (playerToRune < 35) {
-      // Загадка решена!
+      // Загадка решена! Босс получает повышенный урон на время
       boss._puzzleActive = false;
-      boss._sphinxInvuln = false;
       boss._vulnTimer = atk.vulnDuration || 5.0;
       boss._puzzleCd = atk.puzzleInterval || 15.0;
       if (window.Particles) {
@@ -2212,7 +2208,6 @@ Bosses._updatePuzzleSphinx = function(boss, player, dt) {
     } else if (boss._puzzleTimer <= 0) {
       // Время вышло — AoE штраф
       boss._puzzleActive = false;
-      boss._sphinxInvuln = false;
       boss._puzzleCd = atk.puzzleInterval || 15.0;
       const dmg = atk.arenaBlast.damage * boss.difficultyMul;
       if (Player.takeDamage) Player.takeDamage(player, dmg, boss);
@@ -2224,12 +2219,9 @@ Bosses._updatePuzzleSphinx = function(boss, player, dt) {
     }
   }
 
-  // Окно уязвимости
+  // Окно уязвимости после решения загадки (босс получает повышенный урон)
   if (boss._vulnTimer > 0) {
     boss._vulnTimer -= dt;
-    boss._sphinxInvuln = false;
-  } else if (!boss._puzzleActive) {
-    boss._sphinxInvuln = true;
   }
 
   // Атака: луч из глаз (между загадками)
@@ -2542,15 +2534,15 @@ Bosses._updateMirrorKing = function(boss, player, dt) {
     const boss = target || this.current || this.guardian;
     if (!boss || boss.hp <= 0) return;
 
-    // Сфинкс: неуязвимость
-    if (boss.id === 'boss_puzzle_sphinx' && boss._sphinxInvuln) {
+    // Сфинкс: неуязвимость только во время активной загадки
+    if (boss.id === 'boss_puzzle_sphinx' && boss._puzzleActive) {
       if (window.Particles) {
         Particles.burst(boss.x, boss.y, 2, {
           color: '#ffd700', speedMin: 40, speedMax: 80,
           lifeMin: 0.15, lifeMax: 0.25, sizeMin: 1, sizeMax: 3,
         });
       }
-      return; // Урон не проходит
+      return; // Урон не проходит — только пока загадка активна
     }
 
     // Грозовой Колосс: фаза 1 — промахи лечат
