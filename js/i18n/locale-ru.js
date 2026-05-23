@@ -841,8 +841,8 @@ LOCALE.ru.talent_eff_double_xp_2 = '+12% шанс ×2 опыта';
 
 
 // === Монетизация ===
-LOCALE.ru.ad_revive = '▶️ Воскреснуть';
-LOCALE.ru.ad_double_gold = '▶️ ×2 Золото';
+LOCALE.ru.ad_revive = 'Воскреснуть';
+LOCALE.ru.ad_double_gold = '×2 Золото';
 LOCALE.ru.ad_remove = 'Убрать рекламу';
 LOCALE.ru.ad_remove_done = 'Реклама отключена!';
 LOCALE.ru.ad_revive_success = 'Воскрешение!';

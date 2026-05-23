@@ -947,8 +947,8 @@ LOCALE.en.talent_eff_double_xp_2 = '+12% double XP chance';
 
 
 // === Monetization ===
-LOCALE.en.ad_revive = '▶️ Revive';
-LOCALE.en.ad_double_gold = '▶️ ×2 Gold';
+LOCALE.en.ad_revive = 'Revive';
+LOCALE.en.ad_double_gold = '×2 Gold';
 LOCALE.en.ad_remove = 'Remove Ads';
 LOCALE.en.ad_remove_done = 'Ads disabled!';
 LOCALE.en.ad_revive_success = 'Revived!';
