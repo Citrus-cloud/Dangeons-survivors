@@ -256,6 +256,12 @@ LOCALE.ru.upgrade_multishot = '+1 снаряд';
 LOCALE.ru.upgrade_multishot_desc = 'Magic Missile выпускает +1 снаряд.';
 LOCALE.ru.upgrade_heal = 'Восстановление 30%';
 LOCALE.ru.upgrade_heal_desc = 'Мгновенно восстанавливает 30% макс. HP.';
+// --- Upgrade description system ---
+LOCALE.ru.upgrade_weapon_full = 'Урон +{0}% (→{1}), КД -{2}% (→{3}с)';
+LOCALE.ru.upgrade_weapon_dmg_only = 'Урон +{0}% (→{1})';
+LOCALE.ru.upgrade_weapon_new_stats = 'Базовый урон: {0}, КД: {1}с';
+LOCALE.ru.upgrade_ability_effect = '{0} → {1}';
+LOCALE.ru.upgrade_ability_lv1 = 'Ур.1: {0}';
 LOCALE.ru.campaign_map1 = 'Проклятый склеп';
 LOCALE.ru.campaign_map2 = 'Ледяной перевал';
 LOCALE.ru.campaign_map3 = 'Огненные недра';
