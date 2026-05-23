@@ -34,14 +34,16 @@ const UIExtended = {
   _buildClassOverlay() {
     const ov = document.createElement('div');
     ov.id = 'classOverlay';
-    ov.className = 'overlay camp-overlay';
+    ov.className = 'overlay camp-overlay class-select-overlay';
     ov.innerHTML = `
-      <div class="camp-bg">
-        <div style="display:flex;align-items:center;gap:12px;width:100%;margin-bottom:8px;">
+      <div class="class-select-panel">
+        <div class="class-select-header">
           <button id="classBackBtn" class="btn bestiary-back-btn-compact" title="${t('btn_back')}">←</button>
-          <h1 class="camp-title" style="font-size:1.4em;flex:1;text-align:center;margin:0;">${t('class_select_title')}</h1>
+          <h1 class="camp-title class-select-title">${t('class_select_title')}</h1>
         </div>
-        <div id="classGrid" class="class-grid"></div>
+        <div class="class-select-scroll">
+          <div id="classGrid" class="class-grid"></div>
+        </div>
       </div>
     `;
     document.body.appendChild(ov);
@@ -72,10 +74,15 @@ const UIExtended = {
       }
 
       card.innerHTML = `
-        ${iconHtml}
-        <div class="class-card-name">${def.name}</div>
-        <div class="class-card-desc">${def.desc}</div>
-        <div class="class-card-passive">${def.passiveDesc}</div>
+        <div class="class-card-left">
+          ${iconHtml}
+          ${isActive ? '<div class="class-card-selected-badge">✓</div>' : ''}
+        </div>
+        <div class="class-card-right">
+          <div class="class-card-name">${def.name}</div>
+          <div class="class-card-desc">${def.desc}</div>
+          <div class="class-card-passive">${def.passiveDesc}</div>
+        </div>
       `;
       card.addEventListener('click', () => {
         Classes.setSelected(id);
