@@ -2291,12 +2291,27 @@ const GameMap = {
    */
   attractPlayerFromWalls(player, dt) {
     if (!this.dungeon || !player) return;
-    if (this.isWalkable(player.x, player.y)) return;
+    const rad = (player.size || 24) * 0.35;
+    // Используем строгую проверку rectIsWalkable (учитывает размер хитбокса)
+    if (this.rectIsWalkable(player.x, player.y, rad)) return;
     // Игрок в стене — вытаскиваем
     const target = this.findNearestWalkable(player.x, player.y, 8, 200);
-    if (target) {
+    if (target && this.rectIsWalkable(target.x, target.y, rad)) {
       player.x = target.x;
       player.y = target.y;
+    } else if (target) {
+      // findNearestWalkable нашёл точку по grid, но rectIsWalkable не прошла —
+      // пробуем сместиться к центру ближайшей комнаты
+      const room = this._findNearestRoom(player.x, player.y);
+      if (room) {
+        const cx = room.cx || room.x + room.w / 2;
+        const cy = room.cy || room.y + room.h / 2;
+        player.x = cx;
+        player.y = cy;
+      } else {
+        player.x = target.x;
+        player.y = target.y;
+      }
     }
   },
 

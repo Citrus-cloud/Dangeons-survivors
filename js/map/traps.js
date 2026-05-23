@@ -361,8 +361,15 @@ GameMap._handleMagicRuneEvent = function(event, player) {
       break;
     }
     case 'teleport': {
+      const oldTpX = player.x, oldTpY = player.y;
       const safePos = GameMap._findRandomSafePosition();
-      if (safePos) { player.x = safePos.x; player.y = safePos.y; }
+      if (safePos) {
+        player.x = safePos.x; player.y = safePos.y;
+        // Дополнительная проверка: не застрял ли в стене после телепорта
+        if (window.Player && Player.validatePosition) {
+          Player.validatePosition(player, oldTpX, oldTpY);
+        }
+      }
       if (window.Particles) {
         Particles.burst(event.x, event.y, 10, { color: '#ffdd00', speedMin: 80, speedMax: 200, lifeMin: 0.3, lifeMax: 0.6, sizeMin: 2, sizeMax: 5 });
         Particles.burst(player.x, player.y, 10, { color: '#ffdd00', speedMin: 80, speedMax: 200, lifeMin: 0.3, lifeMax: 0.6, sizeMin: 2, sizeMax: 5 });
@@ -404,6 +411,7 @@ GameMap._findRandomSafePosition = function() {
   if (!GameMap.dungeon || !GameMap.dungeon.rooms) return null;
   const rooms = GameMap.dungeon.rooms.filter(r => !r.isSecret);
   if (rooms.length === 0) return null;
+  const playerRad = (CONFIG.PLAYER.SIZE || 24) * 0.35;
   // Bug fix #6.1: Проверяем проходимость точки телепортации (до 10 попыток)
   for (let attempt = 0; attempt < 10; attempt++) {
     const room = rooms[Math.floor(Math.random() * rooms.length)];
@@ -416,8 +424,8 @@ GameMap._findRandomSafePosition = function() {
       const gy = Math.floor(y / cell);
       if (gx >= 0 && gx < GameMap.dungeon.gridW && gy >= 0 && gy < GameMap.dungeon.gridH) {
         if (GameMap.dungeon.grid[gy * GameMap.dungeon.gridW + gx] === 1) {
-          // Дополнительно проверяем что нет колонн/объектов рядом
-          if (!GameMap.rectIsWalkable || GameMap.rectIsWalkable(x, y, 12)) {
+          // Проверяем с реальным радиусом коллизии игрока
+          if (!GameMap.rectIsWalkable || GameMap.rectIsWalkable(x, y, playerRad)) {
             return { x, y };
           }
         }

@@ -415,7 +415,7 @@ const ENEMY_TYPES = {
     xp: [8, 12], behavior: 'ooze', tier: 2, dropChance: 0.6,
     spawnWeight: 3, hitInterval: 0.7, wobble: 1.5,
     trailEvery: 0.5,
-    trail: { kind: 'slime', radius: 22, life: 2, slow: 0.20 },
+    trail: { kind: 'slime', radius: 22, life: 2, slow: 0.12 },
     splitOnDeath: { childId: 'slimeling', count: 2 },
   },
   gasspore: {
@@ -642,7 +642,7 @@ const ENEMY_TYPES = {
     w: 28, h: 28, hp: 30, speed: 50, damage: 12,
     xp: [16, 20], behavior: 'basilisk', tier: 3, dropChance: 0.65,
     spawnWeight: 2, hitInterval: 0.7, wobble: 1.5,
-    gazeCooldown: 6.0, gazeRange: 80, gazeSlowPct: 0.60, gazeSlowDuration: 2.0, gazeDamage: 12,
+    gazeCooldown: 8.0, gazeRange: 80, gazeSlowPct: 0.40, gazeSlowDuration: 1.2, gazeDamage: 12,
   },
   medusa: {
     id: 'medusa', name: t('enemy_medusa'), letter: 'M',
@@ -837,7 +837,7 @@ const ENEMY_TYPES = {
     w: 48, h: 48, hp: 120, speed: 22, damage: 30,
     xp: [65, 75], behavior: 'eldritch_horror', tier: 5, dropChance: 1.0,
     spawnWeight: 0, hitInterval: 0.8, wobble: 0,
-    abyssCry: { cooldown: 5.0, radius: 150, slowPct: 0.50, duration: 3.0 },
+    abyssCry: { cooldown: 7.0, radius: 150, slowPct: 0.35, duration: 1.8 },
     rareSpawn: true, maxPerRun: 1,
     auraGlow: true,
   },
@@ -972,7 +972,7 @@ const BOSS_TYPES = {
     // Атаки
     attacks: {
       bite: { damage: 20, poisonDps: 5, poisonDuration: 3.0, range: 40 },
-      web: { cooldown: 5.0, speed: 300, slowPct: 0.50, slowDuration: 2.0 },
+      web: { cooldown: 7.0, speed: 300, slowPct: 0.35, slowDuration: 1.5 },
       spawnMinions: { hpThreshold: 0.50, count: 4, childId: 'spider', triggered: false },
     },
     trailEvery: 0.6,     // оставляет паутину (лужи замедления)
@@ -1021,8 +1021,8 @@ BOSS_TYPES.boss_ice_lord = {
   letter: 'I',
   // Атаки
   attacks: {
-    iceBolt: { cooldown: 2.0, damage: 18, speed: 280, slowPct: 0.40, slowDuration: 2.0 },
-    frostNova: { cooldown: 6.0, damage: 20, radius: 120, slowPct: 0.50, slowDuration: 3.0 },
+    iceBolt: { cooldown: 2.5, damage: 18, speed: 280, slowPct: 0.30, slowDuration: 1.5 },
+    frostNova: { cooldown: 8.0, damage: 20, radius: 120, slowPct: 0.40, slowDuration: 2.0 },
     iceSpikes: { cooldown: 8.0, damage: 15, count: 6, speed: 220 },  // веер ледяных шипов
     deathShatter: { damage: 30, radius: 130 },
   },
@@ -1127,7 +1127,7 @@ BOSS_TYPES.boss_ice_serpent = {
   hitInterval: 0.8,
   // Атаки
   attacks: {
-    iceBreath: { cooldown: 3.0, damage: 22, range: 120, arc: 90, slowPct: 0.60, slowDuration: 2.0 },
+    iceBreath: { cooldown: 4.0, damage: 22, range: 120, arc: 90, slowPct: 0.40, slowDuration: 1.5 },
     tailSweep: { cooldown: 5.0, damage: 18, radius: 80, knockback: 50 },
     iceStorm: { damage: 10, radius: 100, dps: true }, // включается при фазе 2 (постоянный AoE)
   },
@@ -1182,7 +1182,7 @@ BOSS_TYPES.boss_spider_matriarch = {
   hitInterval: 0.7,
   // Атаки
   attacks: {
-    webZones: { cooldown: 4.0, count: 3, radius: 50, slowPct: 0.50, life: 5.0 },
+    webZones: { cooldown: 6.0, count: 3, radius: 50, slowPct: 0.35, life: 4.0 },
     teleport: { cooldown: 6.0, range: 150 },
     deathSpawn: { count: 10, childId: 'spiderling' }, // при смерти — 10 паучат
   },
@@ -1818,7 +1818,7 @@ ENEMY_TYPES.ettercap = {
   w: 24, h: 24, hp: 22, speed: 55, damage: 10,
   xp: [14, 16], behavior: 'ettercap', tier: 3, dropChance: 0.60,
   spawnWeight: 2, hitInterval: 0.7, wobble: 1.5,
-  webCooldown: 5.0, webRadius: 50, webSlow: 0.60, webDuration: 3.0,
+  webCooldown: 7.0, webRadius: 50, webSlow: 0.40, webDuration: 2.5,
 };
 
 ENEMY_TYPES.fungal_man = {

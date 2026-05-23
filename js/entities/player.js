@@ -614,10 +614,27 @@ const Player = {
         if (GameMap.rectIsWalkable(res.x, res.y, rad)) {
           player.x = res.x;
           player.y = res.y;
-        } else {
-          // Полный откат — остаёмся на месте
+        } else if (GameMap.rectIsWalkable(oldX, oldY, rad)) {
+          // moveWithCollision не помогло, но старая позиция валидна — откат
           player.x = oldX;
           player.y = oldY;
+        } else {
+          // Крайний случай: и старая позиция невалидна (застрял).
+          // Ищем ближайшую свободную точку через findNearestWalkable.
+          if (GameMap.findNearestWalkable) {
+            const safe = GameMap.findNearestWalkable(oldX, oldY, 8, 200);
+            if (safe) {
+              player.x = safe.x;
+              player.y = safe.y;
+            } else {
+              // Последний фоллбэк: центр ближайшей комнаты
+              player.x = oldX;
+              player.y = oldY;
+            }
+          } else {
+            player.x = oldX;
+            player.y = oldY;
+          }
         }
       }
     }

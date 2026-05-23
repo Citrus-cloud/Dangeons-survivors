@@ -600,7 +600,7 @@ const Game = {
       let totalSlow = eff.slow || 0;
       // Шаг 6: замедление от паутины босса
       if (this.player.webSlow && this.player.webSlow > 0) {
-        totalSlow = Math.max(totalSlow, 0.50);
+        totalSlow = Math.max(totalSlow, 0.35);
       }
       // Шаг 17: замедление от ледяной руны
       if (this.player._iceSlow && this.player._iceSlowTimer > 0) {
@@ -715,6 +715,10 @@ const Game = {
     if (this._attractTimer >= 0.5) {
       if (window.GameMap && GameMap.attractAllStuck) {
         GameMap.attractAllStuck(this, this._attractTimer);
+      }
+      // Безопасность: проверяем, не застрял ли игрок в стене
+      if (window.GameMap && GameMap.attractPlayerFromWalls) {
+        GameMap.attractPlayerFromWalls(this.player, this._attractTimer);
       }
       this._attractTimer = 0;
     }
