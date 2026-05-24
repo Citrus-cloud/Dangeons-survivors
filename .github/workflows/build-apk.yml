@@ -37,30 +37,46 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
-      - name: Generate Android app icons
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Replace Android app icons with custom icon
         run: |
-          # Копируем иконку в ресурсы Android (все размеры)
-          mkdir -p android/app/src/main/res/mipmap-mdpi
-          mkdir -p android/app/src/main/res/mipmap-hdpi
-          mkdir -p android/app/src/main/res/mipmap-xhdpi
-          mkdir -p android/app/src/main/res/mipmap-xxhdpi
-          mkdir -p android/app/src/main/res/mipmap-xxxhdpi
-          # Устанавливаем ImageMagick для ресайза
+          # IMPORTANT: This step MUST run AFTER 'cap sync' because sync
+          # overwrites mipmap resources with Capacitor defaults.
+          # We replace all icon sizes with our custom image.
           sudo apt-get install -y imagemagick
+
+          # Standard launcher icons
           convert IMG_20260524_140551_787.jpg -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
           convert IMG_20260524_140551_787.jpg -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
           convert IMG_20260524_140551_787.jpg -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
           convert IMG_20260524_140551_787.jpg -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
           convert IMG_20260524_140551_787.jpg -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
-          # Круглые иконки
+
+          # Round launcher icons
           convert IMG_20260524_140551_787.jpg -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
           convert IMG_20260524_140551_787.jpg -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
           convert IMG_20260524_140551_787.jpg -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
           convert IMG_20260524_140551_787.jpg -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
           convert IMG_20260524_140551_787.jpg -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
 
-      - name: Sync Capacitor
-        run: npx cap sync android
+          # Foreground icons (adaptive icon layer used on Android 8+)
+          convert IMG_20260524_140551_787.jpg -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png
+          convert IMG_20260524_140551_787.jpg -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png
+          convert IMG_20260524_140551_787.jpg -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png
+          convert IMG_20260524_140551_787.jpg -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png
+          convert IMG_20260524_140551_787.jpg -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png
+
+          # Also replace any drawable icons that Capacitor may have placed
+          if [ -d "android/app/src/main/res/drawable" ]; then
+            convert IMG_20260524_140551_787.jpg -resize 192x192 android/app/src/main/res/drawable/ic_launcher.png 2>/dev/null || true
+            convert IMG_20260524_140551_787.jpg -resize 192x192 android/app/src/main/res/drawable/splash.png 2>/dev/null || true
+          fi
+
+          # Verify icons were placed correctly
+          echo "=== Verifying icon files ==="
+          find android/app/src/main/res/mipmap-* -name "ic_launcher*" -exec ls -la {} \;
 
       - name: Build debug APK
         run: |
