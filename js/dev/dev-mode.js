@@ -77,10 +77,18 @@ const DevMode = {
 
     // Флаг: long-press сработал, следующий click нужно проигнорировать
     let longPressTriggered = false;
+    // Начальные координаты касания для допуска на небольшое смещение
+    let startX = 0, startY = 0;
+    const MOVE_THRESHOLD = 15; // пикселей допуска
 
     const startHold = (e) => {
       longPressTriggered = false;
       this._clearHoldTimer();
+      // Запомнить начальную позицию (для touchmove tolerance)
+      if (e.touches && e.touches.length > 0) {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+      }
       this._holdTimer = setTimeout(() => {
         longPressTriggered = true;
         this._onLongPressComplete();
@@ -89,6 +97,17 @@ const DevMode = {
 
     const cancelHold = () => {
       this._clearHoldTimer();
+    };
+
+    const onTouchMove = (e) => {
+      // Отменяем только если палец сместился далеко (tolerance для дрожания)
+      if (e.touches && e.touches.length > 0) {
+        const dx = e.touches[0].clientX - startX;
+        const dy = e.touches[0].clientY - startY;
+        if (Math.abs(dx) > MOVE_THRESHOLD || Math.abs(dy) > MOVE_THRESHOLD) {
+          cancelHold();
+        }
+      }
     };
 
     // Перехватываем click: если long-press сработал — не открывать гильдию
@@ -105,11 +124,11 @@ const DevMode = {
     btn.addEventListener('mouseup', cancelHold);
     btn.addEventListener('mouseleave', cancelHold);
 
-    // Touch events (passive: true — НЕ блокируем scroll/click)
+    // Touch events
     btn.addEventListener('touchstart', startHold, { passive: true });
     btn.addEventListener('touchend', cancelHold);
     btn.addEventListener('touchcancel', cancelHold);
-    btn.addEventListener('touchmove', cancelHold);
+    btn.addEventListener('touchmove', onTouchMove, { passive: true });
   },
 
   _clearHoldTimer() {
@@ -207,6 +226,8 @@ const DevMode = {
       this._passwordOverlay.classList.remove('active');
     }
     this._resumeIfWasPaused();
+    // Сброс таймера на случай если он ещё активен
+    this._clearHoldTimer();
   },
 
   /* ============================================================
@@ -306,6 +327,8 @@ const DevMode = {
       this._devPanel.classList.remove('active');
     }
     this._resumeIfWasPaused();
+    // Сброс таймера на случай если он ещё активен
+    this._clearHoldTimer();
   },
 
   /**

@@ -21,12 +21,8 @@ const BASIC_UPGRADES = [
     apply(p) { p.speedMul *= 1.10; }, available() { return true; } },
   { id: 'b_weapon_cd', icon: '⏱', title: t('upgrade_weapon_cd'),  desc: t('upgrade_weapon_cd_desc'),
     apply(p) { p.weaponCdMul *= 0.90; }, available() { return true; } },
-  { id: 'b_missile_cd',icon: '✦', title: t('upgrade_missile_cd'),        desc: t('upgrade_missile_cd_desc'),
-    apply(p) { p.missileCdMul *= 0.75; }, available() { return true; } },
   { id: 'b_pickup',    icon: '◎', title: t('upgrade_pickup'), desc: t('upgrade_pickup_desc'),
     apply(p) { p.pickupMul *= 1.30; }, available() { return true; } },
-  { id: 'b_multishot', icon: '✶', title: t('upgrade_multishot'),          desc: t('upgrade_multishot_desc'),
-    apply(p) { p.missileCount += 1; }, available() { return true; } },
   { id: 'b_heal',      icon: '✚', title: t('upgrade_heal'), desc: t('upgrade_heal_desc'),
     apply(p) { p.hp = Math.min(p.maxHp, p.hp + p.maxHp * 0.30); }, available() { return true; } },
 ];
