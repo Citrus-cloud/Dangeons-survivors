@@ -12,6 +12,7 @@
    ┌──────────┬─────────┬───────────────┬─────────┬───────┐
    │ Тип      │ Цвет    │ Опыт          │ С волны │ Шанс  │
    ├──────────┼─────────┼───────────────┼─────────┼───────┤
+   │ Белый    │ #ffffff │ 1000000       │ 60      │ 2%    │
    │ Жёлтый   │ #ffd700 │ 100000-500000 │ 20      │ 5%    │
    │ Синий    │ #4488ff │ 10000-40000   │ 10      │ 10%   │
    │ Красный  │ #ff4444 │ 1000-2000     │ 5       │ 15%   │
@@ -27,7 +28,7 @@
  * @returns {Object} Пустой объект кристалла
  */
 function createXP() {
-  return { active: false, x: 0, y: 0, value: 0, pulse: 0, red: false, blue: false, yellow: false };
+  return { active: false, x: 0, y: 0, value: 0, pulse: 0, red: false, blue: false, yellow: false, white: false };
 }
 
 /**
@@ -81,29 +82,43 @@ const Loot = {
 
     // Каскадная проверка: от высшего типа к низшему
     // Каждый тип имеет фиксированный диапазон опыта (не зависит от монстра)
-    if (waveIndex >= 20 && Math.random() < 0.05) {
+    if (waveIndex >= 60 && Math.random() < 0.02) {
+      // Белый кристалл (1,000,000 XP, 2% с 60-й волны)
+      // При активном чите (__DEV_XP_MULTIPLIER) даёт x1000 больше
+      xp.red = false;
+      xp.blue = false;
+      xp.yellow = false;
+      xp.white = true;
+      const baseWhiteXP = 1000000;
+      const devMul = window.__DEV_XP_MULTIPLIER || 1;
+      xp.value = devMul > 1 ? baseWhiteXP * 1000 : baseWhiteXP;
+    } else if (waveIndex >= 20 && Math.random() < 0.05) {
       // Жёлтый кристалл (100000-500000 XP, 5% с 20-й волны)
       xp.red = false;
       xp.blue = false;
       xp.yellow = true;
+      xp.white = false;
       xp.value = Utils.randInt(100000, 500000);
     } else if (waveIndex >= 10 && Math.random() < 0.10) {
       // Синий кристалл (10000-40000 XP, 10% с 10-й волны)
       xp.red = false;
       xp.blue = true;
       xp.yellow = false;
+      xp.white = false;
       xp.value = Utils.randInt(10000, 40000);
     } else if (waveIndex >= 5 && Math.random() < 0.15) {
       // Красный кристалл (1000-2000 XP, 15% с 5-й волны)
       xp.red = true;
       xp.blue = false;
       xp.yellow = false;
+      xp.white = false;
       xp.value = Utils.randInt(1000, 2000);
     } else {
       // Обычный зелёный кристалл (5-15 XP) — Bug fix: было 10-50, слишком много
       xp.red = false;
       xp.blue = false;
       xp.yellow = false;
+      xp.white = false;
       xp.value = Utils.randInt(5, 15);
     }
 
@@ -127,6 +142,9 @@ const Loot = {
     xp.value = value;
     xp.pulse = 0;
     xp.red = false;
+    xp.blue = false;
+    xp.yellow = false;
+    xp.white = false;
     return xp;
   },
 
@@ -172,7 +190,42 @@ const Loot = {
       if (!x.active) continue;
       if (x.x < minX - 20 || x.x > maxX + 20 || x.y < minY - 20 || x.y > maxY + 20) continue;
       const pulse = 1 + Math.sin(x.pulse * 6) * 0.18;
-      if (x.yellow) {
+      if (x.white) {
+        // White XP Crystal — diamond shape, brilliant white/silver glow
+        const whitePulse = 1 + Math.sin(x.pulse * 12) * 0.35;
+        const size = 14 * whitePulse;
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.95)';
+        ctx.shadowBlur = 28;
+        // Diamond shape
+        ctx.beginPath();
+        ctx.moveTo(x.x, x.y - size);
+        ctx.lineTo(x.x + size * 0.7, x.y);
+        ctx.lineTo(x.x, x.y + size);
+        ctx.lineTo(x.x - size * 0.7, x.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        // Inner silver core
+        ctx.fillStyle = 'rgba(220, 220, 255, 0.9)';
+        ctx.beginPath();
+        ctx.moveTo(x.x, x.y - size * 0.5);
+        ctx.lineTo(x.x + size * 0.35, x.y);
+        ctx.lineTo(x.x, x.y + size * 0.5);
+        ctx.lineTo(x.x - size * 0.35, x.y);
+        ctx.closePath();
+        ctx.fill();
+        // Radiating light rays
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth = 2;
+        for (let r = 0; r < 6; r++) {
+          const angle = x.pulse * 1.5 + r * Math.PI / 3;
+          ctx.beginPath();
+          ctx.moveTo(x.x + Math.cos(angle) * 16 * whitePulse, x.y + Math.sin(angle) * 16 * whitePulse);
+          ctx.lineTo(x.x + Math.cos(angle) * 24 * whitePulse, x.y + Math.sin(angle) * 24 * whitePulse);
+          ctx.stroke();
+        }
+      } else if (x.yellow) {
         // Жёлтый кристалл — крупный (12px), яркий с пульсацией и свечением
         const yellowPulse = 1 + Math.sin(x.pulse * 10) * 0.30;
         ctx.fillStyle = '#ffd700';

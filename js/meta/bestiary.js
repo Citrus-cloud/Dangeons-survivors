@@ -553,3 +553,23 @@ Object.assign(BESTIARY_ABILITIES, {
   boss_bone_hydra: t('bestiary_desc_boss_bone_hydra'),
   boss_mirror_king: t('bestiary_desc_boss_mirror_king'),
 });
+
+
+/* === Additional expansion enemies added to bestiary === */
+Object.assign(BESTIARY_DESCRIPTIONS, {
+  dust_devil: t('bestiary_desc_dust_devil'),
+  tomb_scarab: t('bestiary_desc_tomb_scarab'),
+  war_boar: t('bestiary_desc_war_boar'),
+  corpse_flower: t('bestiary_desc_corpse_flower'),
+  crystal_spider: t('bestiary_desc_crystal_spider'),
+  shadow_hound: t('bestiary_desc_shadow_hound'),
+});
+
+Object.assign(BESTIARY_ABILITIES, {
+  dust_devil: t('bestiary_desc_dust_devil'),
+  tomb_scarab: t('bestiary_desc_tomb_scarab'),
+  war_boar: t('bestiary_desc_war_boar'),
+  corpse_flower: t('bestiary_desc_corpse_flower'),
+  crystal_spider: t('bestiary_desc_crystal_spider'),
+  shadow_hound: t('bestiary_desc_shadow_hound'),
+});
