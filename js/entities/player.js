@@ -263,6 +263,9 @@ const Player = {
    * @returns {number} финальный нанесённый урон
    */
   takeDamage(player, rawDmg, source) {
+    // DEV MODE: бесконечное HP (God Mode) — урон полностью игнорируется
+    if (window.__DEV_GODMODE) return 0;
+
     // I-frames: если герой в состоянии неуязвимости — игнорируем урон
     if (player._iFrameTimer && player._iFrameTimer > 0) return 0;
 
