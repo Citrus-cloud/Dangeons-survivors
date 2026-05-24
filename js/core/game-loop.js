@@ -609,7 +609,7 @@ const Game = {
     // Шаг 4: применяем эффекты от наземных луж (slime/rot замедляют, fire — DoT)
     if (window.GameMap && GameMap.queryGroundAt) {
       const eff = GameMap.queryGroundAt(this.player.x, this.player.y);
-      if (eff.dps > 0) this.player.hp -= eff.dps * dt;
+      if (eff.dps > 0 && !window.__DEV_GODMODE) this.player.hp -= eff.dps * dt;
       // Замедление применим в Player.update в этот же кадр в следующий раз —
       // здесь подкорректируем позицию: поскольку Player уже сдвинулся,
       // компенсируем "лишнее" движение, если есть slow > 0.
@@ -716,7 +716,7 @@ const Game = {
     // Шаг 6: яд от паука-королевы
     if (this.player.poison && this.player.poison.remaining > 0) {
       // Шаг 8: сопротивление снижает длительность яда (тик урона остаётся)
-      this.player.hp -= this.player.poison.dps * dt;
+      if (!window.__DEV_GODMODE) this.player.hp -= this.player.poison.dps * dt;
       this.player.poison.remaining -= dt;
     }
     // Шаг 6: замедление от паутины

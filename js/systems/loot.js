@@ -152,7 +152,9 @@ const Loot = {
       if (d2 <= collectR2) {
         // Шаг 15: бонус XP от харизмы
         const xpMul = player.xpBonusMul || 1;
-        player.xp += Math.floor(x.value * xpMul);
+        // DEV MODE: множитель опыта
+        const devXpMul = window.__DEV_XP_MULTIPLIER || 1;
+        player.xp += Math.floor(x.value * xpMul * devXpMul);
         x.active = false;
         // Шаг 18: звук подбора XP
         if (window.GameAudio) GameAudio.playSfx('xp');
@@ -242,11 +244,13 @@ const Loot = {
   magnetizeAll(pool, player) {
     const items = pool.items;
     const xpMul = player.xpBonusMul || 1;
+    // DEV MODE: множитель опыта
+    const devXpMul = window.__DEV_XP_MULTIPLIER || 1;
     for (let i = 0; i < items.length; i++) {
       const x = items[i];
       if (!x.active) continue;
       // Эквивалент мгновенного подбора: засчитываем опыт и снимаем с поля.
-      player.xp += Math.floor(x.value * xpMul);
+      player.xp += Math.floor(x.value * xpMul * devXpMul);
       x.active = false;
     }
   },
