@@ -10,13 +10,13 @@
   "icons": [
     {
       "src": "IMG_20260524_140551_787.jpg",
-      "sizes": "512x512",
+      "sizes": "1024x1024",
       "type": "image/jpeg",
       "purpose": "any"
     },
     {
       "src": "IMG_20260524_140551_787.jpg",
-      "sizes": "512x512",
+      "sizes": "1024x1024",
       "type": "image/jpeg",
       "purpose": "maskable"
     },

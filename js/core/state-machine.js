@@ -81,20 +81,22 @@ const IconGenerator = {
   },
 
   /**
-   * Генерирует иконки нескольких размеров и устанавливает их 
-   * в соответствующие элементы DOM (favicon, apple-touch-icon).
+   * Устанавливает иконку приложения из файла IMG_20260524_140551_787.jpg.
+   * Используется пользовательская иконка вместо программно сгенерированной.
    */
   install() {
-    const favicon64 = this.generate(64);
-    const icon192 = this.generate(192);
+    const iconPath = 'IMG_20260524_140551_787.jpg';
 
-    // Установка favicon (32x32 → 64x64 для retina)
+    // Установка favicon
     const faviconEl = document.getElementById('favicon');
-    if (faviconEl) faviconEl.href = favicon64;
+    if (faviconEl) {
+      faviconEl.type = 'image/jpeg';
+      faviconEl.href = iconPath;
+    }
 
-    // Установка apple-touch-icon (192x192)
+    // Установка apple-touch-icon
     const touchEl = document.getElementById('touchIcon');
-    if (touchEl) touchEl.href = icon192;
+    if (touchEl) touchEl.href = iconPath;
   }
 };
 
