@@ -2301,9 +2301,11 @@ html, body {
   z-index: 99999;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
 }
 .dev-password-overlay.active {
   display: flex;
+  pointer-events: auto;
 }
 .dev-password-backdrop {
   position: absolute;
@@ -2371,9 +2373,11 @@ html, body {
   z-index: 99999;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
 }
 .dev-panel-overlay.active {
   display: flex;
+  pointer-events: auto;
 }
 .dev-panel-backdrop {
   position: absolute;

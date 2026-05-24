@@ -1643,6 +1643,7 @@ const WEAPON_INFO = [
   { id: 'holy_aura',       name: t('weapon_holy_aura'),        icon: '✡',  desc: t('weapon_holy_aura_desc') },
   { id: 'spike_ring',      name: t('weapon_spike_ring'),    icon: '✸',  desc: t('weapon_spike_ring_desc') },
   { id: 'earthquake',      name: t('weapon_earthquake'),   icon: '◉',  desc: t('weapon_earthquake_desc') },
+  { id: 'magic_missile_weapon', name: t('weapon_spellbook'), icon: '✦', desc: t('weapon_spellbook_desc') },
 ];
 
 

@@ -238,15 +238,10 @@ const UI = {
     this.xpFill.style.width = (xpPct * 100) + '%';
     this.xpLabel.textContent = t('hud_level', p.level || 1);
 
-    // Magic Missile cd (встроенная способность) — только если не отключена
-    if (p._noBuiltInMissile) {
+    // Magic Missile cd (встроенная способность убрана — всегда скрываем)
+    if (this.cdMissileFill) {
       this.cdMissileFill.style.height = '0%';
       this.cdMissileFill.parentElement.style.display = 'none';
-    } else {
-      this.cdMissileFill.parentElement.style.display = '';
-      const missTotal = CONFIG.MISSILE.COOLDOWN * p.missileCdMul;
-      const missReady = 1 - (p.missileCd / Math.max(0.0001, missTotal));
-      this.cdMissileFill.style.height = (Utils.clamp(missReady, 0, 1) * 100) + '%';
     }
 
     // Слоты

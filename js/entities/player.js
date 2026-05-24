@@ -135,10 +135,10 @@ const Player = {
     const selectedClass = (window.Classes) ? Classes.getSelected() : 'warrior';
     const startWeaponId = (window.Classes) ? Classes.getStartWeapon(selectedClass) : 'sword';
 
-    // Магический снаряд (встроенный) — только у Волшебника
-    if (selectedClass !== 'mage') {
-      p._noBuiltInMissile = true; // Флаг: отключить встроенный Magic Missile
-    }
+    // Встроенный Magic Missile полностью убран из игры.
+    // Волшебник использует magic_missile_weapon в слоте оружия.
+    // Другие классы могут получить magic_missile_weapon через карточки при повышении уровня.
+    p._noBuiltInMissile = true;
 
     // Добавить стартовое оружие в первый слот
     if (startWeaponId === 'magic_missile_weapon') {
