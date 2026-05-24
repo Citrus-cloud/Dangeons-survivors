@@ -706,7 +706,9 @@ const Enemies = {
   /** Список доступных тиров для номера волны (1-based). */
   _availableTierIds(waveIndex) {
     const out = [];
-    for (let t = 1; t <= 5; t++) {
+    // Check all tiers (1-8+) dynamically
+    const tierKeys = Object.keys(ENEMY_TIERS).map(Number).sort((a, b) => a - b);
+    for (const t of tierKeys) {
       const tier = ENEMY_TIERS[t];
       if (tier && waveIndex >= tier.unlockWave) out.push(...tier.ids);
     }
@@ -736,16 +738,38 @@ const Enemies = {
     return INFINITE_MODE.getDifficultyMultiplier(GameMap.currentMapNumber || 1);
   },
 
-  /** Выбор случайного типа с учётом веса cfg.spawnWeight. */
+  /** Выбор случайного типа с учётом веса cfg.spawnWeight.
+   *  Bug fix: учитываем rareSpawn/maxPerRun — если враг уже достиг лимита
+   *  за текущий забег, исключаем его из пула выбора. */
   _pickWeightedType(ids) {
+    // Фильтруем врагов, которые достигли лимита rareSpawn
+    const available = ids.filter(id => {
+      const cfg = ENEMY_TYPES[id];
+      if (!cfg) return false;
+      if (cfg.rareSpawn && cfg.maxPerRun) {
+        const killed = (window.Game && Game.killsByType && Game.killsByType[id]) || 0;
+        // Считаем также текущих живых на карте
+        let aliveCount = 0;
+        if (window.Game && Game.enemies) {
+          const items = Game.enemies.items;
+          for (let i = 0; i < items.length; i++) {
+            if (items[i].active && items[i].type === id) aliveCount++;
+          }
+        }
+        if (killed + aliveCount >= cfg.maxPerRun) return false;
+      }
+      return true;
+    });
+    // Если после фильтрации ничего не осталось — используем оригинальный список
+    const pool = available.length > 0 ? available : ids;
     let total = 0;
-    for (const id of ids) total += (ENEMY_TYPES[id].spawnWeight || 1);
+    for (const id of pool) total += (ENEMY_TYPES[id].spawnWeight || 1);
     let r = Math.random() * total;
-    for (const id of ids) {
+    for (const id of pool) {
       r -= (ENEMY_TYPES[id].spawnWeight || 1);
       if (r <= 0) return id;
     }
-    return ids[ids.length - 1];
+    return pool[pool.length - 1];
   },
 
   /**
