@@ -62,19 +62,27 @@ const DevMode = {
   /**
    * Привязка обработчиков длительного нажатия к кнопке.
    * Работает для мыши и сенсорных устройств.
+   * 
+   * ВАЖНО: НЕ блокируем стандартное поведение кнопки (click).
+   * Длительное нажатие отслеживается параллельно. При коротком нажатии
+   * кнопка работает как обычно (открывает Гильдию). Только при удержании
+   * 10 секунд активируется секретный режим.
+   * Для предотвращения перехода в Гильдию при успешном long-press,
+   * мы ставим флаг longPressTriggered и перехватываем click.
    */
   _attachLongPress(btn) {
     // Предотвращаем повторную привязку
     if (btn._devModeAttached) return;
     btn._devModeAttached = true;
 
+    // Флаг: long-press сработал, следующий click нужно проигнорировать
+    let longPressTriggered = false;
+
     const startHold = (e) => {
-      // Предотвращаем выделение текста на мобильных
-      if (e.type === 'touchstart') {
-        e.preventDefault();
-      }
+      longPressTriggered = false;
       this._clearHoldTimer();
       this._holdTimer = setTimeout(() => {
+        longPressTriggered = true;
         this._onLongPressComplete();
       }, this._holdDuration);
     };
@@ -83,13 +91,22 @@ const DevMode = {
       this._clearHoldTimer();
     };
 
+    // Перехватываем click: если long-press сработал — не открывать гильдию
+    btn.addEventListener('click', (e) => {
+      if (longPressTriggered) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        longPressTriggered = false;
+      }
+    }, true); // capturing phase — срабатывает ДО обработчика из hud.js
+
     // Mouse events
     btn.addEventListener('mousedown', startHold);
     btn.addEventListener('mouseup', cancelHold);
     btn.addEventListener('mouseleave', cancelHold);
 
-    // Touch events
-    btn.addEventListener('touchstart', startHold, { passive: false });
+    // Touch events (passive: true — НЕ блокируем scroll/click)
+    btn.addEventListener('touchstart', startHold, { passive: true });
     btn.addEventListener('touchend', cancelHold);
     btn.addEventListener('touchcancel', cancelHold);
     btn.addEventListener('touchmove', cancelHold);
